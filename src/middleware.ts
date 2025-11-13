@@ -118,6 +118,26 @@ export function middleware(request: NextRequest) {
   // Security headers
   response.headers.set('X-Content-Type-Options', 'nosniff');
   
+  // Build CSP connect-src directive dynamically based on API URL
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  let connectSrc = "'self'";
+  
+  if (apiUrl) {
+    try {
+      const url = new URL(apiUrl);
+      // Extract origin (protocol + hostname + port if present)
+      connectSrc += ` ${url.origin}`;
+    } catch (e) {
+      // If URL parsing fails, log error but don't add invalid URL
+      console.error('Invalid NEXT_PUBLIC_API_URL:', apiUrl);
+    }
+  }
+  
+  // In development, also allow localhost connections
+  if (process.env.NODE_ENV === 'development') {
+    connectSrc += " http://localhost:* ws://localhost:* ws://127.0.0.1:*";
+  }
+  
   // Only add CSP in production, not in development
   // In development, CSP blocks localhost connections
   if (process.env.NODE_ENV === 'production') {
@@ -126,7 +146,7 @@ export function middleware(request: NextRequest) {
     response.headers.set('X-XSS-Protection', '1; mode=block');
     response.headers.set(
       'Content-Security-Policy',
-      "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.nidia.com;"
+      `default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src ${connectSrc};`
     );
   }
 
