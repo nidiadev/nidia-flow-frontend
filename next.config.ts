@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Standalone output for Docker
+  output: 'standalone',
+  
+  // Remove X-Powered-By header
+  poweredByHeader: false,
 };
 
 export default nextConfig;
