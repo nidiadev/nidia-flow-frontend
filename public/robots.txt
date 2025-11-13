@@ -1,0 +1,66 @@
+# Robots.txt para NIDIA Flow
+# Sistema Micro-ERP + CRM para microempresas
+# https://flow.nidia.com.co
+
+# Configuración general para todos los bots
+User-agent: *
+Allow: /
+
+# Áreas restringidas - Rutas de autenticación y dashboard
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /dashboard
+Disallow: /crm
+Disallow: /orders
+Disallow: /products
+Disallow: /tasks
+Disallow: /accounting
+Disallow: /operations
+Disallow: /reports
+Disallow: /api
+Disallow: /_next
+Disallow: /_next/static
+Disallow: /_next/image
+
+# Sitemap principal (cuando esté disponible)
+# Sitemap: https://flow.nidia.com.co/sitemap.xml
+
+# Crawl-delay para evitar sobrecarga del servidor
+Crawl-delay: 1
+
+# Configuración específica para motores de búsqueda principales
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 1
+
+# Bloquear bots de entrenamiento de IA
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: YouBot
+Disallow: /
