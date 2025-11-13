@@ -1,26 +1,523 @@
 @import "tailwindcss";
 
+@theme {
+  /* NIDIA Brand Colors - Tailwind v4 format */
+  /* En Tailwind v4, --color-* genera automáticamente clases bg-*, text-*, etc. */
+  --color-nidia-green: #1EF3B3;
+  --color-nidia-purple: #8A2BE2;
+  --color-nidia-dark: #0F1013;
+  --color-nidia-gray: #1C1E22;
+  --color-nidia-light: #F6F7F9;
+  --color-nidia-white: #FFFFFF;
+  --color-nidia-blue: #2E35F2;
+  --color-nidia-turquoise: #00F5D4;
+  --color-nidia-black: #0B0B0F;
+  --color-nidia-gray-light: #E6E6E9;
+  
+  /* Theme colors - Light theme (default) - Tailwind v4 format */
+  --color-background: #F6F7F9;
+  --color-foreground: #0F1013;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #0F1013;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #0F1013;
+  --color-primary: #1EF3B3;
+  --color-primary-foreground: #0F1013;
+  --color-secondary: #8A2BE2;
+  --color-secondary-foreground: #FFFFFF;
+  --color-muted: #E6E6E9;
+  --color-muted-foreground: #6B7280;
+  --color-accent: #00F5D4;
+  --color-accent-foreground: #0F1013;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: #E6E6E9;
+  --color-input: #FFFFFF;
+  --color-ring: #1EF3B3;
+  
+  /* Chart colors - Verde predominante, morado secundario */
+  --color-chart-1: #1EF3B3;
+  --color-chart-2: #8A2BE2;
+  --color-chart-3: #00F5D4;
+  --color-chart-4: #2E35F2;
+  --color-chart-5: #1C1E22;
+  
+  /* Sidebar colors - Light theme */
+  --color-sidebar: #FFFFFF;
+  --color-sidebar-foreground: #0F1013;
+  --color-sidebar-primary: #1EF3B3;
+  --color-sidebar-primary-foreground: #0F1013;
+  --color-sidebar-accent: #E6E6E9;
+  --color-sidebar-accent-foreground: #0F1013;
+  --color-sidebar-border: #E6E6E9;
+  --color-sidebar-ring: #1EF3B3;
+  
+  /* Border Radius */
+  --radius: 0.75rem;
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  
+  /* Font Family */
+  --font-outfit: var(--font-outfit), sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Mantener variables CSS para compatibilidad con código existente */
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --card: var(--color-card);
+  --card-foreground: var(--color-card-foreground);
+  --popover: var(--color-popover);
+  --popover-foreground: var(--color-popover-foreground);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-secondary-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-foreground);
+  --destructive: var(--color-destructive);
+  --destructive-foreground: var(--color-destructive-foreground);
+  --border: var(--color-border);
+  --input: var(--color-input);
+  --ring: var(--color-ring);
+  
+  /* Chart colors */
+  --chart-1: var(--color-chart-1);
+  --chart-2: var(--color-chart-2);
+  --chart-3: var(--color-chart-3);
+  --chart-4: var(--color-chart-4);
+  --chart-5: var(--color-chart-5);
+  
+  /* Sidebar colors */
+  --sidebar: var(--color-sidebar);
+  --sidebar-foreground: var(--color-sidebar-foreground);
+  --sidebar-primary: var(--color-sidebar-primary);
+  --sidebar-primary-foreground: var(--color-sidebar-primary-foreground);
+  --sidebar-accent: var(--color-sidebar-accent);
+  --sidebar-accent-foreground: var(--color-sidebar-accent-foreground);
+  --sidebar-border: var(--color-sidebar-border);
+  --sidebar-ring: var(--color-sidebar-ring);
+  
+  /* NIDIA Brand Colors - Para uso en CSS personalizado */
+  --nidia-green: var(--color-nidia-green);
+  --nidia-purple: var(--color-nidia-purple);
+  --nidia-blue: var(--color-nidia-blue);
+  --nidia-turquoise: var(--color-nidia-turquoise);
+  --nidia-dark: var(--color-nidia-dark);
+  --nidia-gray: var(--color-nidia-gray);
+  --nidia-light: var(--color-nidia-light);
+  --nidia-white: var(--color-nidia-white);
+  --nidia-black: var(--color-nidia-black);
+  --nidia-gray-light: var(--color-nidia-gray-light);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  /* Dark Theme using NIDIA colors */
+  --color-background: #0F1013;
+  --color-foreground: #F6F7F9;
+  --color-card: #1C1E22;
+  --color-card-foreground: #F6F7F9;
+  --color-popover: #1C1E22;
+  --color-popover-foreground: #F6F7F9;
+  --color-primary: #1EF3B3;
+  --color-primary-foreground: #0F1013;
+  --color-secondary: #8A2BE2;
+  --color-secondary-foreground: #FFFFFF;
+  --color-muted: #1C1E22;
+  --color-muted-foreground: #9CA3AF;
+  --color-accent: #00F5D4;
+  --color-accent-foreground: #0F1013;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: #2A2D35;
+  --color-input: #25282F;
+  --color-ring: #1EF3B3;
+  
+  /* Chart colors for dark theme - Verde predominante, morado secundario */
+  --color-chart-1: #1EF3B3;
+  --color-chart-2: #8A2BE2;
+  --color-chart-3: #00F5D4;
+  --color-chart-4: #2E35F2;
+  --color-chart-5: #E6E6E9;
+  
+  /* Sidebar colors for dark theme */
+  --color-sidebar: #0B0B0F;
+  --color-sidebar-foreground: #F6F7F9;
+  --color-sidebar-primary: #1EF3B3;
+  --color-sidebar-primary-foreground: #0F1013;
+  --color-sidebar-accent: #1C1E22;
+  --color-sidebar-accent-foreground: #1EF3B3;
+  --color-sidebar-border: #1C1E22;
+  --color-sidebar-ring: #1EF3B3;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html {
+  background-color: var(--color-background);
+}
+
+.dark html {
+  background-color: var(--color-background);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-feature-settings: "rlig" 1, "calt" 1;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
 }
+
+.dark body {
+  background-color: var(--color-background);
+}
+
+/* Smooth transitions for theme changes */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--muted-foreground) 50%, transparent);
+}
+
+/* Selection styling */
+::selection {
+  background-color: color-mix(in srgb, var(--primary) 20%, transparent);
+  color: var(--primary-foreground);
+}
+
+/* Focus visible styling */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ring), 0 0 0 4px color-mix(in srgb, var(--ring) 30%, transparent);
+}
+
+/* Typography improvements */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+h1 {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+  h1 {
+    font-size: 3rem;
+    line-height: 1;
+  }
+}
+
+h2 {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+@media (min-width: 1024px) {
+  h2 {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+}
+
+h3 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+@media (min-width: 1024px) {
+  h3 {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+}
+
+h4 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+@media (min-width: 1024px) {
+  h4 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(to right, var(--nidia-purple), var(--nidia-blue), var(--nidia-green));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Glass morphism effect */
+.glass {
+  background-color: color-mix(in srgb, var(--background) 80%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+/* Smooth animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Button animations */
+@keyframes buttonPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(138, 43, 226, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(138, 43, 226, 0);
+  }
+}
+
+@keyframes buttonShine {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+.button-pulse {
+  animation: buttonPulse 2s infinite;
+}
+
+.button-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.button-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.button-shine:hover::before {
+  left: 100%;
+}
+
+/* Tech animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(30, 243, 179, 0.3);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 40px rgba(30, 243, 179, 0.6);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes tech-grid {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 40px 40px;
+  }
+}
+
+@keyframes particle-float {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.animate-tech-grid {
+  animation: tech-grid 20s linear infinite;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--nidia-green);
+  border-radius: 50%;
+  animation: particle-float 15s linear infinite;
+}
+
+.scan-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--nidia-green),
+    transparent
+  );
+  animation: scan-line 3s linear infinite;
+  pointer-events: none;
+}
+
+/* Tech grid pattern */
+.tech-grid-bg {
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px, 20px 20px, 20px 20px;
+  background-position: 0 0, 0 0, 20px 20px, 20px 20px;
+}
+
+.dark .tech-grid-bg {
+  background-image: 
+    linear-gradient(rgba(138, 43, 226, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(138, 43, 226, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(30, 243, 179, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 243, 179, 0.1) 1px, transparent 1px);
+}
+
+/* Glow effects - usando variables de Tailwind v4 */
+.glow-purple {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-purple) 40%, transparent);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-green) 40%, transparent);
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-blue) 40%, transparent);
+}
+
+.glow-turquoise {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-turquoise) 40%, transparent);
+}
+
+/* Ensure buttons with data-slot maintain their background colors when used as links */
+[data-slot="button"] {
+  display: inline-flex !important;
+  text-decoration: none !important;
+}
+
+/* Force background colors for buttons - usando las variables de Tailwind v4 */
+[data-slot="button"].bg-primary {
+  background-color: var(--color-primary) !important;
+  color: var(--color-primary-foreground) !important;
+}
+
+[data-slot="button"].bg-secondary {
+  background-color: var(--color-secondary) !important;
+  color: var(--color-secondary-foreground) !important;
+}
+
+
+
