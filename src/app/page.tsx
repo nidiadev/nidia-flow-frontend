@@ -9,6 +9,7 @@ import { useTheme } from 'next-themes';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { StructuredData } from '@/components/seo/structured-data';
 import { Loader2, 
   Users, 
   ShoppingCart, 
@@ -175,8 +176,10 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navbar - Logo y selector de tema */}
+    <>
+      <StructuredData />
+      <div className="min-h-screen bg-background">
+        {/* Navbar - Logo y selector de tema */}
       <nav className="fixed top-0 left-0 right-0 z-50">
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
@@ -272,7 +275,7 @@ export default function Home() {
               variants={itemVariants}
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold font-outfit mb-6 text-foreground relative"
             >
-            NIDIA Flow
+            NIDIA Flow - Micro-ERP + CRM
             </motion.h1>
             
             <motion.p
@@ -281,14 +284,15 @@ export default function Home() {
             >
               Sistema administrativo-operacional completo para{' '}
               <span className="font-semibold text-foreground">microempresas</span> y{' '}
-              <span className="font-semibold text-foreground">empresas de servicios</span>
+              <span className="font-semibold text-foreground">empresas de servicios</span> en Colombia
             </motion.p>
             
             <motion.p
               variants={itemVariants}
               className="text-sm sm:text-base md:text-lg font-outfit text-muted-foreground mb-12 max-w-2xl mx-auto px-4"
             >
-              Combina gestión comercial, operativa y comunicacional en una plataforma unificada
+              Combina gestión comercial, operativa y comunicacional en una plataforma unificada.{' '}
+              <span className="hidden">Software ERP en la nube, CRM integrado, gestión de inventario, control de órdenes y operaciones en campo para empresas colombianas.</span>
             </motion.p>
 
             <motion.div
@@ -854,6 +858,7 @@ export default function Home() {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
