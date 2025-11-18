@@ -34,7 +34,7 @@ export const homeMetadata: Metadata = {
     description: 'Sistema Micro-ERP + CRM completo para microempresas. Gestión de clientes, órdenes, inventario, contabilidad y operaciones en campo en una sola plataforma.',
     images: [
       {
-        url: '/logo.png',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: 'NIDIA Flow - Micro-ERP + CRM para Microempresas',
@@ -45,7 +45,7 @@ export const homeMetadata: Metadata = {
     card: 'summary_large_image',
     title: 'NIDIA Flow - Micro-ERP + CRM para Microempresas',
     description: 'Sistema Micro-ERP + CRM completo para microempresas. Gestión de clientes, órdenes, inventario y más en una sola plataforma.',
-    images: ['/logo.png'],
+    images: ['/og-image.png'],
     creator: '@nidiadev',
   },
   alternates: {

@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     locale: 'es_CO',
     images: [
       {
-        url: '/logo.png',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: 'NIDIA Flow - Planes y Precios',
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Planes y Precios | NIDIA Flow',
     description: 'Compara nuestros planes y elige el perfecto para tu negocio.',
-    images: ['/logo.png'],
+    images: ['/og-image.png'],
     creator: '@nidiadev',
   },
   alternates: {

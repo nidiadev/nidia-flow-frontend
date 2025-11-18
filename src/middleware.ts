@@ -257,6 +257,10 @@ export function middleware(request: NextRequest) {
     }
   }
   
+  // Allow Google Apps Script for waitlist form submissions
+  // Note: CSP doesn't support wildcards in the middle of domains, so we list specific domains
+  connectSrc += " https://script.google.com https://script.googleusercontent.com";
+  
   // In development, also allow localhost connections
   if (process.env.NODE_ENV === 'development') {
     connectSrc += " http://localhost:* ws://localhost:* ws://127.0.0.1:*";
