@@ -58,6 +58,14 @@ const adminNavigationItems: NavItem[] = [
     ],
   },
   {
+    title: 'Módulos',
+    href: '/superadmin/modules',
+    icon: Package,
+    children: [
+      { title: 'Lista de Módulos', href: '/superadmin/modules', icon: Package },
+    ],
+  },
+  {
     title: 'Suscripciones',
     href: '/superadmin/subscriptions',
     icon: CreditCard,

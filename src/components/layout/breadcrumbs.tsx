@@ -4,6 +4,8 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AuthService } from '@/lib/auth';
+import { useAuth } from '@/contexts/auth-context';
 
 interface BreadcrumbItem {
   label: string;
@@ -56,6 +58,34 @@ const routeLabels: Record<string, string> = {
 
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  
+  // Solo aplicar slug para usuarios de tenant, no para superadmin
+  const userRole = user?.systemRole || user?.role;
+  const isSuperAdmin = userRole === 'super_admin';
+  const tenantSlug = !isSuperAdmin ? AuthService.getTenantSlug() : null;
+
+  // Función helper para agregar el slug del tenant a las rutas
+  const addTenantSlug = (href: string): string => {
+    // Si es superadmin, retornar la ruta original (sin modificar)
+    if (isSuperAdmin) {
+      return href;
+    }
+    // Si no hay slug, retornar la ruta original
+    if (!tenantSlug) {
+      return href;
+    }
+    // Si la ruta ya tiene el slug, retornarla tal cual
+    if (href.startsWith(`/${tenantSlug}/`)) {
+      return href;
+    }
+    // Si la ruta empieza con /, agregar el slug
+    if (href.startsWith('/')) {
+      return `/${tenantSlug}${href}`;
+    }
+    // Si no empieza con /, agregar /slug/
+    return `/${tenantSlug}/${href}`;
+  };
 
   // Generate breadcrumbs from pathname if items not provided
   const breadcrumbItems = items || generateBreadcrumbsFromPath(pathname);
@@ -74,7 +104,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
     >
       {/* Home link */}
       <Link
-        href="/dashboard"
+        href={addTenantSlug('/dashboard')}
         className="flex items-center hover:text-foreground transition-colors"
       >
         <Home className="h-4 w-4" />
@@ -86,7 +116,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
           <ChevronRight className="h-4 w-4 mx-1" />
           {item.href && index < breadcrumbItems.length - 1 ? (
             <Link
-              href={item.href}
+              href={addTenantSlug(item.href)}
               className="hover:text-foreground transition-colors"
             >
               {item.label}
