@@ -26,32 +26,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isAuthenticated = !!user && AuthService.isAuthenticated();
 
-  // Initialize auth state
+  // Initialize auth state (solo una vez al montar)
   useEffect(() => {
+    let isMounted = true;
+    
     const initAuth = async () => {
       try {
         if (AuthService.isAuthenticated()) {
           const currentUser = await AuthService.getCurrentUser();
-          if (currentUser) {
-            setUser(currentUser);
-            queryClient.setQueryData(queryKeys.auth.me(), currentUser);
-          } else {
-            // Token is invalid, clear it
-            AuthService.clearTokens();
-            setUser(null);
+          if (isMounted) {
+            if (currentUser) {
+              setUser(currentUser);
+              queryClient.setQueryData(queryKeys.auth.me(), currentUser);
+            } else {
+              // Token is invalid, clear it
+              AuthService.clearTokens();
+              setUser(null);
+            }
           }
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        AuthService.clearTokens();
-        setUser(null);
+        if (isMounted) {
+          AuthService.clearTokens();
+          setUser(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     initAuth();
-  }, [queryClient]);
+    
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo ejecutar una vez al montar
 
   // Periodic token refresh check (every 1 minute for proactive refresh)
   useEffect(() => {
@@ -81,15 +94,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const newToken = await AuthService.refreshToken();
           if (newToken) {
             console.log('✅ Token refrescado exitosamente');
-            // Actualizar usuario después del refresh
+            // Actualizar usuario después del refresh para obtener datos actualizados
             try {
               const currentUser = await AuthService.getCurrentUser();
               if (currentUser) {
                 setUser(currentUser);
                 queryClient.setQueryData(queryKeys.auth.me(), currentUser);
+                console.log('✅ Usuario actualizado después del refresh');
+              } else {
+                console.warn('⚠️ No se pudo obtener usuario después del refresh');
               }
             } catch (error) {
-              console.error('Error al obtener usuario después del refresh:', error);
+              console.error('❌ Error al obtener usuario después del refresh:', error);
             }
           } else {
             // Refresh failed, logout
@@ -126,32 +142,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('🔐 Iniciando login...');
       const response = await AuthService.login(credentials);
       
-      if (response.success) {
-        console.log('✅ Login exitoso, usuario:', response.data.user);
-        console.log('🔍 Rol del usuario:', response.data.user.role, 'systemRole:', response.data.user.systemRole);
-        setUser(response.data.user);
+      if (response.success && response.data.user) {
+        const user = response.data.user;
+        console.log('✅ Login exitoso, usuario:', user);
+        console.log('🔍 Rol del usuario:', user.role, 'systemRole:', user.systemRole);
+        setUser(user);
         // Set user data in query cache
-        queryClient.setQueryData(queryKeys.auth.me(), response.data.user);
+        queryClient.setQueryData(queryKeys.auth.me(), user);
         
         // Get redirect path from URL params if exists, or redirect based on role
         const searchParams = new URLSearchParams(window.location.search);
         const requestedRedirect = searchParams.get('redirect');
         
         // Determine redirect path based on user role
-        // Check both role and systemRole for compatibility
-        const userRole = response.data.user.role || response.data.user.systemRole;
+        // Priorizar systemRole sobre role para determinar el tipo de usuario
+        const userRole = user.systemRole || user.role;
+        
+        // IMPORTANTE: tenantSlug solo se usa para tenants, NO para superadmin
+        // Superadmin no tiene tenantSlug y no lo necesita
+        const isSuperAdmin = userRole === 'super_admin';
+        const tenantSlug = !isSuperAdmin ? AuthService.getTenantSlug() : null;
+        
+        console.log('🔍 Información de usuario para redirección:', {
+          systemRole: user.systemRole,
+          role: user.role,
+          userRole,
+          isSuperAdmin,
+          tenantSlug: isSuperAdmin ? 'N/A (superadmin)' : tenantSlug,
+          requestedRedirect,
+        });
+        
         let redirectPath = '/dashboard';
-        if (userRole === 'super_admin') {
+        
+        // Si es super_admin, siempre redirigir al panel de superadmin (sin usar tenantSlug)
+        if (isSuperAdmin) {
           redirectPath = '/superadmin/dashboard';
+          console.log('✅ Usuario es super_admin, redirigiendo a:', redirectPath);
         } else if (requestedRedirect) {
-          redirectPath = requestedRedirect;
+          // Si hay un redirect solicitado, verificar si necesita el slug (solo para tenants)
+          if (tenantSlug && !requestedRedirect.startsWith(`/${tenantSlug}/`) && !requestedRedirect.startsWith('/superadmin/')) {
+            // Agregar el slug al path si no lo tiene
+            const pathWithoutSlash = requestedRedirect.startsWith('/') ? requestedRedirect.slice(1) : requestedRedirect;
+            redirectPath = `/${tenantSlug}/${pathWithoutSlash}`;
+          } else {
+            redirectPath = requestedRedirect;
+          }
+        } else if (tenantSlug) {
+          // Si hay tenantSlug, usar ruta con slug (solo para tenants)
+          redirectPath = `/${tenantSlug}/dashboard`;
         }
         
-        console.log('🚀 Redirigiendo a', redirectPath, 'para rol:', userRole);
-        // Use window.location.href instead of router.push to ensure immediate redirect
-        // and avoid middleware interception
-        window.location.href = redirectPath;
-        return { success: true };
+        console.log('🚀 Redirigiendo a', redirectPath, 'para rol:', userRole, 'slug:', isSuperAdmin ? 'N/A' : tenantSlug);
+        
+        // Asegurar que los tokens se hayan guardado antes de redirigir
+        // Los tokens ya se guardaron en AuthService.login, pero esperamos un momento
+        // para asegurar que las cookies estén disponibles para el middleware
+        // También dar tiempo para que los logs se guarden
+        return new Promise<{ success: boolean; message?: string }>((resolve) => {
+          // Guardar logs antes de redirigir
+          if (typeof window !== 'undefined' && (window as any).getConsoleLogs) {
+            // Forzar guardado de logs
+            const logger = (window as any).__consoleLogger;
+            if (logger && logger.saveLogs) {
+              logger.saveLogs();
+            }
+          }
+          
+          setTimeout(() => {
+            // Usar window.location.href para forzar una redirección completa
+            // Esto evita problemas con el middleware y asegura que la página se recargue completamente
+            window.location.href = redirectPath;
+            resolve({ success: true });
+          }, 500); // Aumentado a 500ms para dar tiempo a guardar logs
+        });
       } else {
         console.log('❌ Login falló:', response.message);
         return { success: false, message: response.message || 'Error al iniciar sesión' };
@@ -173,19 +236,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await AuthService.register(data);
       
       if (response.success) {
-        setUser(response.data.user);
-        // Set user data in query cache
-        queryClient.setQueryData(queryKeys.auth.me(), response.data.user);
+        // If provisioning is in progress, redirect to provisioning page
+        if (response.status === 'provisioning' && response.data.tenantId) {
+          console.log('🔄 Provisioning en progreso, redirigiendo a página de provisioning');
+          window.location.href = `/provisioning/${response.data.tenantId}`;
+          return { success: true };
+        }
         
-        // Redirect based on role
-        // Check both role and systemRole for compatibility
-        const userRole = response.data.user.role || response.data.user.systemRole;
-        const redirectPath = userRole === 'super_admin' 
-          ? '/superadmin/dashboard' 
-          : '/dashboard';
-        console.log('🚀 Registro exitoso, redirigiendo a', redirectPath, 'para rol:', userRole);
-        window.location.href = redirectPath;
-        return { success: true };
+        // If registration completed immediately (shouldn't happen with async provisioning)
+        if (response.data.user && response.data.accessToken) {
+          setUser(response.data.user);
+          // Set user data in query cache
+          queryClient.setQueryData(queryKeys.auth.me(), response.data.user);
+          
+          // Redirect based on role
+          const userRole = response.data.user.role || response.data.user.systemRole;
+          const isSuperAdmin = userRole === 'super_admin';
+          
+          // IMPORTANTE: tenantSlug solo se usa para tenants, NO para superadmin
+          const tenantSlug = !isSuperAdmin ? AuthService.getTenantSlug() : null;
+          
+          const redirectPath = isSuperAdmin
+            ? '/superadmin/dashboard' 
+            : (tenantSlug ? `/${tenantSlug}/dashboard` : '/dashboard');
+          console.log('🚀 Registro exitoso, redirigiendo a', redirectPath, 'para rol:', userRole, 'slug:', isSuperAdmin ? 'N/A' : tenantSlug);
+          window.location.href = redirectPath;
+          return { success: true };
+        }
+        
+        return { success: false, message: 'Respuesta inesperada del servidor' };
       } else {
         return { success: false, message: response.message || 'Error al registrarse' };
       }

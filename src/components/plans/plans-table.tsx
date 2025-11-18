@@ -4,7 +4,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Plan } from '@/lib/api/plans';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUpDown, Eye, Edit, Trash2 } from 'lucide-react';
+import { ArrowUpDown, Eye, Edit, Trash2, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
@@ -15,6 +15,7 @@ interface PlansTableProps {
   onView?: (plan: Plan) => void;
   onEdit?: (plan: Plan) => void;
   onDelete?: (plan: Plan) => void;
+  onViewModules?: (plan: Plan) => void;
   isLoading?: boolean;
 }
 
@@ -23,6 +24,7 @@ export function PlansTable({
   onView,
   onEdit,
   onDelete,
+  onViewModules,
   isLoading = false,
 }: PlansTableProps) {
   const router = useRouter();
@@ -207,6 +209,14 @@ export function PlansTable({
       label: 'Ver detalles',
       icon: <Eye className="h-4 w-4" />,
       onClick: onView,
+    });
+  }
+
+  if (onViewModules) {
+    actions.push({
+      label: 'Ver módulos',
+      icon: <Package className="h-4 w-4" />,
+      onClick: onViewModules,
     });
   }
   

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, ArrowLeft, Download } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
 import Link from 'next/link';
 
 export default function ReportsPage() {
@@ -13,18 +14,17 @@ export default function ReportsPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="mb-6">
-        <Link href="/superadmin/stats/overview">
-          <Button variant="ghost" size="sm" className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a Estadísticas
-          </Button>
-        </Link>
-        <h1 className="text-2xl font-bold mb-2">Reportes</h1>
-        <p className="text-muted-foreground">
-          Genera y descarga reportes detallados del sistema
-        </p>
-      </div>
+      <Link href="/superadmin/stats/overview">
+        <Button variant="ghost" size="sm" className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver a Estadísticas
+        </Button>
+      </Link>
+      
+      <PageHeader
+        title="Reportes"
+        description="Genera y descarga reportes detallados del sistema"
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <Card>

@@ -114,6 +114,7 @@ export const queryKeys = {
     all: () => ['crm'] as const,
     customers: (filters?: any) => ['crm', 'customers', filters] as const,
     customer: (id: string) => ['crm', 'customers', id] as const,
+    statistics: () => ['crm', 'customers', 'statistics'] as const,
     interactions: (customerId?: string) => ['crm', 'interactions', customerId] as const,
     pipeline: () => ['crm', 'pipeline'] as const,
   },

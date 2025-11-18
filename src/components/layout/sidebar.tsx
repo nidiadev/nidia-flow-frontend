@@ -25,9 +25,11 @@ import {
   MapPin,
   Bell,
   Loader2,
+  Layers,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useSubscription } from '@/hooks/use-subscription';
+import { AuthService } from '@/lib/auth';
 import { SidebarItem } from './sidebar-item';
 import { SidebarFooter } from './sidebar-footer';
 
@@ -37,7 +39,15 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
   moduleName?: string; // Nombre del módulo para filtrar por suscripción
-  children?: Array<{ title: string; href: string; icon: React.ComponentType<{ className?: string }> }>;
+  children?: Array<{ 
+    title: string; 
+    href: string; 
+    icon: React.ComponentType<{ className?: string }>;
+    isEnabled?: boolean;
+    subModule?: any;
+  }>;
+  isEnabled?: boolean;
+  module?: any;
 }
 
 // Navegación simplificada - sin sub-rutas para "crear"
@@ -140,16 +150,118 @@ export function Sidebar({ className }: SidebarProps) {
     return null;
   }
 
-  // Filtrar módulos según la suscripción activa
-  const enabledModules = subscription?.plan.enabledModules || [];
-  const filteredNavigationItems = navigationItems.filter(item => {
-    // Si no tiene moduleName, siempre está disponible (Dashboard, Configuración)
-    if (!item.moduleName) {
-      return true;
+  // Obtener slug del tenant del JWT
+  const tenantSlug = AuthService.getTenantSlug();
+
+  // Función helper para agregar el slug del tenant a las rutas
+  const addTenantSlug = (href: string): string => {
+    // Si no hay slug, retornar la ruta original (fallback)
+    if (!tenantSlug) {
+      return href;
     }
-    // Si tiene moduleName, verificar si está en enabledModules
-    return enabledModules.includes(item.moduleName);
-  });
+    // Si la ruta ya tiene el slug, retornarla tal cual
+    if (href.startsWith(`/${tenantSlug}/`)) {
+      return href;
+    }
+    // Si la ruta empieza con /, agregar el slug
+    if (href.startsWith('/')) {
+      return `/${tenantSlug}${href}`;
+    }
+    // Si no empieza con /, agregar /slug/
+    return `/${tenantSlug}/${href}`;
+  };
+
+  // Procesar navigationItems para agregar el slug del tenant
+  const processedNavigationItems: NavItem[] = navigationItems.map(item => ({
+    ...item,
+    href: addTenantSlug(item.href),
+    children: item.children?.map(child => ({
+      ...child,
+      href: addTenantSlug(child.href),
+    })),
+  }));
+
+  // Obtener módulos del usuario (vienen del endpoint /auth/me)
+  const userModules = user?.modules || [];
+  const moduleMap = new Map(userModules.map(m => [m.name, m]));
+
+  // Mostrar todos los módulos, pero marcar los no habilitados
+  const filteredNavigationItems = processedNavigationItems.map(item => {
+    if (!item.moduleName) {
+      return { ...item, isEnabled: true };
+    }
+
+    const module = moduleMap.get(item.moduleName);
+    const isVisible = module?.isVisible ?? true;
+
+    // Si el módulo no es visible, no mostrarlo
+    if (!isVisible) {
+      return null;
+    }
+
+    // Si el módulo tiene submódulos, agregarlos como hijos (mostrar todos los visibles, pero marcar los deshabilitados)
+    let childrenWithSubModules = item.children || [];
+    
+    if (module?.subModules && module.subModules.length > 0) {
+      // Mostrar todos los submódulos visibles, no solo los habilitados
+      // Esto permite mostrar submódulos bloqueados con indicador visual
+      const visibleSubModules = module.subModules
+        .filter(sm => sm.isVisible) // Solo filtrar por visibilidad
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map(sm => {
+          // Intentar obtener el icono del submódulo o usar uno por defecto
+          const getIcon = () => {
+            // Si el submódulo tiene un icono definido, intentar usarlo
+            // Por ahora usamos un icono genérico, pero podrías mapear iconos
+            return Layers; // Icono por defecto para submódulos
+          };
+
+          return {
+            title: sm.displayName,
+            href: sm.path || `${item.href}/${sm.name}`,
+            icon: getIcon(),
+            isEnabled: sm.isEnabled, // Marcar si está habilitado o no
+            subModule: sm,
+          };
+        });
+
+      // Combinar hijos existentes con submódulos visibles
+      childrenWithSubModules = [...(item.children || []), ...visibleSubModules];
+    }
+
+    // NUEVA LÓGICA: Un módulo está habilitado SIEMPRE que tenga al menos 1 submódulo/hijo activo
+    // Verificar en TODOS los hijos combinados (tanto hardcodeados como del backend)
+    // Si tiene 0 submódulos/hijos activos, está bloqueado
+    // Si no tiene submódulos definidos, usar la lógica anterior (isEnabled del módulo)
+    let isEnabled: boolean;
+    if (module?.subModules && module.subModules.length > 0) {
+      // Si tiene submódulos del backend, verificar si al menos uno está habilitado
+      // Verificar en todos los hijos combinados:
+      // - Los submódulos del backend tienen isEnabled explícito
+      // - Los hijos hardcodeados sin isEnabled se consideran habilitados por defecto
+      const hasActiveSubModules = childrenWithSubModules.some(child => {
+        // Si no tiene isEnabled definido, se considera habilitado (hijos hardcodeados)
+        if (child.isEnabled === undefined) return true;
+        // Si tiene isEnabled explícito, verificar su valor
+        return child.isEnabled === true;
+      });
+      isEnabled = hasActiveSubModules;
+    } else if (childrenWithSubModules.length > 0) {
+      // Si no tiene submódulos del backend pero tiene hijos hardcodeados, verificar si alguno está habilitado
+      const hasActiveChildren = childrenWithSubModules.some(child => child.isEnabled !== false);
+      isEnabled = hasActiveChildren;
+    } else {
+      // Si no tiene submódulos ni hijos, usar la lógica anterior
+      isEnabled = module ? (module.isEnabled ?? true) : true;
+    }
+
+    return { 
+      ...item, 
+      isEnabled, 
+      module,
+      children: childrenWithSubModules.length > 0 ? childrenWithSubModules : item.children,
+    };
+  }).filter((item): item is NonNullable<typeof item> => item !== null);
 
   // Usar isotipo.svg siempre
   const isotipoSrc = '/isotipo.svg';
@@ -177,7 +289,7 @@ export function Sidebar({ className }: SidebarProps) {
         "flex h-16 items-center border-b border-sidebar-border px-3",
         isCollapsed ? "justify-center" : ""
       )}>
-        <Link href="/dashboard" className="flex items-center gap-2.5">
+        <Link href={addTenantSlug('/dashboard')} className="flex items-center gap-2.5">
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -226,6 +338,8 @@ export function Sidebar({ className }: SidebarProps) {
               isCollapsed={isCollapsed}
               isExpanded={isExpanded(item.href)}
               onExpandToggle={() => toggleExpanded(item.href)}
+              isEnabled={item.isEnabled ?? true}
+              module={item.module}
             />
           ))
         )}

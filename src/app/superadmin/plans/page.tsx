@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
 import { PlansTable } from '@/components/plans/plans-table';
 import { PlanForm, PlanFormRef } from '@/components/plans/plan-form';
+import { PageHeader } from '@/components/ui/page-header';
+import { TableSkeleton } from '@/components/ui/loading';
 import {
   Sheet,
   SheetContent,
@@ -112,6 +114,10 @@ export default function PlansPage() {
     router.push(`/superadmin/plans/${plan.id}`);
   };
 
+  const handleViewModules = (plan: Plan) => {
+    router.push(`/superadmin/plans/${plan.id}/modules`);
+  };
+
   const handleEditClick = (plan: Plan) => {
     setSelectedPlan(plan);
     setIsEditSheetOpen(true);
@@ -128,14 +134,16 @@ export default function PlansPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold font-outfit mb-2 text-foreground">
-          Gestión de Planes
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          Administra los planes de suscripción disponibles
-        </p>
-      </div>
+      <PageHeader
+        title="Gestión de Planes"
+        description="Administra los planes de suscripción disponibles"
+        actions={
+          <Button onClick={() => setIsCreateSheetOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Plan
+          </Button>
+        }
+      />
 
       <Card>
         <CardHeader>
@@ -146,17 +154,11 @@ export default function PlansPage() {
                 Configura los planes disponibles para los clientes
               </CardDescription>
             </div>
-            <Button onClick={() => setIsCreateSheetOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Plan
-            </Button>
           </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
+            <TableSkeleton rows={5} columns={6} />
           ) : error ? (
             <div className="text-center py-12 text-destructive">
               <p>Error al cargar los planes</p>
@@ -170,6 +172,7 @@ export default function PlansPage() {
               onView={handleView}
               onEdit={handleEditClick}
               onDelete={handleDeleteClick}
+              onViewModules={handleViewModules}
               isLoading={isLoading}
             />
           )}

@@ -12,59 +12,27 @@ import {
   UserX,
   Activity
 } from 'lucide-react';
-import { useCustomers } from '@/hooks/use-api';
+import { useCustomerStatistics } from '@/hooks/use-api';
 import { CardSkeleton } from '@/components/ui/loading';
-import { Customer, CUSTOMER_TYPE_CONFIG } from '@/types/customer';
-import { useMemo } from 'react';
 
 interface CustomerStatsProps {
   className?: string;
 }
 
 export function CustomerStats({ className }: CustomerStatsProps) {
-  const { data: customers, isLoading, isError, refetch } = useCustomers({ 
-    limit: 1000 // Get all customers for stats
-  });
+  const { data: statistics, isLoading, isError, refetch } = useCustomerStatistics();
 
-  const stats = useMemo(() => {
-    if (!customers || customers.length === 0) {
-      return {
-        totalCustomers: 0,
-        activeLeads: 0,
-        prospects: 0,
-        activeCustomers: 0,
-        conversionRate: 0,
-        averageLeadScore: 0,
-        interactionsThisWeek: 0,
-      };
-    }
-
-    const totalCustomers = customers.length;
-    const activeLeads = customers.filter((c: Customer) => c.type === 'lead').length;
-    const prospects = customers.filter((c: Customer) => c.type === 'prospect').length;
-    const activeCustomers = customers.filter((c: Customer) => c.type === 'active').length;
-    
-    const conversionRate = totalCustomers > 0 
-      ? ((activeCustomers / totalCustomers) * 100) 
-      : 0;
-    
-    const averageLeadScore = totalCustomers > 0
-      ? customers.reduce((sum: number, c: Customer) => sum + (c.leadScore || 0), 0) / totalCustomers
-      : 0;
-
-    // Mock interactions for now - this would come from a separate API
-    const interactionsThisWeek = Math.floor(Math.random() * 50) + 20;
-
-    return {
-      totalCustomers,
-      activeLeads,
-      prospects,
-      activeCustomers,
-      conversionRate,
-      averageLeadScore,
-      interactionsThisWeek,
-    };
-  }, [customers]);
+  const stats = {
+    totalCustomers: statistics?.totalCustomers || 0,
+    activeLeads: statistics?.byType?.lead || 0,
+    prospects: statistics?.byType?.prospect || 0,
+    activeCustomers: statistics?.byType?.active || 0,
+    inactiveCustomers: statistics?.byType?.inactive || 0,
+    churnedCustomers: statistics?.byType?.churned || 0,
+    conversionRate: statistics?.conversionRate || 0,
+    averageLeadScore: Math.round(statistics?.averageLeadScore || 0),
+    interactionsThisWeek: 0, // TODO: Add interactions endpoint
+  };
 
   if (isLoading) {
     return (

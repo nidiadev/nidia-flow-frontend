@@ -50,10 +50,14 @@ export const loginSchema = z.object({
 
 export const registerSchema = z.object({
   email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  password: z.string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres'),
   firstName: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
   companyName: z.string().min(2, 'El nombre de la empresa debe tener al menos 2 caracteres'),
+  slug: z.string()
+    .min(2, 'El slug debe tener al menos 2 caracteres')
+    .regex(/^[a-z0-9-]+$/, 'El slug solo puede contener letras minúsculas, números y guiones'),
   phone: z.string().optional(),
 });
 
@@ -63,8 +67,8 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Token requerido'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
-  confirmPassword: z.string().min(6, 'Confirma tu contraseña'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  confirmPassword: z.string().min(8, 'Confirma tu contraseña'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
   path: ["confirmPassword"],
@@ -75,6 +79,42 @@ export type LoginData = z.infer<typeof loginSchema>;
 export type RegisterData = z.infer<typeof registerSchema>;
 export type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
+
+export interface SubModule {
+  id: string;
+  name: string;
+  displayName: string;
+  description?: string;
+  icon?: string;
+  path?: string;
+  sortOrder: number;
+  isEnabled: boolean;
+  isVisible: boolean;
+  permissions?: string[];
+}
+
+export interface Module {
+  id: string;
+  name: string;
+  displayName: string;
+  description?: string;
+  icon?: string;
+  path: string;
+  category?: string;
+  sortOrder: number;
+  isEnabled: boolean;
+  isVisible: boolean;
+  metadata?: any;
+  subModules?: SubModule[];
+}
+
+export interface PlanLimits {
+  maxUsers?: number;
+  maxStorageGb?: number;
+  maxMonthlyEmails?: number;
+  maxMonthlyWhatsapp?: number;
+  maxMonthlyApiCalls?: number;
+}
 
 export interface User {
   id: string;
@@ -87,17 +127,23 @@ export interface User {
   permissions: string[];
   avatar?: string;
   isActive: boolean;
+  modules?: Module[]; // Módulos disponibles con su estado de habilitación
+  limits?: PlanLimits | null; // Límites del plan actual
 }
 
 export interface AuthResponse {
   success: boolean;
   data: {
-    user: User;
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
+    user?: User;
+    accessToken?: string;
+    refreshToken?: string;
+    expiresIn?: number;
+    tenantId?: string;
+    email?: string;
+    estimatedTime?: string;
   };
   message?: string;
+  status?: 'success' | 'provisioning' | 'failed';
 }
 
 // Auth service
@@ -114,6 +160,16 @@ export class AuthService {
         this.setTokens(backendResponse.accessToken, backendResponse.refreshToken);
         
         // Transform backend response to frontend format
+        // Priorizar systemRole sobre role para determinar el rol del usuario
+        const systemRole = backendResponse.user.systemRole;
+        const role = backendResponse.user.role || systemRole || '';
+        
+        console.log('🔍 Mapeando usuario del backend:', {
+          systemRole,
+          role: backendResponse.user.role,
+          finalRole: role,
+        });
+        
         return {
           success: true,
           data: {
@@ -122,8 +178,8 @@ export class AuthService {
               email: backendResponse.user.email,
               firstName: backendResponse.user.firstName || '',
               lastName: backendResponse.user.lastName || '',
-              role: backendResponse.user.role || backendResponse.user.systemRole || '',
-              systemRole: backendResponse.user.systemRole,
+              role: role,
+              systemRole: systemRole, // Priorizar systemRole
               tenantId: backendResponse.user.tenantId || '',
               permissions: [], // Will be fetched separately if needed
               avatar: backendResponse.user.avatarUrl,
@@ -157,14 +213,30 @@ export class AuthService {
     try {
       const response = await api.post('/auth/register', data);
       
-      // Backend returns { accessToken, refreshToken, user } directly
+      // Backend returns different formats based on provisioning status
       const backendResponse = response.data;
       
+      // If provisioning is in progress, return provisioning status
+      if (backendResponse.status === 'provisioning') {
+        return {
+          success: true,
+          status: 'provisioning',
+          data: {
+            tenantId: backendResponse.tenantId,
+            email: backendResponse.email,
+            estimatedTime: backendResponse.estimatedTime,
+          },
+          message: backendResponse.message || 'Registro exitoso. Configurando tu espacio de trabajo...',
+        };
+      }
+      
+      // If registration completed immediately (shouldn't happen with async provisioning, but handle it)
       if (backendResponse.accessToken && backendResponse.refreshToken) {
         this.setTokens(backendResponse.accessToken, backendResponse.refreshToken);
         
         return {
           success: true,
+          status: 'success',
           data: {
             user: {
               id: backendResponse.user.id,
@@ -194,6 +266,7 @@ export class AuthService {
       const errorMessage = error.response?.data?.message || error.message || 'Error al registrarse';
       return {
         success: false,
+        status: 'failed',
         data: {} as any,
         message: errorMessage,
       };
@@ -255,6 +328,8 @@ export class AuthService {
           permissions: userData.permissions || [],
           avatar: userData.avatarUrl || userData.avatar,
           isActive: userData.isActive !== false,
+          modules: userData.modules || [],
+          limits: userData.limits || null,
         };
       }
       
@@ -299,21 +374,22 @@ export class AuthService {
       const newRefreshToken = backendResponse.refreshToken || backendResponse.data?.refreshToken;
       
       if (accessToken) {
-        this.setAccessToken(accessToken);
-        
-        // Update refresh token if provided
+        // Guardar ambos tokens usando setTokens para mantener consistencia
         if (newRefreshToken) {
-          localStorage.setItem('refreshToken', newRefreshToken);
-          // Update cookie
-          const isProduction = process.env.NODE_ENV === 'production';
-          const cookieOptions = isProduction 
-            ? 'secure; samesite=strict; path=/' 
-            : 'samesite=lax; path=/';
-          const refreshTokenExpiry = 7 * 24 * 60 * 60; // 7 días
-          document.cookie = `refreshToken=${newRefreshToken}; ${cookieOptions}; max-age=${refreshTokenExpiry}`;
+          this.setTokens(accessToken, newRefreshToken);
+        } else {
+          this.setAccessToken(accessToken);
         }
         
         console.log('✅ Token refrescado exitosamente');
+        console.log('🔍 Verificando tenantSlug en nuevo token...');
+        const payload = decodeJWT(accessToken);
+        if (payload?.tenantSlug) {
+          console.log('✅ tenantSlug encontrado en nuevo token:', payload.tenantSlug);
+        } else {
+          console.warn('⚠️ tenantSlug no encontrado en nuevo token');
+        }
+        
         return accessToken;
       }
       
@@ -428,5 +504,29 @@ export class AuthService {
     
     // Refrescar si expira en los próximos 2 minutos (120 segundos)
     return isTokenExpired(token, 120);
+  }
+
+  /**
+   * Obtener el tenantSlug del JWT token
+   * @returns El slug del tenant o null si no está disponible
+   */
+  static getTenantSlug(): string | null {
+    const token = this.getAccessToken();
+    if (!token) return null;
+    const payload = decodeJWT(token);
+    if (!payload) return null;
+    return payload.tenantSlug || null;
+  }
+
+  /**
+   * Obtener el tenantId del JWT token
+   * @returns El ID del tenant o null si no está disponible
+   */
+  static getTenantId(): string | null {
+    const token = this.getAccessToken();
+    if (!token) return null;
+    const payload = decodeJWT(token);
+    if (!payload) return null;
+    return payload.tenantId || null;
   }
 }

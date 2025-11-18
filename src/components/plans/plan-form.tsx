@@ -4,7 +4,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import React, { forwardRef, useImperativeHandle } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Plan } from '@/lib/api/plans';
+import { modulesApi, Module } from '@/lib/api/modules';
 import {
   Form,
   FormControl,
@@ -45,6 +47,10 @@ const planFormSchema = z.object({
   sortOrder: z.number().min(0).default(0),
   stripePriceIdMonthly: z.string().optional(),
   stripePriceIdYearly: z.string().optional(),
+  badge: z.string().optional(),
+  badgeColor: z.string().optional(),
+  accentColor: z.string().optional(),
+  featuredFeatures: z.array(z.string()).optional(),
 });
 
 type PlanFormValues = z.infer<typeof planFormSchema>;
@@ -61,22 +67,15 @@ interface PlanFormProps {
   showActions?: boolean;
 }
 
-// Módulos disponibles
-const AVAILABLE_MODULES = [
-  'CRM',
-  'Orders',
-  'Tasks',
-  'Accounting',
-  'Reports',
-  'Communications',
-  'Products',
-  'Files',
-  'Settings',
-  'Audit',
-];
-
 export const PlanForm = forwardRef<PlanFormRef, PlanFormProps>(
   ({ defaultValues, onSubmit, onCancel, isLoading = false, showActions = true }, ref) => {
+    // Cargar módulos disponibles desde la API
+    const { data: availableModules = [], isLoading: isLoadingModules } = useQuery({
+      queryKey: ['modules'],
+      queryFn: () => modulesApi.list(true), // Incluir inactivos para mostrar todos
+      retry: 1,
+    });
+
     const form = useForm<PlanFormValues>({
       resolver: zodResolver(planFormSchema) as any,
       defaultValues: {
@@ -97,6 +96,12 @@ export const PlanForm = forwardRef<PlanFormRef, PlanFormProps>(
         sortOrder: defaultValues?.sortOrder || 0,
         stripePriceIdMonthly: defaultValues?.stripePriceIdMonthly || '',
         stripePriceIdYearly: defaultValues?.stripePriceIdYearly || '',
+        badge: (defaultValues as any)?.badge || undefined,
+        badgeColor: (defaultValues as any)?.badgeColor || undefined,
+        accentColor: (defaultValues as any)?.accentColor || undefined,
+        featuredFeatures: Array.isArray((defaultValues as any)?.featuredFeatures) 
+          ? (defaultValues as any).featuredFeatures 
+          : undefined,
       },
     });
 
@@ -355,44 +360,204 @@ export const PlanForm = forwardRef<PlanFormRef, PlanFormProps>(
           {/* Módulos Habilitados */}
           <div className="space-y-4">
             <p className="text-sm font-medium text-muted-foreground">Módulos Habilitados</p>
+            {isLoadingModules ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Cargando módulos...</span>
+              </div>
+            ) : (
+              <FormField
+                control={form.control}
+                name="enabledModules"
+                render={() => (
+                  <FormItem>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                      {availableModules
+                        .filter((module) => module.isActive) // Solo mostrar módulos activos
+                        .sort((a, b) => a.sortOrder - b.sortOrder) // Ordenar por sortOrder
+                        .map((module) => (
+                          <FormField
+                            key={module.id}
+                            control={form.control}
+                            name="enabledModules"
+                            render={({ field }) => {
+                              // Usar el name del módulo para el array enabledModules
+                              const moduleName = module.name;
+                              return (
+                                <FormItem
+                                  key={module.id}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(moduleName)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...(field.value || []), moduleName])
+                                          : field.onChange(
+                                              field.value?.filter((value) => value !== moduleName)
+                                            );
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <div className="flex flex-col space-y-1">
+                                    <FormLabel className="font-normal cursor-pointer">
+                                      {module.displayName || module.name}
+                                    </FormLabel>
+                                    {module.description && (
+                                      <p className="text-xs text-muted-foreground">
+                                        {module.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </FormItem>
+                              );
+                            }}
+                          />
+                        ))}
+                    </div>
+                    {availableModules.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        No hay módulos disponibles. Crea módulos desde la sección de Módulos.
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
+
+          {/* Marketing y Visualización */}
+          <div className="space-y-4">
+            <p className="text-sm font-medium text-muted-foreground">Marketing y Visualización</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="badge"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Badge (ej: "Popular", "Recomendado")</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Popular" {...field} value={field.value || ''} />
+                    </FormControl>
+                    <FormDescription>
+                      Texto del badge que aparece sobre el plan
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="badgeColor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Color del Badge</FormLabel>
+                    <FormControl>
+                      <Select value={field.value || ''} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar color" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Sin color</SelectItem>
+                          <SelectItem value="blue">Azul</SelectItem>
+                          <SelectItem value="green">Verde</SelectItem>
+                          <SelectItem value="purple">Morado</SelectItem>
+                          <SelectItem value="orange">Naranja</SelectItem>
+                          <SelectItem value="red">Rojo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormDescription>
+                      Color del badge
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="accentColor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Color de Acento</FormLabel>
+                    <FormControl>
+                      <Select value={field.value || ''} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar color" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Sin color</SelectItem>
+                          <SelectItem value="blue">Azul</SelectItem>
+                          <SelectItem value="green">Verde</SelectItem>
+                          <SelectItem value="purple">Morado</SelectItem>
+                          <SelectItem value="orange">Naranja</SelectItem>
+                          <SelectItem value="red">Rojo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormDescription>
+                      Color para bordes y acentos del plan
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
-              name="enabledModules"
-              render={() => (
+              name="featuredFeatures"
+              render={({ field }) => (
                 <FormItem>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {AVAILABLE_MODULES.map((module) => (
-                      <FormField
-                        key={module}
-                        control={form.control}
-                        name="enabledModules"
-                        render={({ field }) => {
-                          return (
-                            <FormItem
-                              key={module}
-                              className="flex flex-row items-start space-x-3 space-y-0"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(module)}
-                                  onCheckedChange={(checked) => {
-                                    return checked
-                                      ? field.onChange([...(field.value || []), module])
-                                      : field.onChange(
-                                          field.value?.filter((value) => value !== module)
-                                        );
-                                  }}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">
-                                {module}
-                              </FormLabel>
-                            </FormItem>
-                          );
+                  <FormLabel>Características Destacadas</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      {Array.isArray(field.value) && field.value.length > 0 && (
+                        <div className="space-y-2">
+                          {field.value.map((feature, index) => (
+                            <div key={index} className="flex gap-2">
+                              <Input
+                                value={feature}
+                                onChange={(e) => {
+                                  const currentFeatures = field.value || [];
+                                  const newFeatures = [...currentFeatures];
+                                  newFeatures[index] = e.target.value;
+                                  field.onChange(newFeatures);
+                                }}
+                                placeholder={`Característica ${index + 1}`}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => {
+                                  const currentFeatures = field.value || [];
+                                  const newFeatures = currentFeatures.filter((_, i) => i !== index);
+                                  field.onChange(newFeatures);
+                                }}
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          field.onChange([...(field.value || []), '']);
                         }}
-                      />
-                    ))}
-                  </div>
+                      >
+                        + Agregar Característica
+                      </Button>
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Lista de características destacadas que se mostrarán en el plan
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

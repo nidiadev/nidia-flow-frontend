@@ -5,12 +5,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, Lock } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface FloatingMenuItem {
   title: string;
   href: string;
   icon: LucideIcon;
+  isEnabled?: boolean;
 }
 
 interface FloatingMenuProps {
@@ -56,24 +63,53 @@ export function FloatingMenu({
               {items.map((item, index) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                 const Icon = item.icon;
+                const itemIsEnabled = item.isEnabled !== false; // Default to true if not specified
                 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => {
-                      // Cerrar el menú al hacer click en un link
-                      onClose();
-                    }}
-                    className={cn(
-                      'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
-                      'hover:bg-primary/15 hover:text-foreground',
-                      isActive && 'bg-primary/15 text-foreground font-medium'
-                    )}
-                  >
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    <span>{item.title}</span>
+                const itemContent = (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          className={cn(
+                            'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                            itemIsEnabled
+                              ? 'hover:bg-primary/15 hover:text-foreground cursor-pointer'
+                              : 'opacity-60 cursor-not-allowed',
+                            isActive && itemIsEnabled && 'bg-primary/15 text-foreground font-medium'
+                          )}
+                          onClick={() => {
+                            if (itemIsEnabled) {
+                              onClose();
+                            }
+                          }}
+                        >
+                          <div className="relative">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            {!itemIsEnabled && (
+                              <Lock className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 text-orange-500" />
+                            )}
+                          </div>
+                          <span>{item.title}</span>
+                        </div>
+                      </TooltipTrigger>
+                      {!itemIsEnabled && (
+                        <TooltipContent>
+                          <p className="font-medium">Submódulo no disponible</p>
+                          <p className="text-xs mt-1">Actualiza tu plan para acceder a "{item.title}"</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+                
+                return itemIsEnabled ? (
+                  <Link key={item.href} href={item.href} onClick={onClose}>
+                    {itemContent}
                   </Link>
+                ) : (
+                  <div key={item.href}>
+                    {itemContent}
+                  </div>
                 );
               })}
             </div>

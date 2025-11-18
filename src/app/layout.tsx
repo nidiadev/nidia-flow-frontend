@@ -4,7 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/auth-context";
 import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
+import { ConsoleLoggerInit } from "@/components/console-logger-init";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -124,19 +125,20 @@ export default function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange={false}
         >
           <QueryProvider>
             <AuthProvider>
+              <ConsoleLoggerInit />
               {children}
               <Toaster 
                 position="top-right"
                 richColors
                 closeButton
                 duration={4000}
-                theme="system"
+                theme="dark"
               />
             </AuthProvider>
           </QueryProvider>

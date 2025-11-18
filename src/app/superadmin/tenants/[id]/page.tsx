@@ -27,6 +27,7 @@ import {
   FileText,
   Globe,
   Briefcase,
+  Layers,
 } from 'lucide-react';
 import Link from 'next/link';
 import { tenantsApi, Tenant } from '@/lib/api/tenants';
@@ -209,6 +210,13 @@ export default function TenantDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/superadmin/tenants/${tenant.id}/assignments`)}
+            >
+              <Layers className="h-4 w-4 mr-2" />
+              Asignaciones
+            </Button>
             <Button
               variant="outline"
               onClick={() => setIsStatusDialogOpen(true)}

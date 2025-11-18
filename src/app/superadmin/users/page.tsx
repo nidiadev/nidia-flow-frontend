@@ -9,6 +9,8 @@ import { Users, Shield, UserPlus, Plus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { SystemUsersTable } from '@/components/system-users/system-users-table';
 import { SystemUserForm, SystemUserFormRef } from '@/components/system-users/system-user-form';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatsCardSkeleton, TableSkeleton } from '@/components/ui/loading';
 import {
   Sheet,
   SheetContent,
@@ -150,19 +152,16 @@ export default function SystemUsersPage() {
         transition={{ duration: 0.3 }}
         className="space-y-6"
       >
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Usuarios del Sistema</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Gestión de usuarios administrativos del sistema
-            </p>
-          </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Usuario
-          </Button>
-        </div>
+        <PageHeader
+          title="Usuarios del Sistema"
+          description="Gestión de usuarios administrativos del sistema"
+          actions={
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo Usuario
+            </Button>
+          }
+        />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, Cog, Plug, FileText } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
 import Link from 'next/link';
 
 export default function SettingsPage() {
@@ -12,12 +13,10 @@ export default function SettingsPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">Configuración</h1>
-        <p className="text-muted-foreground">
-          Configuración general del sistema
-        </p>
-      </div>
+      <PageHeader
+        title="Configuración"
+        description="Configuración general del sistema"
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link href="/superadmin/settings/system">

@@ -181,5 +181,11 @@ export const tenantsApi = {
         const responseData = response.data;
         return responseData.data || responseData;
       },
+
+      // Validate slug availability
+      validateSlug: async (slug: string): Promise<{ available: boolean; message: string }> => {
+        const response = await api.get<{ available: boolean; message: string }>(`/tenants/validate-slug/${slug}`);
+        return response.data;
+      },
     };
 

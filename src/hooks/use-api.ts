@@ -105,11 +105,45 @@ export function useLogout() {
 
 // CRM hooks
 export function useCustomers(filters?: any) {
+  return useQuery({
+    queryKey: queryKeys.crm.customers(filters),
+    queryFn: async () => {
+      const response = await ApiClient.get('/crm/customers', { params: filters });
+      return {
+        data: response.data || [],
+        pagination: response.pagination,
+      };
+    },
+    placeholderData: (previousData) => previousData,
+    select: (response) => response.data, // Extract just the data array for backward compatibility
+  });
+}
+
+export function useCustomersWithPagination(filters?: any) {
+  return useQuery({
+    queryKey: queryKeys.crm.customers(filters),
+    queryFn: async () => {
+      const response = await ApiClient.get('/crm/customers', { params: filters });
+      return {
+        data: response.data || [],
+        pagination: response.pagination || {
+          page: filters?.page || 1,
+          limit: filters?.limit || 20,
+          total: response.data?.length || 0,
+          totalPages: 1,
+        },
+      };
+    },
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+export function useCustomerStatistics() {
   return useApiQuery(
-    queryKeys.crm.customers(filters),
-    () => ApiClient.get('/crm/customers', { params: filters }),
+    queryKeys.crm.statistics(),
+    () => ApiClient.get('/crm/customers/statistics'),
     {
-      placeholderData: (previousData) => previousData, // Keep previous data while loading new data
+      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     }
   );
 }
@@ -131,8 +165,9 @@ export function useCreateCustomer() {
     (customerData: any) => ApiClient.post('/crm/customers', customerData),
     {
       onSuccess: () => {
-        // Invalidate customers list
-        queryClient.invalidateQueries({ queryKey: queryKeys.crm.all() });
+        // Invalidate customers list and statistics
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.customers() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.statistics() });
       },
     }
   );
@@ -146,9 +181,10 @@ export function useUpdateCustomer() {
       ApiClient.put(`/crm/customers/${id}`, data),
     {
       onSuccess: (_, { id }) => {
-        // Invalidate specific customer and list
+        // Invalidate specific customer, list, and statistics
         queryClient.invalidateQueries({ queryKey: queryKeys.crm.customer(id) });
         queryClient.invalidateQueries({ queryKey: queryKeys.crm.customers() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.statistics() });
       },
     }
   );
@@ -161,9 +197,10 @@ export function useDeleteCustomer() {
     (id: string) => ApiClient.delete(`/crm/customers/${id}`),
     {
       onSuccess: (_, id) => {
-        // Remove from cache and invalidate list
+        // Remove from cache and invalidate list and statistics
         queryClient.removeQueries({ queryKey: queryKeys.crm.customer(id) });
         queryClient.invalidateQueries({ queryKey: queryKeys.crm.customers() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.statistics() });
       },
     }
   );

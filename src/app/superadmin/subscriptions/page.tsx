@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
+import { TableSkeleton } from '@/components/ui/loading';
 import { Button } from '@/components/ui/button';
 import { CreditCard, Loader2 } from 'lucide-react';
 import { SubscriptionsTable } from '@/components/subscriptions/subscriptions-table';
@@ -53,14 +55,10 @@ export default function SubscriptionsPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold font-outfit mb-2 text-foreground">
-          Suscripciones
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          Gestiona todas las suscripciones de los clientes
-        </p>
-      </div>
+      <PageHeader
+        title="Suscripciones"
+        description="Gestiona todas las suscripciones de los clientes"
+      />
 
       <Card>
         <CardHeader>
@@ -123,9 +121,7 @@ export default function SubscriptionsPage() {
 
             <TabsContent value="all" className="space-y-4">
               {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
+                <TableSkeleton rows={5} columns={6} />
               ) : error ? (
                 <div className="text-center py-12 text-destructive">
                   <p>Error al cargar las suscripciones</p>

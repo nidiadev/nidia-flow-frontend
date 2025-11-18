@@ -50,7 +50,7 @@ export function MainLayout({ children, className }: MainLayoutProps) {
         <main className="flex-1 overflow-y-auto">
           {/* Breadcrumbs */}
           <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container mx-auto px-4 py-3">
+            <div className="w-full px-6 py-3">
               <Breadcrumbs />
             </div>
           </div>
@@ -60,7 +60,7 @@ export function MainLayout({ children, className }: MainLayoutProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className={cn('container mx-auto px-4 py-6', className)}
+            className={cn('w-full px-6 py-6', className)}
           >
             {children}
           </motion.div>

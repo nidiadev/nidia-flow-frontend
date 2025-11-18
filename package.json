@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 4002",
+    "dev:log": "mkdir -p logs && next dev --turbopack -p 4002 2>&1 | tee logs/nextjs-$(date +%Y%m%d-%H%M%S).log",
     "build": "next build --turbopack",
     "start": "next start -p 4002",
     "lint": "next lint",
@@ -41,6 +42,7 @@
     "react-dom": "19.1.0",
     "react-hook-form": "^7.65.0",
     "react-is": "^19.2.0",
+    "react-phone-number-input": "^3.4.13",
     "recharts": "^3.2.1",
     "socket.io-client": "^4.8.1",
     "sonner": "^2.0.7",
