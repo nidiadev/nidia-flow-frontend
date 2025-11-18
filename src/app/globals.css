@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* Smooth scroll global */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 @theme {
   /* NIDIA Brand Colors - Tailwind v4 format */
   /* En Tailwind v4, --color-* genera automáticamente clases bg-*, text-*, etc. */
@@ -517,6 +528,26 @@ h4 {
 [data-slot="button"].bg-secondary {
   background-color: var(--color-secondary) !important;
   color: var(--color-secondary-foreground) !important;
+}
+
+/* Carousel automático para funcionalidades próximas */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-50% - 12px)); /* -50% porque duplicamos los items, -12px por el gap */
+  }
+}
+
+.animate-scroll {
+  animation: scroll 60s linear infinite;
+  display: flex;
+  width: fit-content;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
 }
 
 
