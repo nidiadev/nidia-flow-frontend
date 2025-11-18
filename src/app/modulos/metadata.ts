@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     locale: 'es_CO',
     images: [
       {
-        url: '/logo.png',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: 'NIDIA Flow - Módulos y Funcionalidades',
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Módulos y Funcionalidades | NIDIA Flow',
     description: 'Descubre todos los módulos y funcionalidades de NIDIA Flow.',
-    images: ['/logo.png'],
+    images: ['/og-image.png'],
     creator: '@nidiadev',
   },
   alternates: {

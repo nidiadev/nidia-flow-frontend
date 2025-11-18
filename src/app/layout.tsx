@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     description,
     images: [
       {
-        url: '/logo.png',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: 'NIDIA Flow - Micro-ERP + CRM',
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: `${siteName} - Micro-ERP + CRM para Microempresas`,
     description,
-    images: ['/logo.png'],
+    images: ['/og-image.png'],
     creator: '@nidiadev',
   },
   robots: {
