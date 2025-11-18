@@ -37,41 +37,18 @@ export function PageLoading({ message = 'Cargando...' }: { message?: string }) {
   );
 }
 
-// Card loading skeleton
-export function CardSkeleton({ className }: { className?: string }) {
-  return (
-    <div className={cn('animate-pulse rounded-lg border bg-card p-6', className)}>
-      <div className="space-y-3">
-        <div className="h-4 bg-muted rounded w-3/4"></div>
-        <div className="h-4 bg-muted rounded w-1/2"></div>
-        <div className="h-4 bg-muted rounded w-5/6"></div>
-      </div>
-    </div>
-  );
-}
-
-// Table loading skeleton
-export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
-  return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex space-x-4">
-        {Array.from({ length: columns }).map((_, i) => (
-          <div key={i} className="h-4 bg-muted rounded flex-1"></div>
-        ))}
-      </div>
-      
-      {/* Rows */}
-      {Array.from({ length: rows }).map((_, rowIndex) => (
-        <div key={rowIndex} className="flex space-x-4 animate-pulse">
-          {Array.from({ length: columns }).map((_, colIndex) => (
-            <div key={colIndex} className="h-4 bg-muted rounded flex-1"></div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
+// Re-export skeletons from dedicated file for backward compatibility
+export {
+  CardSkeleton,
+  TableSkeleton,
+  TableRowSkeleton,
+  StatsCardSkeleton,
+  FormSkeleton,
+  ListSkeleton,
+  PageSkeleton,
+  ChartSkeleton,
+  GridSkeleton,
+} from './skeletons';
 
 // Button loading state
 interface LoadingButtonProps {
