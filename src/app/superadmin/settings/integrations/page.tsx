@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plug, ArrowLeft } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
 import Link from 'next/link';
 
 export default function IntegrationsSettingsPage() {
@@ -13,18 +14,17 @@ export default function IntegrationsSettingsPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="mb-6">
-        <Link href="/superadmin/settings">
-          <Button variant="ghost" size="sm" className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a Configuración
-          </Button>
-        </Link>
-        <h1 className="text-2xl font-bold mb-2">Integraciones</h1>
-        <p className="text-muted-foreground">
-          Configurar integraciones con servicios externos
-        </p>
-      </div>
+      <Link href="/superadmin/settings">
+        <Button variant="ghost" size="sm" className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver a Configuración
+        </Button>
+      </Link>
+      
+      <PageHeader
+        title="Integraciones"
+        description="Configurar integraciones con servicios externos"
+      />
 
       <Card>
         <CardHeader>

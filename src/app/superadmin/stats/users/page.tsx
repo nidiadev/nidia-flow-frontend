@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, ArrowLeft, TrendingUp, Loader2 } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatsCardSkeleton } from '@/components/ui/loading';
 import Link from 'next/link';
 import { tenantsApi } from '@/lib/api/tenants';
 
@@ -20,8 +22,22 @@ export default function UsersStatsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6">
+        <Link href="/superadmin/stats/overview">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver a Estadísticas
+          </Button>
+        </Link>
+        <PageHeader
+          title="Estadísticas de Usuarios"
+          description="Análisis de usuarios y crecimiento"
+        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <StatsCardSkeleton key={i} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -44,20 +60,17 @@ export default function UsersStatsPage() {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <div className="flex items-center gap-4">
-        <Link href="/superadmin/stats/overview">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a Estadísticas
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Estadísticas de Usuarios</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Análisis de usuarios y crecimiento
-          </p>
-        </div>
-      </div>
+      <Link href="/superadmin/stats/overview">
+        <Button variant="ghost" size="sm" className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver a Estadísticas
+        </Button>
+      </Link>
+      
+      <PageHeader
+        title="Estadísticas de Usuarios"
+        description="Análisis de usuarios y crecimiento"
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>

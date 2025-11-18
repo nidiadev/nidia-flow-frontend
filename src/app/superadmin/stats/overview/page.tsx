@@ -9,6 +9,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatsCardSkeleton, ChartSkeleton } from '@/components/ui/loading';
 import {
   LineChart,
   Line,
@@ -34,8 +36,17 @@ export default function StatsOverviewPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-8">
+        <PageHeader
+          title="Estadísticas Generales"
+          description="Resumen completo del sistema"
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatsCardSkeleton key={i} />
+          ))}
+        </div>
+        <ChartSkeleton height={300} />
       </div>
     );
   }
@@ -67,14 +78,10 @@ export default function StatsOverviewPage() {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold font-outfit mb-2 text-foreground">
-          Estadísticas Generales
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          Resumen completo del sistema
-        </p>
-      </div>
+      <PageHeader
+        title="Estadísticas Generales"
+        description="Resumen completo del sistema"
+      />
 
       {/* Métricas principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

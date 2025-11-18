@@ -6,8 +6,8 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
-import { PlansTable } from '@/components/plans/plans-table';
-import { PlanForm, PlanFormRef } from '@/components/plans/plan-form';
+import { ModulesTable } from '@/components/modules/modules-table';
+import { ModuleForm, ModuleFormRef } from '@/components/modules/module-form';
 import { PageHeader } from '@/components/ui/page-header';
 import { TableSkeleton } from '@/components/ui/loading';
 import {
@@ -27,105 +27,103 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { plansApi, Plan } from '@/lib/api/plans';
+import { modulesApi, Module } from '@/lib/api/modules';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
-export default function PlansPage() {
+export default function ModulesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const createFormRef = useRef<PlanFormRef>(null);
-  const editFormRef = useRef<PlanFormRef>(null);
+  const createFormRef = useRef<ModuleFormRef>(null);
+  const editFormRef = useRef<ModuleFormRef>(null);
   const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
 
-  // Fetch plans with real-time updates
-  const { data: plans, isLoading, error } = useQuery({
-    queryKey: ['plans'],
-    queryFn: () => plansApi.list(),
+  // Fetch modules
+  const { data: modules, isLoading, error } = useQuery({
+    queryKey: ['modules'],
+    queryFn: () => modulesApi.list(true), // Include inactive
     retry: 1,
-    refetchInterval: 10000, // Refrescar cada 10 segundos
-    refetchOnWindowFocus: true,
   });
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: plansApi.create,
-    onSuccess: (newPlan) => {
-      queryClient.invalidateQueries({ queryKey: ['plans'] });
-      queryClient.setQueryData(['plans'], (old: Plan[] | undefined) => {
-        if (!old) return [newPlan];
-        return [newPlan, ...old];
+    mutationFn: modulesApi.create,
+    onSuccess: (newModule) => {
+      queryClient.invalidateQueries({ queryKey: ['modules'] });
+      queryClient.setQueryData(['modules'], (old: Module[] | undefined) => {
+        if (!old) return [newModule];
+        return [newModule, ...old];
       });
       setIsCreateSheetOpen(false);
-      toast.success('Plan creado exitosamente');
+      toast.success('Módulo creado exitosamente');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Error al crear plan');
+      toast.error(error?.response?.data?.message || 'Error al crear módulo');
     },
   });
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Plan> }) =>
-      plansApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<Module> }) =>
+      modulesApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plans'] });
+      queryClient.invalidateQueries({ queryKey: ['modules'] });
       setIsEditSheetOpen(false);
-      setSelectedPlan(null);
-      toast.success('Plan actualizado exitosamente');
+      setSelectedModule(null);
+      toast.success('Módulo actualizado exitosamente');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Error al actualizar plan');
+      toast.error(error?.response?.data?.message || 'Error al actualizar módulo');
     },
   });
 
   // Delete mutation
   const deleteMutation = useMutation({
-    mutationFn: plansApi.delete,
+    mutationFn: modulesApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['plans'] });
+      queryClient.invalidateQueries({ queryKey: ['modules'] });
       setIsDeleteDialogOpen(false);
-      setSelectedPlan(null);
-      toast.success('Plan eliminado exitosamente');
+      setSelectedModule(null);
+      toast.success('Módulo eliminado exitosamente');
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Error al eliminar plan');
+      toast.error(error?.response?.data?.message || 'Error al eliminar módulo');
     },
   });
 
-  const handleCreate = async (data: Partial<Plan>) => {
+  const handleCreate = async (data: any) => {
     await createMutation.mutateAsync(data);
   };
 
-  const handleEdit = async (data: Partial<Plan>) => {
-    if (!selectedPlan) return;
-    await updateMutation.mutateAsync({ id: selectedPlan.id, data });
+  const handleEdit = async (data: any) => {
+    if (!selectedModule) return;
+    await updateMutation.mutateAsync({ id: selectedModule.id, data });
   };
 
-  const handleDelete = () => {
-    if (!selectedPlan) return;
-    deleteMutation.mutate(selectedPlan.id);
+  const handleDelete = async () => {
+    if (!selectedModule) return;
+    await deleteMutation.mutateAsync(selectedModule.id);
   };
 
-  const handleView = (plan: Plan) => {
-    router.push(`/superadmin/plans/${plan.id}`);
-  };
-
-  const handleViewModules = (plan: Plan) => {
-    router.push(`/superadmin/plans/${plan.id}/modules`);
-  };
-
-  const handleEditClick = (plan: Plan) => {
-    setSelectedPlan(plan);
+  const handleEditClick = (module: Module) => {
+    setSelectedModule(module);
     setIsEditSheetOpen(true);
   };
 
-  const handleDeleteClick = (plan: Plan) => {
-    setSelectedPlan(plan);
+  const handleDeleteClick = (module: Module) => {
+    setSelectedModule(module);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleViewPlans = (module: Module) => {
+    router.push(`/superadmin/modules/${module.id}/plans`);
+  };
+
+  const handleView = (module: Module) => {
+    router.push(`/superadmin/modules/${module.id}`);
   };
 
   return (
@@ -135,12 +133,12 @@ export default function PlansPage() {
       transition={{ duration: 0.3 }}
     >
       <PageHeader
-        title="Gestión de Planes"
-        description="Administra los planes de suscripción disponibles"
+        title="Gestión de Módulos"
+        description="Administra los módulos disponibles en la plataforma"
         actions={
           <Button onClick={() => setIsCreateSheetOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Nuevo Plan
+            Nuevo Módulo
           </Button>
         }
       />
@@ -149,9 +147,9 @@ export default function PlansPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Planes de Suscripción</CardTitle>
+              <CardTitle>Módulos del Sistema</CardTitle>
               <CardDescription>
-                Configura los planes disponibles para los clientes
+                Configura los módulos disponibles para asignar a los planes
               </CardDescription>
             </div>
           </div>
@@ -161,18 +159,18 @@ export default function PlansPage() {
             <TableSkeleton rows={5} columns={6} />
           ) : error ? (
             <div className="text-center py-12 text-destructive">
-              <p>Error al cargar los planes</p>
+              <p>Error al cargar los módulos</p>
               <p className="text-sm text-muted-foreground mt-2">
                 {error instanceof Error ? error.message : 'Error desconocido'}
               </p>
             </div>
           ) : (
-            <PlansTable
-              data={plans || []}
-              onView={handleView}
+            <ModulesTable
+              modules={modules || []}
               onEdit={handleEditClick}
               onDelete={handleDeleteClick}
-              onViewModules={handleViewModules}
+              onViewPlans={handleViewPlans}
+              onView={handleView}
               isLoading={isLoading}
             />
           )}
@@ -183,18 +181,17 @@ export default function PlansPage() {
       <Sheet open={isCreateSheetOpen} onOpenChange={setIsCreateSheetOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader className="sticky top-0 bg-background z-10 pb-4 border-b">
-            <SheetTitle>Crear Nuevo Plan</SheetTitle>
+            <SheetTitle>Crear Nuevo Módulo</SheetTitle>
             <SheetDescription>
-              Completa la información para crear un nuevo plan de suscripción
+              Completa la información para crear un nuevo módulo del sistema
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6">
-            <PlanForm
+            <ModuleForm
               ref={createFormRef}
               onSubmit={handleCreate}
-              onCancel={() => setIsCreateSheetOpen(false)}
               isLoading={createMutation.isPending}
-              showActions={false}
+              mode="create"
             />
           </div>
           <div className="sticky bottom-0 bg-background border-t pt-4 mt-6 flex justify-end gap-3">
@@ -210,7 +207,7 @@ export default function PlansPage() {
               disabled={createMutation.isPending}
             >
               {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Crear Plan
+              Crear Módulo
             </Button>
           </div>
         </SheetContent>
@@ -220,20 +217,29 @@ export default function PlansPage() {
       <Sheet open={isEditSheetOpen} onOpenChange={setIsEditSheetOpen}>
         <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader className="sticky top-0 bg-background z-10 pb-4 border-b">
-            <SheetTitle>Editar Plan</SheetTitle>
+            <SheetTitle>Editar Módulo</SheetTitle>
             <SheetDescription>
-              Modifica la información del plan de suscripción
+              Modifica la información del módulo del sistema
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6">
-            {selectedPlan && (
-              <PlanForm
+            {selectedModule && (
+              <ModuleForm
                 ref={editFormRef}
-                defaultValues={selectedPlan}
+                defaultValues={{
+                  name: selectedModule.name,
+                  displayName: selectedModule.displayName,
+                  description: selectedModule.description,
+                  icon: selectedModule.icon,
+                  path: selectedModule.path,
+                  category: selectedModule.category,
+                  sortOrder: selectedModule.sortOrder,
+                  isActive: selectedModule.isActive,
+                  isVisible: selectedModule.isVisible,
+                }}
                 onSubmit={handleEdit}
-                onCancel={() => setIsEditSheetOpen(false)}
                 isLoading={updateMutation.isPending}
-                showActions={false}
+                mode="edit"
               />
             )}
           </div>
@@ -250,7 +256,7 @@ export default function PlansPage() {
               disabled={updateMutation.isPending}
             >
               {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Actualizar Plan
+              Actualizar Módulo
             </Button>
           </div>
         </SheetContent>
@@ -262,9 +268,8 @@ export default function PlansPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente el plan{' '}
-              <strong>{selectedPlan?.displayName}</strong> y no podrá ser asignado a nuevos clientes.
-              Los clientes existentes con este plan no se verán afectados.
+              Esta acción no se puede deshacer. Esto eliminará permanentemente el módulo{' '}
+              <strong>{selectedModule?.displayName}</strong> y todas sus asignaciones a planes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

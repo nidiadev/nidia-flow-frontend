@@ -3,8 +3,7 @@
 import { useAuth } from '@/contexts/auth-context';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 export default function AdminLayoutWrapper({
   children,
@@ -12,35 +11,25 @@ export default function AdminLayoutWrapper({
   children: React.ReactNode;
 }) {
   const { isLoading, isAuthenticated, user } = useAuth();
-  const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
+  const hasCheckedRef = useRef(false);
 
   useEffect(() => {
+    // Prevenir múltiples ejecuciones
+    if (hasCheckedRef.current) {
+      return;
+    }
+
     // Esperar a que termine la carga inicial
     if (isLoading) {
       setIsChecking(true);
       return;
     }
 
+    // Marcar como verificado para evitar re-ejecuciones
+    hasCheckedRef.current = true;
     setIsChecking(false);
-
-    // Si no está autenticado, el middleware redirigirá
-    if (!isAuthenticated) {
-      console.log('⚠️ Usuario no autenticado en layout de admin');
-      return;
-    }
-
-    // Verificar rol del usuario (priorizar systemRole)
-    const userRole = user?.systemRole || user?.role;
-    console.log('🔍 Verificando rol en layout de superadmin:', { userRole, systemRole: user?.systemRole, role: user?.role, user });
-    
-    if (userRole !== 'super_admin') {
-      console.log('🔄 Usuario no es superadmin en layout de superadmin, redirigiendo a /dashboard');
-      router.push('/dashboard');
-    } else {
-      console.log('✅ Usuario es superadmin, renderizando layout de superadmin');
-    }
-  }, [isLoading, isAuthenticated, user, router]);
+  }, [isLoading]);
 
   // Mostrar loader mientras se verifica autenticación
   if (isLoading || isChecking) {
@@ -69,13 +58,15 @@ export default function AdminLayoutWrapper({
   // Verificar rol del usuario (priorizar systemRole)
   const userRole = user?.systemRole || user?.role;
   
-  // Si no es superadmin, mostrar loader mientras redirige
-  if (userRole !== 'super_admin') {
+  // Si no es superadmin, el middleware ya debería haber redirigido
+  // Solo verificar si realmente no es super_admin (no si userRole es null/undefined)
+  // Si userRole es null/undefined, confiar en el middleware y renderizar
+  if (userRole && userRole !== 'super_admin') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-nidia-green" />
-          <p className="text-muted-foreground">Redirigiendo...</p>
+          <p className="text-muted-foreground">Verificando permisos...</p>
         </div>
       </div>
     );

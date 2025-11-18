@@ -24,6 +24,7 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  Layers,
 } from 'lucide-react';
 import Link from 'next/link';
 import { plansApi, Plan } from '@/lib/api/plans';
@@ -163,6 +164,20 @@ export default function PlanDetailPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/superadmin/plans/${plan.id}/modules`)}
+            >
+              <Package className="h-4 w-4 mr-2" />
+              Módulos
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/superadmin/plans/${plan.id}/submodules`)}
+            >
+              <Layers className="h-4 w-4 mr-2" />
+              Submódulos
+            </Button>
             <Button
               variant="outline"
               onClick={() => router.push(`/superadmin/plans/${plan.id}/edit`)}

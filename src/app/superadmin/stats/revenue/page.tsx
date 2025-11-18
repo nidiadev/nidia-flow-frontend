@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, ArrowLeft, DollarSign, Loader2 } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatsCardSkeleton, ChartSkeleton } from '@/components/ui/loading';
 import Link from 'next/link';
 import { tenantsApi } from '@/lib/api/tenants';
 import {
@@ -51,8 +53,23 @@ export default function RevenueStatsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6">
+        <Link href="/superadmin/stats/overview">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver a Estadísticas
+          </Button>
+        </Link>
+        <PageHeader
+          title="Estadísticas de Ingresos"
+          description="Análisis de ingresos y facturación"
+        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <StatsCardSkeleton key={i} />
+          ))}
+        </div>
+        <ChartSkeleton height={300} />
       </div>
     );
   }
@@ -75,20 +92,17 @@ export default function RevenueStatsPage() {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <div className="flex items-center gap-4">
-        <Link href="/superadmin/stats/overview">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a Estadísticas
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Estadísticas de Ingresos</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Análisis detallado de ingresos y facturación
-          </p>
-        </div>
-      </div>
+      <Link href="/superadmin/stats/overview">
+        <Button variant="ghost" size="sm" className="mb-4">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver a Estadísticas
+        </Button>
+      </Link>
+      
+      <PageHeader
+        title="Estadísticas de Ingresos"
+        description="Análisis detallado de ingresos y facturación"
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>

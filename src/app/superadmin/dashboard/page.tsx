@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatsCardSkeleton, ChartSkeleton } from '@/components/ui/loading';
 import { 
   Building2, 
   Users, 
@@ -36,6 +38,7 @@ import {
 import { tenantsApi } from '@/lib/api/tenants';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
@@ -111,34 +114,38 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
+    <ErrorBoundary>
+      <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Panel de Administración</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Bienvenido, <span className="font-medium text-foreground">{user?.firstName} {user?.lastName}</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="default">
-            <Link href="/superadmin/stats/overview">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Ver Estadísticas
-            </Link>
-          </Button>
-          <Button asChild size="default" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Link href="/superadmin/tenants/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Cliente
-            </Link>
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Panel de Administración"
+        description={`Bienvenido, ${user?.firstName} ${user?.lastName}`}
+        actions={
+          <>
+            <Button asChild variant="outline" size="default">
+              <Link href="/superadmin/stats/overview">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Ver Estadísticas
+              </Link>
+            </Button>
+            <Button asChild size="default" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Link href="/superadmin/tenants/new">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Cliente
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
       {/* Métricas Compactas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {metrics.map((metric, index) => {
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <StatsCardSkeleton key={i} />
+          ))
+        ) : (
+          metrics.map((metric, index) => {
           const Icon = metric.icon;
           const isPositive = metric.change >= 0;
           
@@ -178,7 +185,8 @@ export default function AdminDashboardPage() {
               </Link>
             </motion.div>
           );
-        })}
+        })
+        )}
       </div>
 
       {/* Gráfico de Tendencias */}
@@ -192,9 +200,7 @@ export default function AdminDashboardPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center justify-center h-[300px]">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
+            <ChartSkeleton height={300} />
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={dashboardStats.revenueByMonth || []}>
@@ -379,5 +385,6 @@ export default function AdminDashboardPage() {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }

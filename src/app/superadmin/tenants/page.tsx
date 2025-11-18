@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
 import { TenantsTable } from '@/components/tenants/tenants-table';
 import { TenantForm, TenantFormRef } from '@/components/tenants/tenant-form';
+import { PageHeader } from '@/components/ui/page-header';
+import { TableSkeleton } from '@/components/ui/loading';
 import {
   Sheet,
   SheetContent,
@@ -169,18 +171,16 @@ export default function TenantsPage() {
         className="space-y-6"
       >
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Gestión de Clientes</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Administra todas las empresas registradas en el sistema
-            </p>
-          </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Cliente
-          </Button>
-        </div>
+        <PageHeader
+          title="Gestión de Clientes"
+          description="Administra todas las empresas registradas en el sistema"
+          actions={
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo Cliente
+            </Button>
+          }
+        />
 
         {/* Table */}
         <Card>
@@ -198,6 +198,8 @@ export default function TenantsPage() {
                   {error instanceof Error ? error.message : 'Error desconocido'}
                 </p>
               </div>
+            ) : isLoading ? (
+              <TableSkeleton rows={5} columns={6} />
             ) : (
               <TenantsTable
                 data={tenants}

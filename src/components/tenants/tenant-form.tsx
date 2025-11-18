@@ -3,8 +3,10 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import React, { forwardRef, useImperativeHandle, useState } from 'react';
-import { CreateTenantDto } from '@/lib/api/tenants';
+import React, { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
+import { CreateTenantDto, tenantsApi } from '@/lib/api/tenants';
+import { useQuery } from '@tanstack/react-query';
+import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import {
   Form,
   FormControl,
@@ -24,8 +26,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Combobox } from '@/components/ui/combobox';
-import { Loader2 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 import { plansApi } from '@/lib/api/plans';
 
 const tenantFormSchema = z.object({
@@ -34,7 +34,16 @@ const tenantFormSchema = z.object({
     .string()
     .min(3, 'El slug debe tener al menos 3 caracteres')
     .max(50, 'El slug no puede exceder 50 caracteres')
-    .regex(/^[a-z0-9-]+$/, 'El slug solo puede contener letras minúsculas, números y guiones'),
+    .regex(/^[a-z0-9-]+$/, 'El slug solo puede contener letras minúsculas, números y guiones')
+    .refine(async (slug) => {
+      if (!slug || slug.length < 3) return true;
+      try {
+        const result = await tenantsApi.validateSlug(slug);
+        return result.available;
+      } catch {
+        return true;
+      }
+    }, 'Este identificador ya está en uso'),
   companyLegalName: z.string().max(255).optional(),
   taxId: z.string().max(50).optional(),
   industry: z.string().max(100).optional(),
@@ -345,6 +354,38 @@ export const TenantForm = forwardRef<TenantFormRef, TenantFormProps>(({
 
   // Track if slug was manually edited
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(!!defaultValues?.slug);
+  
+  // Watch slug value from form
+  const formSlug = form.watch('slug');
+  
+  // Initialize slugValue from form
+  const [slugValue, setSlugValue] = useState(() => formSlug || defaultValues?.slug || '');
+
+  // Sync slugValue with form value when form changes (only if different to avoid loops)
+  useEffect(() => {
+    if (formSlug !== slugValue) {
+      setSlugValue(formSlug || '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formSlug]);
+
+  // Debounce slug for validation
+  const [debouncedSlug, setDebouncedSlug] = useState(slugValue);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSlug(slugValue);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [slugValue]);
+
+  // Validate slug availability
+  const { data: slugValidation, isLoading: isValidatingSlug } = useQuery({
+    queryKey: ['validate-slug', debouncedSlug],
+    queryFn: () => tenantsApi.validateSlug(debouncedSlug),
+    enabled: debouncedSlug.length >= 3 && /^[a-z0-9-]+$/.test(debouncedSlug) && (!defaultValues || debouncedSlug !== defaultValues.slug),
+    retry: false,
+  });
 
   // Auto-generate slug from name (only if not manually edited)
   const handleNameChange = (value: string) => {
@@ -357,16 +398,30 @@ export const TenantForm = forwardRef<TenantFormRef, TenantFormProps>(({
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
-      form.setValue('slug', slug);
+      if (slug.length >= 3) {
+        form.setValue('slug', slug, { shouldValidate: true });
+        setSlugValue(slug); // Actualizar directamente para que se vea inmediatamente
+      } else {
+        form.setValue('slug', '');
+        setSlugValue('');
+      }
     }
   };
 
   // Handle slug manual edit
   const handleSlugChange = (value: string) => {
-    form.setValue('slug', value);
+    const normalizedValue = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    form.setValue('slug', normalizedValue, { shouldValidate: true });
     // Marcar como editado manualmente solo si el usuario realmente escribió algo
-    if (value.trim().length > 0) {
+    if (normalizedValue.trim().length > 0) {
       setSlugManuallyEdited(true);
+    } else {
+      // Si borra todo, permitir que se regenere desde el nombre
+      setSlugManuallyEdited(false);
+      const nameValue = form.getValues('name');
+      if (nameValue) {
+        handleNameChange(nameValue);
+      }
     }
   };
 
@@ -406,14 +461,40 @@ export const TenantForm = forwardRef<TenantFormRef, TenantFormProps>(({
                 <FormItem className="flex flex-col">
                   <FormLabel>Slug *</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="identificador-unico" 
-                      {...field}
-                      onChange={(e) => handleSlugChange(e.target.value)}
-                    />
+                    <div className="relative">
+                      <Input 
+                        placeholder="identificador-unico" 
+                        value={slugValue}
+                        onChange={(e) => {
+                          handleSlugChange(e.target.value);
+                          field.onChange(e);
+                        }}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                        className={slugValidation && !slugValidation.available ? 'border-destructive' : slugValidation?.available ? 'border-green-500' : ''}
+                      />
+                      {slugValue.length >= 3 && /^[a-z0-9-]+$/.test(slugValue) && (!defaultValues || slugValue !== defaultValues.slug) && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          {isValidatingSlug ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          ) : slugValidation?.available ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          ) : slugValidation && !slugValidation.available ? (
+                            <XCircle className="h-4 w-4 text-destructive" />
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
                   </FormControl>
                   <FormDescription className="text-xs leading-tight">
-                    Se genera automáticamente desde el nombre
+                    {slugValidation && !slugValidation.available ? (
+                      <span className="text-destructive">{slugValidation.message}</span>
+                    ) : slugValidation?.available ? (
+                      <span className="text-green-600 dark:text-green-400">{slugValidation.message}</span>
+                    ) : (
+                      'Se genera automáticamente desde el nombre'
+                    )}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

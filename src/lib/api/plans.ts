@@ -55,6 +55,12 @@ export const plansApi = {
     }
   },
   
+  get: async (id: string): Promise<Plan> => {
+    const response = await api.get<ApiResponse<Plan>>(`/plans/${id}`);
+    const responseData = response.data;
+    return responseData.data || responseData;
+  },
+
   getById: async (id: string): Promise<Plan> => {
     const response = await api.get<ApiResponse<Plan>>(`/plans/${id}`);
     const responseData = response.data;
