@@ -5,6 +5,7 @@ import { MainLayout } from '@/components/layout/main-layout';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { AuthService } from '@/lib/auth';
 
 export default function DashboardLayout({
   children,
@@ -22,6 +23,17 @@ export default function DashboardLayout({
       console.log('🔄 Usuario superadmin detectado en layout de dashboard, redirigiendo a /superadmin/dashboard');
       // Usar window.location.href para forzar redirección inmediata
       window.location.href = '/superadmin/dashboard';
+      return;
+    }
+
+    // Si el usuario tiene tenantSlug, redirigir a la ruta con slug
+    if (!isLoading && isAuthenticated && userRole !== 'super_admin') {
+      const tenantSlug = AuthService.getTenantSlug();
+      if (tenantSlug) {
+        console.log('🔄 Usuario con tenantSlug detectado, redirigiendo a /[slug]/dashboard');
+        window.location.href = `/${tenantSlug}/dashboard`;
+        return;
+      }
     }
   }, [isLoading, isAuthenticated, user]);
 

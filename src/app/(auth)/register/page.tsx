@@ -13,7 +13,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff, Loader2, Building2, Users, Rocket } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Building2, Users, Rocket, CheckCircle2, XCircle, Sparkles, RefreshCw } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { tenantsApi } from '@/lib/api/tenants';
+import { PhoneInput } from '@/components/ui/phone-input';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -48,6 +51,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const { register: registerUser, isLoading } = useAuth();
   const { resolvedTheme } = useTheme();
 
@@ -61,18 +65,95 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegisterData>({
     resolver: zodResolver(registerSchema),
   });
 
+  // Watch form values
+  const companyName = watch('companyName');
+  const formSlug = watch('slug');
+  const [slugValue, setSlugValue] = useState('');
+
+  // Sync slugValue with form value
+  useEffect(() => {
+    setSlugValue(formSlug || '');
+  }, [formSlug]);
+
+  // Debounce slug for validation
+  const [debouncedSlug, setDebouncedSlug] = useState(slugValue);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSlug(slugValue);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [slugValue]);
+
+  // Validate slug availability
+  const { data: slugValidation, isLoading: isValidatingSlug } = useQuery({
+    queryKey: ['validate-slug', debouncedSlug],
+    queryFn: () => tenantsApi.validateSlug(debouncedSlug),
+    enabled: debouncedSlug.length >= 3 && /^[a-z0-9-]+$/.test(debouncedSlug),
+    retry: false,
+  });
+
+  // Auto-generate slug from company name
+  useEffect(() => {
+    if (!slugManuallyEdited && companyName) {
+      const slug = companyName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      
+      if (slug.length >= 2) {
+        setValue('slug', slug, { shouldValidate: true });
+        setSlugValue(slug);
+      } else {
+        setValue('slug', '');
+        setSlugValue('');
+      }
+    }
+  }, [companyName, slugManuallyEdited, setValue]);
+
+  // Handle company name change
+  const handleCompanyNameChange = (value: string) => {
+    setValue('companyName', value);
+  };
+
+  // Handle slug manual edit
+  const handleSlugChange = (value: string) => {
+    const normalizedValue = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    setValue('slug', normalizedValue, { shouldValidate: true });
+    setSlugValue(normalizedValue);
+    
+    if (normalizedValue.trim().length > 0) {
+      setSlugManuallyEdited(true);
+    } else {
+      setSlugManuallyEdited(false);
+    }
+  };
+
   const onSubmit = async (data: RegisterData) => {
     setError(null);
+    
+    // Guardar credenciales temporalmente para auto-login después del provisioning
+    sessionStorage.setItem('pendingLogin', JSON.stringify({
+      email: data.email,
+      password: data.password,
+      timestamp: Date.now(),
+    }));
     
     const result = await registerUser(data);
     
     if (!result.success) {
       setError(result.message || 'Error al registrarse');
+      // Limpiar credenciales si hay error
+      sessionStorage.removeItem('pendingLogin');
     }
   };
 
@@ -182,11 +263,11 @@ export default function RegisterPage() {
         </CardHeader>
 
               <CardContent className="px-6 sm:px-8 pb-6">
-                <motion.form
-                  variants={itemVariants}
-                  onSubmit={handleSubmit(onSubmit)}
-                  className="space-y-3 sm:space-y-4"
-                >
+                       <motion.form
+                         variants={itemVariants}
+                         onSubmit={handleSubmit(onSubmit)}
+                         className="space-y-2.5 sm:space-y-3"
+                       >
                   <AnimatePresence>
             {error && (
                       <motion.div
@@ -202,7 +283,7 @@ export default function RegisterPage() {
 
                   {/* Name Fields */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <Label 
                         htmlFor="firstName" 
                         className="text-sm font-outfit text-foreground font-medium"
@@ -226,7 +307,7 @@ export default function RegisterPage() {
                             initial={{ opacity: 0, y: -5 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -5 }}
-                            className="text-sm font-outfit text-destructive"
+                            className="text-xs font-outfit text-destructive"
                           >
                     {errors.firstName.message}
                           </motion.p>
@@ -234,7 +315,7 @@ export default function RegisterPage() {
                       </AnimatePresence>
               </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <Label 
                         htmlFor="lastName" 
                         className="text-sm font-outfit text-foreground font-medium"
@@ -258,7 +339,7 @@ export default function RegisterPage() {
                             initial={{ opacity: 0, y: -5 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -5 }}
-                            className="text-sm font-outfit text-destructive"
+                            className="text-xs font-outfit text-destructive"
                           >
                     {errors.lastName.message}
                           </motion.p>
@@ -268,7 +349,7 @@ export default function RegisterPage() {
             </div>
 
                   {/* Email Field */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <Label 
                       htmlFor="email" 
                       className="text-sm font-outfit text-foreground font-medium"
@@ -293,7 +374,7 @@ export default function RegisterPage() {
                           initial={{ opacity: 0, y: -5 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -5 }}
-                          className="text-sm font-outfit text-destructive"
+                          className="text-xs font-outfit text-destructive"
                         >
                   {errors.email.message}
                         </motion.p>
@@ -301,58 +382,183 @@ export default function RegisterPage() {
                     </AnimatePresence>
             </div>
 
-                  {/* Company Field */}
-                  <div className="space-y-1.5">
-                    <Label 
-                      htmlFor="companyName" 
-                      className="text-sm font-outfit text-foreground font-medium"
-                    >
-                      Empresa
-                    </Label>
-              <Input
-                id="companyName"
-                placeholder="Mi Empresa S.A.S."
-                {...register('companyName')}
-                      className={`h-10 sm:h-11 text-sm sm:text-base font-outfit ${
-                        errors.companyName 
-                          ? 'border-destructive focus-visible:ring-destructive' 
-                          : 'border-primary/30 focus-visible:ring-primary'
-                      }`}
-                      autoComplete="organization"
-                    />
-                    <AnimatePresence>
-              {errors.companyName && (
-                        <motion.p
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -5 }}
-                          className="text-sm font-outfit text-destructive"
+                  {/* Company and Slug Fields - Side by Side */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Company Field */}
+                    <div className="space-y-1">
+                      <Label 
+                        htmlFor="companyName" 
+                        className="text-sm font-outfit text-foreground font-medium"
+                      >
+                        Empresa
+                      </Label>
+                      <Input
+                        id="companyName"
+                        placeholder="Mi Empresa S.A.S."
+                        {...register('companyName')}
+                        onChange={(e) => {
+                          handleCompanyNameChange(e.target.value);
+                          register('companyName').onChange(e);
+                        }}
+                        className={`h-10 sm:h-11 text-sm sm:text-base font-outfit ${
+                          errors.companyName 
+                            ? 'border-destructive focus-visible:ring-destructive' 
+                            : 'border-primary/30 focus-visible:ring-primary'
+                        }`}
+                        autoComplete="organization"
+                      />
+                      <AnimatePresence>
+                        {errors.companyName && (
+                          <motion.p
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -5 }}
+                            className="text-xs font-outfit text-destructive"
+                          >
+                            {errors.companyName.message}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Slug Field */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <Label 
+                          htmlFor="slug" 
+                          className="text-sm font-outfit text-foreground font-medium"
                         >
-                  {errors.companyName.message}
-                        </motion.p>
-              )}
-                    </AnimatePresence>
-            </div>
+                          Identificador
+                        </Label>
+                        {!slugManuallyEdited && companyName && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex items-center gap-1 text-xs text-muted-foreground"
+                          >
+                            <Sparkles className="h-3 w-3 text-primary" />
+                            <span className="text-xs">Auto</span>
+                          </motion.div>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <Input
+                          id="slug"
+                          placeholder="mi-empresa"
+                          value={slugValue}
+                          onChange={(e) => {
+                            handleSlugChange(e.target.value);
+                            register('slug').onChange(e);
+                          }}
+                          onBlur={register('slug').onBlur}
+                          name={register('slug').name}
+                          ref={register('slug').ref}
+                          className={`h-10 sm:h-11 text-sm sm:text-base font-outfit lowercase ${
+                            errors.slug 
+                              ? 'border-destructive focus-visible:ring-destructive pr-10' 
+                              : slugValidation && !slugValidation.available
+                              ? 'border-destructive focus-visible:ring-destructive pr-10'
+                              : slugValidation?.available
+                              ? 'border-green-500 focus-visible:ring-green-500 pr-10'
+                              : slugManuallyEdited
+                              ? 'border-primary/30 focus-visible:ring-primary pr-10'
+                              : 'border-primary/30 focus-visible:ring-primary pr-20'
+                          }`}
+                          autoComplete="off"
+                        />
+                        {!slugManuallyEdited && companyName && slugValue && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSlugManuallyEdited(false);
+                              const slug = companyName
+                                .toLowerCase()
+                                .normalize('NFD')
+                                .replace(/[\u0300-\u036f]/g, '')
+                                .replace(/[^a-z0-9]+/g, '-')
+                                .replace(/^-+|-+$/g, '');
+                              if (slug.length >= 2) {
+                                setValue('slug', slug, { shouldValidate: true });
+                                setSlugValue(slug);
+                              }
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors p-1"
+                            title="Regenerar desde nombre de empresa"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {slugValue.length >= 3 && /^[a-z0-9-]+$/.test(slugValue) && (
+                          <div className={`absolute ${!slugManuallyEdited && companyName ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2`}>
+                            {isValidatingSlug ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            ) : slugValidation?.available ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            ) : slugValidation && !slugValidation.available ? (
+                              <XCircle className="h-4 w-4 text-destructive" />
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                      <AnimatePresence>
+                        {errors.slug && (
+                          <motion.p
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -5 }}
+                            className="text-xs font-outfit text-destructive"
+                          >
+                            {errors.slug.message}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
+                      <p className="text-xs text-muted-foreground">
+                        {slugValidation && !slugValidation.available ? (
+                          <span className="text-destructive">{slugValidation.message}</span>
+                        ) : slugValidation?.available ? (
+                          <span className="text-green-600 dark:text-green-400">{slugValidation.message}</span>
+                        ) : (
+                          <span className="flex items-center gap-1">
+                            {!slugManuallyEdited && companyName ? (
+                              <>
+                                <Sparkles className="h-3 w-3 text-primary" />
+                                <span>Se genera automáticamente</span>
+                              </>
+                            ) : (
+                              'Identificador único para tu empresa'
+                            )}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
 
                   {/* Phone Field */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <Label 
                       htmlFor="phone" 
                       className="text-sm font-outfit text-foreground font-medium"
                     >
                       Teléfono <span className="text-muted-foreground font-normal">(Opcional)</span>
                     </Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+57 300 123 4567"
-                {...register('phone')}
+                    <PhoneInput
+                      id="phone"
+                      value={watch('phone') || ''}
+                      onChange={(value) => setValue('phone', value || undefined)}
+                      onBlur={(e) => {
+                        if (e) {
+                          register('phone').onBlur(e);
+                        } else {
+                          register('phone').onBlur({ target: { value: watch('phone') } } as any);
+                        }
+                      }}
+                      defaultCountry="CO"
+                      placeholder="+57 300 123 4567"
                       className={`h-10 sm:h-11 text-sm sm:text-base font-outfit ${
                         errors.phone 
                           ? 'border-destructive focus-visible:ring-destructive' 
                           : 'border-primary/30 focus-visible:ring-primary'
                       }`}
-                      autoComplete="tel"
                     />
                     <AnimatePresence>
               {errors.phone && (
@@ -369,7 +575,7 @@ export default function RegisterPage() {
             </div>
 
                   {/* Password Field */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <Label 
                       htmlFor="password" 
                       className="text-sm font-outfit text-foreground font-medium"
@@ -414,6 +620,9 @@ export default function RegisterPage() {
                         </motion.p>
               )}
                     </AnimatePresence>
+                    <p className="text-xs text-muted-foreground">
+                      Debe tener al menos 8 caracteres
+                    </p>
             </div>
 
                   {/* Submit Button */}
