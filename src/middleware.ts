@@ -251,6 +251,12 @@ export function middleware(request: NextRequest) {
       const url = new URL(apiUrl);
       // Extract origin (protocol + hostname + port if present)
       connectSrc += ` ${url.origin}`;
+      // Also allow WebSocket Secure (wss://) for the same origin
+      if (url.protocol === 'https:') {
+        connectSrc += ` wss://${url.host}`;
+      } else if (url.protocol === 'http:') {
+        connectSrc += ` ws://${url.host}`;
+      }
     } catch (e) {
       // If URL parsing fails, log error but don't add invalid URL
       console.error('Invalid NEXT_PUBLIC_API_URL:', apiUrl);
