@@ -13,7 +13,27 @@ class WebSocketService {
       return;
     }
 
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
+    // Get WebSocket URL, automatically use wss:// if API URL is https://
+    let wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    
+    // If API URL is https://, ensure WebSocket uses wss://
+    if (apiUrl && apiUrl.startsWith('https://')) {
+      // Convert ws:// to wss:// or http:// to https://
+      if (wsUrl.startsWith('ws://')) {
+        wsUrl = wsUrl.replace('ws://', 'wss://');
+      } else if (wsUrl.startsWith('http://')) {
+        wsUrl = wsUrl.replace('http://', 'wss://');
+      } else if (!wsUrl.startsWith('wss://')) {
+        // If no protocol specified, extract host from API URL and use wss://
+        try {
+          const apiUrlObj = new URL(apiUrl);
+          wsUrl = `wss://${apiUrlObj.host}`;
+        } catch (e) {
+          console.warn('Could not parse API URL for WebSocket, using default');
+        }
+      }
+    }
 
     this.socket = io(wsUrl, {
       auth: {
