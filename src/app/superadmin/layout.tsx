@@ -48,14 +48,7 @@ export default function AdminLayoutWrapper({
   // Solo verificar si realmente no es super_admin (no si userRole es null/undefined)
   // Si userRole es null/undefined, confiar en el middleware y renderizar
   if (userRole && userRole !== 'super_admin') {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-nidia-green" />
-          <p className="text-muted-foreground">Verificando permisos...</p>
-        </div>
-      </div>
-    );
+    return <AppLoading message="Verificando permisos..." />;
   }
 
   // Renderizar el layout de admin con los children
