@@ -137,7 +137,7 @@ export function PhoneInput({
         ref={containerRef}
         className={cn(
           'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground',
-          'w-full min-w-0 rounded-md border px-3 py-1 text-base transition-[color,box-shadow] outline-none',
+          'h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base transition-[color,box-shadow] outline-none',
           'bg-background relative',
           borderClasses,
           'dark:bg-input dark:border-[#2A2D35] dark:text-foreground dark:shadow-sm dark:hover:border-[#353842] dark:focus:border-ring',

@@ -310,7 +310,6 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                               placeholder="+57 300 123 4567"
                               defaultCountry="CO"
                               className={cn(
-                                'h-10',
                                 form.formState.errors.mobile && 'border-destructive focus-visible:ring-destructive'
                               )}
                             />
@@ -334,7 +333,6 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                               placeholder="+57 300 123 4567"
                               defaultCountry="CO"
                               className={cn(
-                                'h-10',
                                 form.formState.errors.whatsapp && 'border-destructive focus-visible:ring-destructive'
                               )}
                             />
