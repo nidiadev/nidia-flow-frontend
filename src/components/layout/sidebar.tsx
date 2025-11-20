@@ -63,10 +63,17 @@ const navigationItems: NavItem[] = [
     href: '/crm',
     icon: Users,
     moduleName: 'crm',
-    children: [
-      { title: 'Clientes', href: '/crm/customers', icon: Users },
-      { title: 'Pipeline', href: '/crm/pipeline', icon: BarChart3 },
-    ],
+      children: [
+        { title: 'Clientes', href: '/crm/customers', icon: Users },
+        { title: 'Pipeline', href: '/crm/pipeline', icon: BarChart3 },
+        { title: 'Inbox', href: '/crm/inbox', icon: Inbox },
+        { title: 'Calendario', href: '/crm/calendar', icon: Calendar },
+        { title: 'Listas Inteligentes', href: '/crm/smart-lists', icon: List },
+        { title: 'Lead Scoring', href: '/crm/lead-scoring', icon: TrendingUp },
+        { title: 'Reportes', href: '/crm/reports', icon: FileText },
+        { title: 'Automatizaciones', href: '/crm/workflows', icon: Zap },
+        { title: 'Formularios Web', href: '/crm/web-forms', icon: FileEdit },
+      ],
   },
   {
     title: 'Productos',
