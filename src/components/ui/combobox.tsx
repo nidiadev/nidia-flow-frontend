@@ -85,9 +85,17 @@ export function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between font-normal", className)}
+          className={cn(
+            "w-full justify-between font-normal h-9 px-3 py-1 text-base md:text-sm",
+            "bg-background border-border",
+            "dark:bg-input dark:border-[#2A2D35] dark:text-foreground dark:shadow-sm dark:hover:border-[#353842]",
+            "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:ring-offset-0",
+            "hover:bg-background hover:border-border",
+            "dark:hover:bg-input dark:hover:border-[#353842]",
+            className
+          )}
         >
-          {displayValue || placeholder}
+          <span className="truncate text-left flex-1">{displayValue || placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

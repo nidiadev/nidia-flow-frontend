@@ -459,35 +459,74 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="addressLine1"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="mb-2 block">Dirección Principal *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Calle 123 #45-67" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Fila 1: Dirección Principal y Dirección Secundaria */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="addressLine1"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="mb-2 block">Dirección Principal *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Calle 123 #45-67" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="addressLine2"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Dirección Secundaria</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Apartamento, oficina, etc." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="addressLine2"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="mb-2 block">Dirección Secundaria</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Apartamento, oficina, etc." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Fila 2: País y Departamento */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="country"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="mb-2 block">País *</FormLabel>
+                          <FormControl>
+                            <CountrySelect
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              placeholder="Selecciona un país"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="state"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="mb-2 block">Departamento</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Cundinamarca" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Fila 3: Ciudad y Código Postal */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="city"
@@ -504,24 +543,10 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                     
                     <FormField
                       control={form.control}
-                      name="state"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Departamento</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Cundinamarca" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
                       name="postalCode"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Código Postal</FormLabel>
+                          <FormLabel className="mb-2 block">Código Postal</FormLabel>
                           <FormControl>
                             <Input placeholder="110111" {...field} />
                           </FormControl>
@@ -530,24 +555,6 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                       )}
                     />
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name="country"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="mb-2 block">País *</FormLabel>
-                        <FormControl>
-                          <CountrySelect
-                            value={field.value}
-                            onValueChange={field.onChange}
-                            placeholder="Selecciona un país"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </CardContent>
               </Card>
 
