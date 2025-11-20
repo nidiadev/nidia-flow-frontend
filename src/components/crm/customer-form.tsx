@@ -215,11 +215,9 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
   const formRef = useRef<HTMLFormElement>(null);
   
   // Expose submit function if onSubmitTrigger is provided
-  if (onSubmitTrigger && typeof onSubmitTrigger === 'object' && 'current' in onSubmitTrigger) {
-    (onSubmitTrigger as any).current = {
-      submit: () => formRef.current?.requestSubmit(),
-    };
-  }
+  useImperativeHandle(onSubmitTrigger as any, () => ({
+    submit: () => formRef.current?.requestSubmit(),
+  }), []);
 
   return (
     <div className={className}>
