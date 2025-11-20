@@ -103,16 +103,18 @@ export function PhoneInput({
     setSelectedCountry(country);
     setIsDropdownOpen(false);
     setSearchQuery('');
-    const fullNumber = country.dialCode + phoneNumber;
-    onChange?.(fullNumber || undefined);
+    // Format: +[dialCode][number] without spaces (E.164 format)
+    const fullNumber = phoneNumber ? `${country.dialCode}${phoneNumber}` : undefined;
+    onChange?.(fullNumber);
     inputRef.current?.focus();
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value.replace(/\D/g, '');
     setPhoneNumber(newValue);
-    const fullNumber = selectedCountry.dialCode + (newValue ? ' ' + newValue : '');
-    onChange?.(fullNumber || undefined);
+    // Format: +[dialCode][number] without spaces (E.164 format)
+    const fullNumber = newValue ? `${selectedCountry.dialCode}${newValue}` : undefined;
+    onChange?.(fullNumber);
   };
 
   const formatPhoneNumber = (value: string): string => {

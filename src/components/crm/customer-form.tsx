@@ -53,9 +53,15 @@ const customerSchema = z.object({
   firstName: z.string().min(1, 'El nombre es requerido').max(100, 'Máximo 100 caracteres'),
   lastName: z.string().min(1, 'El apellido es requerido').max(100, 'Máximo 100 caracteres'),
   email: z.string().email('Email inválido').max(255, 'Máximo 255 caracteres'),
-  phone: z.string().default(''),
-  mobile: z.string().default(''),
-  whatsapp: z.string().default(''),
+  phone: z.string().optional().refine((val) => !val || /^\+[1-9]\d{1,14}$/.test(val.replace(/\s/g, '')), {
+    message: 'El teléfono debe incluir el código de país (ej: +57 300 123 4567)'
+  }),
+  mobile: z.string().optional().refine((val) => !val || /^\+[1-9]\d{1,14}$/.test(val.replace(/\s/g, '')), {
+    message: 'El móvil debe incluir el código de país (ej: +57 300 123 4567)'
+  }),
+  whatsapp: z.string().optional().refine((val) => !val || /^\+[1-9]\d{1,14}$/.test(val.replace(/\s/g, '')), {
+    message: 'WhatsApp debe incluir el código de país (ej: +57 300 123 4567)'
+  }),
   companyName: z.string().default(''),
   type: z.enum(['lead', 'prospect', 'active', 'inactive', 'churned']),
   leadScore: z.number().min(0).max(100),
@@ -291,7 +297,16 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                         <FormItem>
                           <FormLabel>Teléfono</FormLabel>
                           <FormControl>
-                            <Input placeholder="+57 1 234 5678" {...field} />
+                            <PhoneInput
+                              value={field.value || ''}
+                              onChange={(value) => field.onChange(value || '')}
+                              onBlur={field.onBlur}
+                              placeholder="+57 1 234 5678"
+                              defaultCountry="CO"
+                              className={cn(
+                                form.formState.errors.phone && 'border-destructive focus-visible:ring-destructive'
+                              )}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
