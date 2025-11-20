@@ -18,7 +18,7 @@ import { useSubscription } from '@/hooks/use-subscription';
 import { AuthService } from '@/lib/auth';
 import { SidebarItem } from './sidebar-item';
 import { SidebarFooter } from './sidebar-footer';
-import { Module } from '@/lib/api/modules';
+import { Module } from '@/lib/auth';
 
 interface NavItem {
   title: string;
