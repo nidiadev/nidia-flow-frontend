@@ -2,6 +2,7 @@
 
 import { Suspense, ReactNode } from 'react';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
 
