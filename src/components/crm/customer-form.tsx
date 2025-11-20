@@ -28,6 +28,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { cn } from '@/lib/utils';
 import { 
   User, 
   Building2, 
