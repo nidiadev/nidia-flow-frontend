@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dialog';
 import { ArrowLeft, Save, Plus } from 'lucide-react';
 import { TenantLink } from '@/components/ui/tenant-link';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from '@/components/ui/section-header';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { toast } from 'sonner';
 import { dealsApi, dealStagesApi, CreateDealDto } from '@/lib/api/crm';
@@ -142,10 +142,9 @@ export default function NewDealPage() {
   return (
     <ErrorBoundary>
       <div>
-        <PageHeader
+        <SectionHeader
           title="Nuevo Deal"
           description="Crea una nueva oportunidad en el pipeline"
-          variant="gradient"
           actions={
             <Button variant="outline" asChild>
               <TenantLink href="/crm/pipeline">
