@@ -18,7 +18,10 @@ export default function NewCustomerPage() {
   
   const handleSuccess = (newCustomer: Customer) => {
     setIsSubmitting(false);
-    router.push(route(`/crm/customers/${newCustomer.id}`));
+    // Small delay to show success state
+    setTimeout(() => {
+      router.push(route(`/crm/customers/${newCustomer.id}`));
+    }, 100);
   };
   
   const handleCancel = () => {

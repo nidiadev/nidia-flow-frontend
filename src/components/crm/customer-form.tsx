@@ -191,6 +191,10 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
       onSuccess?.(result.data);
     } catch (error) {
       // Error is handled by the mutation hook
+      // Reset external loading state if provided
+      if (externalIsLoading !== undefined && typeof onSuccess === 'function') {
+        // Loading state will be reset by parent component
+      }
     }
   };
 
