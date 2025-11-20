@@ -41,22 +41,26 @@ export function MainLayout({ children, className }: MainLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden p-2">
         {/* Content area */}
         <main className="flex-1 overflow-y-auto">
           {/* Compact Breadcrumbs Bar */}
-          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-12 items-center px-6">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 rounded-t-lg">
+            <div className="flex h-12 items-center px-4">
               <Breadcrumbs className="text-sm" />
             </div>
           </div>
 
-          {/* Page content */}
+          {/* Page content with rounded corners */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className={cn('w-full px-6 py-6', className)}
+            className={cn(
+              'w-full h-full bg-background rounded-lg border border-border',
+              'px-4 py-4',
+              className
+            )}
           >
             {children}
           </motion.div>

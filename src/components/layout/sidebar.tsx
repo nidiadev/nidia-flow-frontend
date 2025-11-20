@@ -193,7 +193,7 @@ export function Sidebar({ className }: SidebarProps) {
   const isExpanded = (href: string) => expandedItems.includes(href);
 
   return (
-    <div className="relative">
+    <div className="relative h-screen">
       <aside
         className={cn(
           'flex h-full flex-col bg-sidebar transition-all duration-300 overflow-hidden',
@@ -272,16 +272,15 @@ export function Sidebar({ className }: SidebarProps) {
       />
       </aside>
 
-      {/* Floating Toggle Button - Centered between sidebar and content */}
+      {/* Floating Toggle Button - Top position */}
       <Button
         variant="ghost"
         size="sm"
         onClick={() => setIsCollapsed(!isCollapsed)}
         className={cn(
-          'absolute top-1/2 -right-3 z-50 h-6 w-6 rounded-full border-2 border-sidebar-border bg-sidebar p-0 shadow-md hover:bg-sidebar-accent hover:border-sidebar-accent transition-all',
+          'absolute top-4 -right-3 z-50 h-6 w-6 rounded-full border-2 border-sidebar-border bg-sidebar p-0 shadow-md hover:bg-sidebar-accent hover:border-sidebar-accent transition-all',
           'flex items-center justify-center'
         )}
-        style={{ transform: 'translateY(-50%)' }}
       >
         {isCollapsed ? (
           <ChevronRight className="h-3 w-3 text-sidebar-foreground" />
