@@ -144,13 +144,17 @@ export default function NewDealPage() {
                         <SelectValue placeholder="Selecciona un cliente" />
                       </SelectTrigger>
                       <SelectContent>
-                        {customers.map((customer: any) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            {customer.companyName || 
-                             `${customer.firstName} ${customer.lastName}` ||
-                             customer.email}
-                          </SelectItem>
-                        ))}
+                        {customers.map((customer: any) => {
+                          const displayName = customer.companyName || 
+                            `${customer.firstName || ''} ${customer.lastName || ''}`.trim() ||
+                            customer.email ||
+                            'Cliente sin nombre';
+                          return (
+                            <SelectItem key={customer.id} value={customer.id}>
+                              {displayName}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                     {errors.customerId && (
@@ -248,13 +252,16 @@ export default function NewDealPage() {
                     <div>
                       <Label htmlFor="assignedTo">Asignado a</Label>
                       <Select
-                        onValueChange={(value) => setValue('assignedTo', value)}
+                        onValueChange={(value) => {
+                          // "none" means unassigned, set to undefined
+                          setValue('assignedTo', value === 'none' ? undefined : value);
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Sin asignar" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sin asignar</SelectItem>
+                          <SelectItem value="none">Sin asignar</SelectItem>
                           {/* TODO: Load users from API */}
                         </SelectContent>
                       </Select>

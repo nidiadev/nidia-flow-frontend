@@ -134,13 +134,13 @@ export function Sidebar({ className }: SidebarProps) {
     });
 
     // 2. Obtener módulos del usuario (vienen del endpoint /auth/me)
-    const userModules = user?.modules || [];
+    const userModules = (user?.modules || []) as Module[];
 
     // 3. Procesar cada módulo del backend
     userModules
-      .filter((module: Module) => module.isVisible) // Solo módulos visibles
-      .sort((a: Module, b: Module) => a.sortOrder - b.sortOrder) // Ordenar por sortOrder
-      .forEach((module: Module) => {
+      .filter((module) => module.isVisible) // Solo módulos visibles
+      .sort((a, b) => a.sortOrder - b.sortOrder) // Ordenar por sortOrder
+      .forEach((module) => {
         // Construir hijos desde los submódulos del backend
         const children: NavItem['children'] = [];
 
