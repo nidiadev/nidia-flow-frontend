@@ -27,13 +27,15 @@ export default function NewCustomerPage() {
 
   const handleSubmit = () => {
     setIsSubmitting(true);
-    if (formSubmitRef.current) {
-      formSubmitRef.current.submit();
+    // Trigger form submit via DOM
+    const submitButton = document.querySelector('form button[type="submit"]') as HTMLButtonElement;
+    if (submitButton) {
+      submitButton.click();
     } else {
-      // Fallback: trigger form submit via DOM
-      const submitButton = document.querySelector('form button[type="submit"]') as HTMLButtonElement;
-      if (submitButton) {
-        submitButton.click();
+      // Fallback: try form.requestSubmit()
+      const form = document.querySelector('form');
+      if (form) {
+        form.requestSubmit();
       }
     }
   };
