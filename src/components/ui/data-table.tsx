@@ -37,6 +37,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { AppLoading } from '@/components/ui/app-loading';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -495,10 +496,7 @@ export function DataTable<T>({
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={tableColumns.length} className="h-24 text-center">
-                  <div className="flex items-center justify-center">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span className="ml-2 text-muted-foreground">Cargando...</span>
-                  </div>
+                  <AppLoading message="Cargando datos..." fullScreen={false} showLogo={false} />
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (

@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/contexts/auth-context';
 import { MainLayout } from '@/components/layout/main-layout';
-import { Loader2 } from 'lucide-react';
+import { AppLoading } from '@/components/ui/app-loading';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { AuthService } from '@/lib/auth';
@@ -47,14 +47,7 @@ export default function TenantSlugLayout({
   }, [isLoading, isAuthenticated, user, slug, router]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-nidia-green" />
-          <p className="text-muted-foreground">Cargando...</p>
-        </div>
-      </div>
-    );
+    return <AppLoading message="Cargando aplicación..." />;
   }
 
   if (!isAuthenticated) {
