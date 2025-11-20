@@ -21,6 +21,7 @@ import { AuthService } from '@/lib/auth';
 import { SidebarItem } from './sidebar-item';
 import { SidebarFooter } from './sidebar-footer';
 import { SidebarNotifications } from './sidebar-notifications';
+import { SidebarThemeToggle } from './sidebar-theme-toggle';
 import { Module } from '@/lib/auth';
 
 interface NavItem {
@@ -194,13 +195,13 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <div className="relative h-screen">
-      <aside
-        className={cn(
+    <aside
+      className={cn(
           'flex h-full flex-col bg-sidebar transition-all duration-300 overflow-hidden',
-          isCollapsed ? 'w-16' : 'w-64',
-          className
-        )}
-      >
+        isCollapsed ? 'w-16' : 'w-64',
+        className
+      )}
+    >
       {/* Header - Isotipo */}
       <div className={cn(
         "flex h-14 items-center px-3",
@@ -265,12 +266,15 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Notifications Section */}
       <SidebarNotifications isCollapsed={isCollapsed} />
 
+      {/* Theme Toggle Section */}
+      <SidebarThemeToggle isCollapsed={isCollapsed} />
+
       {/* Footer con usuario y plan */}
       <SidebarFooter 
         isCollapsed={isCollapsed} 
         variant="client"
       />
-      </aside>
+    </aside>
 
       {/* Floating Toggle Button - Top position */}
       <Button
