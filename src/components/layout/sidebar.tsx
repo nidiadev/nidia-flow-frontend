@@ -26,6 +26,11 @@ import {
   Bell,
   Loader2,
   Layers,
+  Inbox,
+  List,
+  TrendingUp,
+  Zap,
+  FileEdit,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useSubscription } from '@/hooks/use-subscription';

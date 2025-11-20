@@ -100,67 +100,67 @@ export const dealsApi = {
     customerId?: string;
     search?: string;
   }) => {
-    const response = await api.get('/api/v1/crm/deals', { params });
+    const response = await api.get('/crm/deals', { params });
     return response.data;
   },
 
   // Get deal by ID
   getById: async (id: string) => {
-    const response = await api.get(`/api/v1/crm/deals/${id}`);
+    const response = await api.get(`/crm/deals/${id}`);
     return response.data;
   },
 
   // Create deal
   create: async (data: CreateDealDto) => {
-    const response = await api.post('/api/v1/crm/deals', data);
+    const response = await api.post('/crm/deals', data);
     return response.data;
   },
 
   // Update deal
   update: async (id: string, data: UpdateDealDto) => {
-    const response = await api.put(`/api/v1/crm/deals/${id}`, data);
+    const response = await api.put(`/crm/deals/${id}`, data);
     return response.data;
   },
 
   // Delete deal
   delete: async (id: string) => {
-    const response = await api.delete(`/api/v1/crm/deals/${id}`);
+    const response = await api.delete(`/crm/deals/${id}`);
     return response.data;
   },
 
   // Change deal stage
   changeStage: async (id: string, stageId: string) => {
-    const response = await api.patch(`/api/v1/crm/deals/${id}/stage`, { stageId });
+    const response = await api.patch(`/crm/deals/${id}/stage`, { stageId });
     return response.data;
   },
 
   // Win deal
   win: async (id: string, data?: { notes?: string; closedAt?: string }) => {
-    const response = await api.patch(`/api/v1/crm/deals/${id}/win`, data || {});
+    const response = await api.patch(`/crm/deals/${id}/win`, data || {});
     return response.data;
   },
 
   // Lose deal
   lose: async (id: string, reason: string, notes?: string) => {
-    const response = await api.patch(`/api/v1/crm/deals/${id}/lose`, { reason, notes });
+    const response = await api.patch(`/crm/deals/${id}/lose`, { reason, notes });
     return response.data;
   },
 
   // Assign deal
   assign: async (id: string, userId: string) => {
-    const response = await api.patch(`/api/v1/crm/deals/${id}/assign`, { assignedTo: userId });
+    const response = await api.patch(`/crm/deals/${id}/assign`, { assignedTo: userId });
     return response.data;
   },
 
   // Get pipeline statistics
   getStats: async () => {
-    const response = await api.get('/api/v1/crm/deals/statistics');
+    const response = await api.get('/crm/deals/statistics');
     return response.data;
   },
 
   // Get forecast
   getForecast: async (year: number, month: number) => {
-    const response = await api.get('/api/v1/crm/deals/forecast', {
+    const response = await api.get('/crm/deals/forecast', {
       params: { year, month },
     });
     return response.data;
@@ -170,37 +170,37 @@ export const dealsApi = {
 export const dealStagesApi = {
   // Get all stages
   getAll: async () => {
-    const response = await api.get('/api/v1/crm/deal-stages');
+    const response = await api.get('/crm/deal-stages');
     return response.data;
   },
 
   // Get stage by ID
   getById: async (id: string) => {
-    const response = await api.get(`/api/v1/crm/deal-stages/${id}`);
+    const response = await api.get(`/crm/deal-stages/${id}`);
     return response.data;
   },
 
   // Create stage
   create: async (data: { name: string; displayName: string; probability: number; color?: string }) => {
-    const response = await api.post('/api/v1/crm/deal-stages', data);
+    const response = await api.post('/crm/deal-stages', data);
     return response.data;
   },
 
   // Update stage
   update: async (id: string, data: Partial<DealStage>) => {
-    const response = await api.put(`/api/v1/crm/deal-stages/${id}`, data);
+    const response = await api.put(`/crm/deal-stages/${id}`, data);
     return response.data;
   },
 
   // Delete stage
   delete: async (id: string) => {
-    const response = await api.delete(`/api/v1/crm/deal-stages/${id}`);
+    const response = await api.delete(`/crm/deal-stages/${id}`);
     return response.data;
   },
 
   // Reorder stages
   reorder: async (stageIds: string[]) => {
-    const response = await api.patch('/api/v1/crm/deal-stages/reorder', { stageIds });
+    const response = await api.patch('/crm/deal-stages/reorder', { stageIds });
     return response.data;
   },
 };
@@ -276,37 +276,37 @@ export const inboxApi = {
     assignedTo?: string;
     search?: string;
   }) => {
-    const response = await api.get('/api/v1/crm/inbox/conversations', { params });
+    const response = await api.get('/crm/inbox/conversations', { params });
     return response.data;
   },
 
   // Get conversation by ID
   getConversation: async (id: string) => {
-    const response = await api.get(`/api/v1/crm/inbox/conversations/${id}`);
+    const response = await api.get(`/crm/inbox/conversations/${id}`);
     return response.data;
   },
 
   // Get messages
   getMessages: async (conversationId: string, params?: { page?: number; limit?: number }) => {
-    const response = await api.get(`/api/v1/crm/inbox/conversations/${conversationId}/messages`, { params });
+    const response = await api.get(`/crm/inbox/conversations/${conversationId}/messages`, { params });
     return response.data;
   },
 
   // Send message
   sendMessage: async (conversationId: string, data: SendMessageDto) => {
-    const response = await api.post(`/api/v1/crm/inbox/conversations/${conversationId}/messages`, data);
+    const response = await api.post(`/crm/inbox/conversations/${conversationId}/messages`, data);
     return response.data;
   },
 
   // Update conversation status
   updateStatus: async (id: string, status: string) => {
-    const response = await api.patch(`/api/v1/crm/inbox/conversations/${id}/status`, { status });
+    const response = await api.patch(`/crm/inbox/conversations/${id}/status`, { status });
     return response.data;
   },
 
   // Assign conversation
   assign: async (id: string, userId: string) => {
-    const response = await api.patch(`/api/v1/crm/inbox/conversations/${id}/assign`, { assignedTo: userId });
+    const response = await api.patch(`/crm/inbox/conversations/${id}/assign`, { assignedTo: userId });
     return response.data;
   },
 };
@@ -341,7 +341,7 @@ export interface Activity {
 export const calendarApi = {
   // Get calendar view
   getView: async (view: 'month' | 'week' | 'day', date: string) => {
-    const response = await api.get('/api/v1/crm/calendar/view', {
+    const response = await api.get('/crm/calendar/view', {
       params: { view, date },
     });
     return response.data;
@@ -349,7 +349,7 @@ export const calendarApi = {
 
   // Get today's activities
   getToday: async () => {
-    const response = await api.get('/api/v1/crm/calendar/today');
+    const response = await api.get('/crm/calendar/today');
     return response.data;
   },
 
@@ -361,13 +361,13 @@ export const calendarApi = {
     scheduledAt: string;
     recurrenceRule: string;
   }) => {
-    const response = await api.post('/api/v1/crm/calendar/recurring', data);
+    const response = await api.post('/crm/calendar/recurring', data);
     return response.data;
   },
 
   // Add reminder
   addReminder: async (activityId: string, reminderAt: string) => {
-    const response = await api.post(`/api/v1/crm/calendar/activities/${activityId}/reminders`, {
+    const response = await api.post(`/crm/calendar/activities/${activityId}/reminders`, {
       reminderAt,
     });
     return response.data;
@@ -375,7 +375,7 @@ export const calendarApi = {
 
   // Complete activity
   complete: async (activityId: string, notes?: string) => {
-    const response = await api.post(`/api/v1/crm/calendar/activities/${activityId}/complete`, { notes });
+    const response = await api.post(`/crm/calendar/activities/${activityId}/complete`, { notes });
     return response.data;
   },
 };
@@ -400,13 +400,13 @@ export interface SmartList {
 export const smartListsApi = {
   // Get all smart lists
   getAll: async (params?: { page?: number; limit?: number; search?: string }) => {
-    const response = await api.get('/api/v1/crm/smart-lists', { params });
+    const response = await api.get('/crm/smart-lists', { params });
     return response.data;
   },
 
   // Get smart list by ID
   getById: async (id: string) => {
-    const response = await api.get(`/api/v1/crm/smart-lists/${id}`);
+    const response = await api.get(`/crm/smart-lists/${id}`);
     return response.data;
   },
 
@@ -417,25 +417,25 @@ export const smartListsApi = {
     filterConfig: any;
     filterLogic?: 'AND' | 'OR';
   }) => {
-    const response = await api.post('/api/v1/crm/smart-lists', data);
+    const response = await api.post('/crm/smart-lists', data);
     return response.data;
   },
 
   // Update smart list
   update: async (id: string, data: Partial<SmartList>) => {
-    const response = await api.put(`/api/v1/crm/smart-lists/${id}`, data);
+    const response = await api.put(`/crm/smart-lists/${id}`, data);
     return response.data;
   },
 
   // Delete smart list
   delete: async (id: string) => {
-    const response = await api.delete(`/api/v1/crm/smart-lists/${id}`);
+    const response = await api.delete(`/crm/smart-lists/${id}`);
     return response.data;
   },
 
   // Evaluate smart list (get members)
   evaluate: async (id: string) => {
-    const response = await api.get(`/api/v1/crm/smart-lists/${id}/evaluate`);
+    const response = await api.get(`/crm/smart-lists/${id}/evaluate`);
     return response.data;
   },
 };
@@ -468,13 +468,13 @@ export interface LeadScoreHistory {
 export const leadScoringApi = {
   // Get all rules
   getRules: async () => {
-    const response = await api.get('/api/v1/crm/lead-scoring/rules');
+    const response = await api.get('/crm/lead-scoring/rules');
     return response.data;
   },
 
   // Get rule by ID
   getRule: async (id: string) => {
-    const response = await api.get(`/api/v1/crm/lead-scoring/rules/${id}`);
+    const response = await api.get(`/crm/lead-scoring/rules/${id}`);
     return response.data;
   },
 
@@ -486,31 +486,31 @@ export const leadScoringApi = {
     category: string;
     conditions: any[];
   }) => {
-    const response = await api.post('/api/v1/crm/lead-scoring/rules', data);
+    const response = await api.post('/crm/lead-scoring/rules', data);
     return response.data;
   },
 
   // Update rule
   updateRule: async (id: string, data: Partial<LeadScoringRule>) => {
-    const response = await api.put(`/api/v1/crm/lead-scoring/rules/${id}`, data);
+    const response = await api.put(`/crm/lead-scoring/rules/${id}`, data);
     return response.data;
   },
 
   // Delete rule
   deleteRule: async (id: string) => {
-    const response = await api.delete(`/api/v1/crm/lead-scoring/rules/${id}`);
+    const response = await api.delete(`/crm/lead-scoring/rules/${id}`);
     return response.data;
   },
 
   // Recalculate all scores
   recalculateAll: async () => {
-    const response = await api.post('/api/v1/crm/lead-scoring/recalculate-all');
+    const response = await api.post('/crm/lead-scoring/recalculate-all');
     return response.data;
   },
 
   // Update customer score manually
   updateScore: async (customerId: string, score: number, reason?: string) => {
-    const response = await api.patch(`/api/v1/crm/lead-scoring/customers/${customerId}/score`, {
+    const response = await api.patch(`/crm/lead-scoring/customers/${customerId}/score`, {
       score,
       reason,
     });
@@ -525,13 +525,13 @@ export const leadScoringApi = {
 export const crmReportsApi = {
   // Get pipeline KPIs
   getPipelineKPIs: async () => {
-    const response = await api.get('/api/v1/crm/reports/pipeline-kpis');
+    const response = await api.get('/crm/reports/pipeline-kpis');
     return response.data;
   },
 
   // Get win rate
   getWinRate: async (sellerId?: string) => {
-    const response = await api.get('/api/v1/crm/reports/win-rate', {
+    const response = await api.get('/crm/reports/win-rate', {
       params: sellerId ? { sellerId } : {},
     });
     return response.data;
@@ -539,7 +539,7 @@ export const crmReportsApi = {
 
   // Get average time to close
   getAverageTimeToClose: async (sellerId?: string) => {
-    const response = await api.get('/api/v1/crm/reports/average-time-to-close', {
+    const response = await api.get('/crm/reports/average-time-to-close', {
       params: sellerId ? { sellerId } : {},
     });
     return response.data;
@@ -547,7 +547,7 @@ export const crmReportsApi = {
 
   // Get forecast
   getForecast: async (year?: number, month?: number) => {
-    const response = await api.get('/api/v1/crm/reports/forecast', {
+    const response = await api.get('/crm/reports/forecast', {
       params: { year, month },
     });
     return response.data;
@@ -555,7 +555,7 @@ export const crmReportsApi = {
 
   // Get conversion funnel
   getConversionFunnel: async (dateFrom?: string, dateTo?: string) => {
-    const response = await api.get('/api/v1/crm/reports/conversion-funnel', {
+    const response = await api.get('/crm/reports/conversion-funnel', {
       params: { dateFrom, dateTo },
     });
     return response.data;
@@ -563,13 +563,13 @@ export const crmReportsApi = {
 
   // Get pipeline velocity
   getPipelineVelocity: async () => {
-    const response = await api.get('/api/v1/crm/reports/pipeline-velocity');
+    const response = await api.get('/crm/reports/pipeline-velocity');
     return response.data;
   },
 
   // Get seller performance
   getSellerPerformance: async (dateFrom?: string, dateTo?: string) => {
-    const response = await api.get('/api/v1/crm/reports/seller-performance', {
+    const response = await api.get('/crm/reports/seller-performance', {
       params: { dateFrom, dateTo },
     });
     return response.data;
@@ -577,7 +577,7 @@ export const crmReportsApi = {
 
   // Get loss analysis
   getLossAnalysis: async (dateFrom?: string, dateTo?: string) => {
-    const response = await api.get('/api/v1/crm/reports/loss-analysis', {
+    const response = await api.get('/crm/reports/loss-analysis', {
       params: { dateFrom, dateTo },
     });
     return response.data;
@@ -585,7 +585,7 @@ export const crmReportsApi = {
 
   // Get lead sources
   getLeadSources: async (dateFrom?: string, dateTo?: string) => {
-    const response = await api.get('/api/v1/crm/reports/lead-sources', {
+    const response = await api.get('/crm/reports/lead-sources', {
       params: { dateFrom, dateTo },
     });
     return response.data;
@@ -614,13 +614,13 @@ export interface Workflow {
 export const workflowsApi = {
   // Get all workflows
   getAll: async (params?: { page?: number; limit?: number; isActive?: boolean }) => {
-    const response = await api.get('/api/v1/crm/workflows', { params });
+    const response = await api.get('/crm/workflows', { params });
     return response.data;
   },
 
   // Get workflow by ID
   getById: async (id: string) => {
-    const response = await api.get(`/api/v1/crm/workflows/${id}`);
+    const response = await api.get(`/crm/workflows/${id}`);
     return response.data;
   },
 
@@ -632,31 +632,31 @@ export const workflowsApi = {
     triggerConfig: any;
     steps: any[];
   }) => {
-    const response = await api.post('/api/v1/crm/workflows', data);
+    const response = await api.post('/crm/workflows', data);
     return response.data;
   },
 
   // Update workflow
   update: async (id: string, data: Partial<Workflow>) => {
-    const response = await api.put(`/api/v1/crm/workflows/${id}`, data);
+    const response = await api.put(`/crm/workflows/${id}`, data);
     return response.data;
   },
 
   // Delete workflow
   delete: async (id: string) => {
-    const response = await api.delete(`/api/v1/crm/workflows/${id}`);
+    const response = await api.delete(`/crm/workflows/${id}`);
     return response.data;
   },
 
   // Get executions
   getExecutions: async (id: string, params?: { page?: number; limit?: number }) => {
-    const response = await api.get(`/api/v1/crm/workflows/${id}/executions`, { params });
+    const response = await api.get(`/crm/workflows/${id}/executions`, { params });
     return response.data;
   },
 
   // Get execution logs
   getExecutionLogs: async (executionId: string) => {
-    const response = await api.get(`/api/v1/crm/workflows/executions/${executionId}/logs`);
+    const response = await api.get(`/crm/workflows/executions/${executionId}/logs`);
     return response.data;
   },
 };
