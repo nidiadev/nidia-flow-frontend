@@ -28,7 +28,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { PhoneInput } from '@/components/ui/phone-input';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProviderImmediate, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { 
   User, 
@@ -595,11 +595,11 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     Clasificación
-                    <TooltipProvider>
-                      <Tooltip>
+                    <TooltipProviderImmediate>
+                      <Tooltip delayDuration={0}>
                         <TooltipTrigger asChild>
-                          <span className="inline-flex items-center justify-center cursor-help">
-                            <Info className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                          <span className="inline-flex items-center justify-center cursor-help group">
+                            <Info className="h-4 w-4 text-muted-foreground group-hover:text-nidia-green transition-colors" />
                           </span>
                         </TooltipTrigger>
                         <TooltipContent 
@@ -607,14 +607,14 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                           align="start"
                           className="max-w-xs"
                         >
-                          <p className="font-semibold mb-1">Lead Score</p>
-                          <p className="text-sm">
+                          <p className="font-semibold mb-1.5 text-nidia-green">Lead Score</p>
+                          <p className="text-sm leading-relaxed">
                             Sistema de puntuación (0-100) que evalúa la probabilidad de conversión de un lead en cliente. 
                             Se calcula automáticamente según comportamiento, interacciones y datos demográficos.
                           </p>
                         </TooltipContent>
                       </Tooltip>
-                    </TooltipProvider>
+                    </TooltipProviderImmediate>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">

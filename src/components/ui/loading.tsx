@@ -27,12 +27,11 @@ export function LoadingSpinner({ size = 'md', className, text }: LoadingSpinnerP
   );
 }
 
-// Full page loading
+// Full page loading - uses AppLoading for consistency
 export function PageLoading({ message = 'Cargando...' }: { message?: string }) {
   return (
-    <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
-      <LoadingSpinner size="lg" />
-      <p className="text-sm text-muted-foreground">{message}</p>
+    <div className="flex min-h-[400px] flex-col items-center justify-center">
+      <LoadingSpinner size="lg" text={message} />
     </div>
   );
 }
