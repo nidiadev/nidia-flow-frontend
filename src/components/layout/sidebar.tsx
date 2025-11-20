@@ -193,16 +193,17 @@ export function Sidebar({ className }: SidebarProps) {
   const isExpanded = (href: string) => expandedItems.includes(href);
 
   return (
-    <aside
-      className={cn(
-        'flex h-full flex-col bg-sidebar transition-all duration-300 overflow-hidden',
-        isCollapsed ? 'w-16' : 'w-64',
-        className
-      )}
-    >
-      {/* Header - Isotipo con botón toggle */}
+    <div className="relative">
+      <aside
+        className={cn(
+          'flex h-full flex-col bg-sidebar transition-all duration-300 overflow-hidden',
+          isCollapsed ? 'w-16' : 'w-64',
+          className
+        )}
+      >
+      {/* Header - Isotipo */}
       <div className={cn(
-        "flex h-14 items-center justify-between px-3",
+        "flex h-14 items-center px-3",
         isCollapsed ? "justify-center" : ""
       )}>
         <Link href={addTenantSlug('/dashboard')} className="flex items-center gap-2.5">
@@ -234,18 +235,6 @@ export function Sidebar({ className }: SidebarProps) {
             )}
           </AnimatePresence>
         </Link>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="h-8 w-8 p-0 text-sidebar-foreground hover:bg-sidebar-accent shrink-0"
-        >
-          {isCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
-        </Button>
       </div>
 
       {/* Navigation */}
@@ -281,6 +270,25 @@ export function Sidebar({ className }: SidebarProps) {
         isCollapsed={isCollapsed} 
         variant="client"
       />
-    </aside>
+      </aside>
+
+      {/* Floating Toggle Button - Centered between sidebar and content */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className={cn(
+          'absolute top-1/2 -right-3 z-50 h-6 w-6 rounded-full border-2 border-sidebar-border bg-sidebar p-0 shadow-md hover:bg-sidebar-accent hover:border-sidebar-accent transition-all',
+          'flex items-center justify-center'
+        )}
+        style={{ transform: 'translateY(-50%)' }}
+      >
+        {isCollapsed ? (
+          <ChevronRight className="h-3 w-3 text-sidebar-foreground" />
+        ) : (
+          <ChevronLeft className="h-3 w-3 text-sidebar-foreground" />
+        )}
+      </Button>
+    </div>
   );
 }
