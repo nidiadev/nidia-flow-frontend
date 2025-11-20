@@ -352,7 +352,7 @@ export default function PipelinePage() {
   );
 
   // Fetch deals and stages
-  const { data: dealsData, isLoading: dealsLoading, isError: dealsError, refetch: refetchDeals } = useQuery({
+  const { data: dealsData, isLoading: dealsLoading, isError: dealsError, error: dealsErrorObj, refetch: refetchDeals } = useQuery({
     queryKey: ['deals', assignedToFilter, statusFilter],
     queryFn: () => dealsApi.getAll({
       status: statusFilter,
@@ -468,7 +468,7 @@ export default function PipelinePage() {
         <QueryLoading
           isLoading={isLoading}
           isError={isError}
-          error={dealsError as Error}
+          error={dealsErrorObj}
           isEmpty={false}
           onRetry={refetchDeals}
         >
@@ -504,7 +504,7 @@ export default function PipelinePage() {
         <QueryLoading
           isLoading={isLoading}
           isError={isError}
-          error={dealsError as Error}
+          error={dealsErrorObj}
           isEmpty={!deals || deals.length === 0}
           onRetry={refetchDeals}
           loadingFallback={
