@@ -10,41 +10,77 @@ export interface Deal {
   customerId: string;
   customer?: {
     id: string;
-    companyName: string;
-    firstName: string;
-    lastName: string;
+    companyName?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
   };
   stageId: string;
   stage?: {
     id: string;
+    name: string;
     displayName: string;
     sortOrder: number;
     probability: number;
+    color?: string;
   };
   amount: number;
   currency: string;
   probability: number;
-  status: 'open' | 'won' | 'lost';
+  status: 'open' | 'won' | 'lost' | 'abandoned';
   expectedCloseDate?: string;
   closedAt?: string;
+  wonAt?: string;
+  lostAt?: string;
+  lostReason?: string;
   assignedTo?: string;
   assignedToUser?: {
     id: string;
-    firstName: string;
-    lastName: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
   };
   contacts?: Array<{
     id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
+    contactId: string;
+    contact?: {
+      id: string;
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      phone?: string;
+      position?: string;
+    };
+    role?: string;
+    isPrimary?: boolean;
   }>;
   products?: Array<{
     id: string;
-    name: string;
+    productId: string;
+    product?: {
+      id: string;
+      name: string;
+      sku?: string;
+    };
     quantity: number;
     unitPrice: number;
+    discount?: number;
+    total?: number;
+    notes?: string;
   }>;
+  tags?: string[];
+  notes?: string;
+  customFields?: Record<string, any>;
+  daysInStage?: number;
+  lastStageChangeAt?: string;
+  stageHistory?: Array<{
+    stageId: string;
+    stageName: string;
+    changedAt: string;
+    changedBy: string;
+    changedByName?: string;
+  }>;
+  createdBy?: string;
   createdAt: string;
   updatedAt: string;
 }
