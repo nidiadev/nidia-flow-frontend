@@ -145,7 +145,8 @@ export function SidebarItem({
                 isEnabled
                   ? 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer'
                   : 'opacity-60 cursor-not-allowed',
-                isActive && isEnabled && 'bg-primary text-primary-foreground font-medium shadow-sm'
+                isActive && isEnabled && 'bg-primary text-primary-foreground font-medium shadow-sm',
+                !isActive && isEnabled && 'text-sidebar-foreground'
               )}
             >
               <Icon className={cn('h-5 w-5 shrink-0', isActive && isEnabled ? 'text-primary-foreground' : 'text-muted-foreground')} />
@@ -176,7 +177,7 @@ export function SidebarItem({
         ) : (
           headerContent
         )}
-        <div className="ml-8 space-y-0.5 border-l border-border pl-3">
+        <div className="ml-8 space-y-1 border-l border-border pl-3">
           {children.map((child) => {
             const ChildIcon = child.icon;
             const isChildActive = pathname === child.href || pathname.startsWith(child.href + '/');
@@ -190,7 +191,7 @@ export function SidebarItem({
                       className={cn(
                         'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors',
                         childIsEnabled
-                          ? 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer'
+                          ? 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer text-sidebar-foreground'
                           : 'opacity-60 cursor-not-allowed',
                         isChildActive && childIsEnabled && 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
                       )}

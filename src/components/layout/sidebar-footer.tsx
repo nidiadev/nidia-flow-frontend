@@ -117,28 +117,28 @@ export function SidebarFooter({ isCollapsed, variant = 'client' }: SidebarFooter
   }
 
   return (
-    <div className="p-4 space-y-3">
+    <div className="p-3 space-y-2">
       {/* User section */}
       <div className="relative">
         <Button
           variant="ghost"
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className="w-full justify-start gap-3 h-auto p-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+          className="w-full justify-start gap-2.5 h-auto p-1.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-nidia-green to-nidia-purple shrink-0">
-            <span className="text-sm font-medium text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-nidia-green to-nidia-purple shrink-0">
+            <span className="text-xs font-medium text-white">
               {user?.firstName?.[0]}{user?.lastName?.[0]}
             </span>
           </div>
           <div className="flex-1 text-left min-w-0">
-            <p className="text-sm font-medium truncate">
+            <p className="text-xs font-medium truncate">
               {user?.firstName} {user?.lastName}
             </p>
-            <p className="text-xs text-muted-foreground truncate capitalize">
+            <p className="text-[10px] text-muted-foreground truncate capitalize">
               {user?.role}
             </p>
           </div>
-          <ChevronDown className="h-4 w-4 shrink-0" />
+          <ChevronDown className="h-3.5 w-3.5 shrink-0" />
         </Button>
 
         {/* User menu dropdown */}
@@ -208,7 +208,7 @@ export function SidebarFooter({ isCollapsed, variant = 'client' }: SidebarFooter
 
       {/* Plan Badge */}
       <div className="flex items-center justify-center">
-        <Badge className={cn('text-xs font-medium px-2 py-1', planBadgeColor)}>
+        <Badge className={cn('text-[10px] font-medium px-1.5 py-0.5', planBadgeColor)}>
           {planName}
         </Badge>
       </div>
