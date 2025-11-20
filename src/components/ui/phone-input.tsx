@@ -175,7 +175,7 @@ export function PhoneInput({
             onFocus={() => setIsFocused(true)}
             disabled={disabled}
             placeholder={placeholder.replace(/^\+\d+\s/, '')}
-            className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm sm:text-base font-outfit h-full relative z-10"
+            className="flex-1 min-w-0 bg-transparent border-0 outline-none ring-0 focus:ring-0 focus:border-0 focus:outline-none text-foreground placeholder:text-muted-foreground text-sm sm:text-base font-outfit h-full relative z-10"
             style={{ backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
             autoComplete="tel"
           />
