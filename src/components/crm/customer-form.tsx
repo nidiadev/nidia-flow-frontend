@@ -185,9 +185,27 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
 
   const onSubmit = async (data: CustomerFormData) => {
     try {
+      // Remove empty optional fields before sending to backend
       const customerData = {
         ...data,
         tags,
+        // Convert empty strings to undefined for optional fields
+        lastName: data.lastName?.trim() || undefined,
+        email: data.email?.trim() || undefined,
+        phone: data.phone?.trim() || undefined,
+        mobile: data.mobile?.trim() || undefined,
+        whatsapp: data.whatsapp?.trim() || undefined,
+        companyName: data.companyName?.trim() || undefined,
+        leadSource: data.leadSource?.trim() || undefined,
+        addressLine1: data.addressLine1?.trim() || undefined,
+        addressLine2: data.addressLine2?.trim() || undefined,
+        city: data.city?.trim() || undefined,
+        state: data.state?.trim() || undefined,
+        postalCode: data.postalCode?.trim() || undefined,
+        industry: data.industry?.trim() || undefined,
+        segment: data.segment?.trim() || undefined,
+        taxId: data.taxId?.trim() || undefined,
+        notes: data.notes?.trim() || undefined,
       };
 
       let result;
