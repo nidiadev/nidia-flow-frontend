@@ -603,11 +603,11 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                     )}
                   />
 
-                  <div className="p-3 bg-muted rounded-lg">
-                    <Badge variant={typeConfig.variant} className={typeConfig.color}>
+                  <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                    <Badge variant="outline" className={cn('border', typeConfig.color)}>
                       {typeConfig.label}
                     </Badge>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-1.5">
                       {typeConfig.description}
                     </p>
                   </div>
@@ -615,37 +615,55 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                   <FormField
                     control={form.control}
                     name="leadScore"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center justify-between">
-                          <span>Lead Score</span>
-                          <div className="flex items-center">
-                            <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                            <span className={`font-bold ${leadScoreInfo.color}`}>
-                              {leadScore}
+                    render={({ field }) => {
+                      const getSliderColor = (score: number) => {
+                        if (score >= 80) return 'bg-green-500';
+                        if (score >= 60) return 'bg-yellow-500';
+                        if (score >= 40) return 'bg-orange-500';
+                        return 'bg-red-500';
+                      };
+                      
+                      return (
+                        <FormItem>
+                          <FormLabel className="flex items-center justify-between">
+                            <span>Lead Score</span>
+                            <div className="flex items-center gap-1.5">
+                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                              <span className={`font-bold text-base ${leadScoreInfo.color}`}>
+                                {field.value}
+                              </span>
+                            </div>
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Slider
+                                min={0}
+                                max={100}
+                                step={1}
+                                value={[field.value]}
+                                onValueChange={(value: number[]) => field.onChange(value[0])}
+                                className="w-full"
+                              />
+                              <div 
+                                className="absolute top-0 left-0 h-2 rounded-full pointer-events-none transition-colors"
+                                style={{ 
+                                  width: `${field.value}%`,
+                                  backgroundColor: getSliderColor(field.value)
+                                }}
+                              />
+                            </div>
+                          </FormControl>
+                          <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
+                            <span>0</span>
+                            <span className={`font-medium ${leadScoreInfo.color}`}>
+                              {leadScoreInfo.label}
                             </span>
+                            <span>100</span>
                           </div>
-                        </FormLabel>
-                        <FormControl>
-                          <Slider
-                            min={0}
-                            max={100}
-                            step={1}
-                            value={[field.value]}
-                            onValueChange={(value: number[]) => field.onChange(value[0])}
-                            className="w-full"
-                          />
-                        </FormControl>
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>0</span>
-                          <span className={leadScoreInfo.color}>
-                            {leadScoreInfo.label}
-                          </span>
-                          <span>100</span>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
 
                   <FormField
