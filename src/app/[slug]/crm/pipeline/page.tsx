@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,149 +28,95 @@ import {
   Mail, 
   Phone,
   Plus,
-  Star,
-  Building2,
-  Calendar,
-  User,
   TrendingUp,
   DollarSign,
-  Eye
+  Eye,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { TenantLink } from '@/components/ui/tenant-link';
-import { useCustomers } from '@/hooks/use-api';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { PageHeader } from '@/components/ui/page-header';
 import { useNetworkStatus } from '@/hooks/use-network-status';
 import { toast } from 'sonner';
-import { Customer, CUSTOMER_TYPE_CONFIG, getLeadScoreInfo } from '@/types/customer';
-
-// Pipeline stages configuration
-const PIPELINE_STAGES = [
-  { id: 'lead', name: 'Leads', color: 'bg-blue-500', type: 'lead' },
-  { id: 'prospect', name: 'Prospectos', color: 'bg-yellow-500', type: 'prospect' },
-  { id: 'active', name: 'Clientes Activos', color: 'bg-green-500', type: 'active' },
-] as const;
-
-// Filters component
-function PipelineFilters({ 
-  assignedToFilter, 
-  setAssignedToFilter,
-  dateFilter,
-  setDateFilter
-}: {
-  assignedToFilter: string;
-  setAssignedToFilter: (value: string) => void;
-  dateFilter: string;
-  setDateFilter: (value: string) => void;
-}) {
-  return (
-    <div className="flex flex-col sm:flex-row gap-4 mb-6">
-      <Select value={assignedToFilter} onValueChange={setAssignedToFilter}>
-        <SelectTrigger className="w-full sm:w-[200px]">
-          <SelectValue placeholder="Filtrar por vendedor" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todos los vendedores</SelectItem>
-          <SelectItem value="me">Mis clientes</SelectItem>
-          <SelectItem value="unassigned">Sin asignar</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <Select value={dateFilter} onValueChange={setDateFilter}>
-        <SelectTrigger className="w-full sm:w-[200px]">
-          <SelectValue placeholder="Filtrar por fecha" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todas las fechas</SelectItem>
-          <SelectItem value="today">Hoy</SelectItem>
-          <SelectItem value="week">Esta semana</SelectItem>
-          <SelectItem value="month">Este mes</SelectItem>
-          <SelectItem value="quarter">Este trimestre</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
+import { dealsApi, dealStagesApi, Deal, DealStage } from '@/lib/api/crm';
+import { useRouter } from 'next/navigation';
 
 // Pipeline metrics component
-function PipelineMetrics({ customers }: { customers: Customer[] }) {
+function PipelineMetrics({ deals, stages }: { deals: Deal[]; stages: DealStage[] }) {
   const metrics = useMemo(() => {
-    const leads = customers.filter(c => c.type === 'lead');
-    const prospects = customers.filter(c => c.type === 'prospect');
-    const active = customers.filter(c => c.type === 'active');
-    
-    const totalValue = customers.reduce((sum, c) => sum + (c.creditLimit || 0), 0);
-    const avgLeadScore = customers.length > 0 
-      ? customers.reduce((sum, c) => sum + c.leadScore, 0) / customers.length 
-      : 0;
-    
-    const conversionRate = leads.length > 0 
-      ? ((active.length / (leads.length + prospects.length + active.length)) * 100).toFixed(1)
-      : '0';
+    const openDeals = deals.filter(d => d.status === 'open');
+    const totalAmount = openDeals.reduce((sum, d) => sum + d.amount, 0);
+    const weightedAmount = openDeals.reduce((sum, d) => sum + (d.amount * d.probability / 100), 0);
+    const wonDeals = deals.filter(d => d.status === 'won');
+    const lostDeals = deals.filter(d => d.status === 'lost');
+    const closedDeals = wonDeals.length + lostDeals.length;
+    const winRate = closedDeals > 0 ? (wonDeals.length / closedDeals) * 100 : 0;
 
     return {
-      leads: leads.length,
-      prospects: prospects.length,
-      active: active.length,
-      totalValue,
-      avgLeadScore: avgLeadScore.toFixed(0),
-      conversionRate
+      totalDeals: openDeals.length,
+      totalAmount,
+      weightedAmount,
+      winRate: winRate.toFixed(1),
+      avgDealSize: openDeals.length > 0 ? totalAmount / openDeals.length : 0,
     };
-  }, [customers]);
+  }, [deals]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Pipeline</CardTitle>
+          <CardTitle className="text-sm font-medium">Deals Abiertos</CardTitle>
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{customers.length}</div>
+          <div className="text-2xl font-bold">{metrics.totalDeals}</div>
           <p className="text-xs text-muted-foreground">
-            {metrics.leads} leads, {metrics.prospects} prospectos
+            En el pipeline
           </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Valor Potencial</CardTitle>
+          <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            ${metrics.totalValue.toLocaleString()}
+            ${metrics.totalAmount.toLocaleString()}
           </div>
           <p className="text-xs text-muted-foreground">
-            Límite de crédito total
+            Valor ponderado: ${metrics.weightedAmount.toLocaleString()}
           </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Score Promedio</CardTitle>
-          <Star className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-sm font-medium">Deal Promedio</CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.avgLeadScore}</div>
+          <div className="text-2xl font-bold">
+            ${metrics.avgDealSize.toLocaleString()}
+          </div>
           <p className="text-xs text-muted-foreground">
-            Calidad del pipeline
+            Tamaño promedio
           </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Tasa Conversión</CardTitle>
+          <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.conversionRate}%</div>
+          <div className="text-2xl font-bold">{metrics.winRate}%</div>
           <p className="text-xs text-muted-foreground">
-            Leads a clientes
+            Tasa de éxito
           </p>
         </CardContent>
       </Card>
@@ -177,22 +124,19 @@ function PipelineMetrics({ customers }: { customers: Customer[] }) {
   );
 }
 
-// Customer card component for Kanban
-function CustomerCard({ customer }: { customer: Customer }) {
-  const leadScoreInfo = getLeadScoreInfo(customer.leadScore);
-  
+// Deal card component for Kanban
+function DealCard({ deal, onEdit, onDelete }: { deal: Deal; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
   return (
     <Card className="mb-3 hover:shadow-md transition-shadow cursor-move">
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1">
             <h4 className="font-medium text-sm mb-1">
-              {customer.firstName} {customer.lastName}
+              {deal.name}
             </h4>
-            {customer.companyName && (
-              <div className="flex items-center text-xs text-muted-foreground mb-1">
-                <Building2 className="h-3 w-3 mr-1" />
-                {customer.companyName}
+            {deal.customer && (
+              <div className="text-xs text-muted-foreground mb-1">
+                {deal.customer.companyName || `${deal.customer.firstName} ${deal.customer.lastName}`}
               </div>
             )}
           </div>
@@ -205,28 +149,25 @@ function CustomerCard({ customer }: { customer: Customer }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <TenantLink href={`/crm/customers/${customer.id}`}>
-                  <Eye className="mr-2 h-4 w-4" />
-                  Ver detalle
-                </TenantLink>
+              <DropdownMenuItem onClick={() => onEdit(deal.id)}>
+                <Eye className="mr-2 h-4 w-4" />
+                Ver detalle
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <TenantLink href={`/crm/customers/${customer.id}/edit`}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar
-                </TenantLink>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Mail className="mr-2 h-4 w-4" />
-                Enviar email
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Phone className="mr-2 h-4 w-4" />
-                Llamar
+              <DropdownMenuItem onClick={() => onEdit(deal.id)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-green-600">
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Marcar como ganado
+              </DropdownMenuItem>
               <DropdownMenuItem className="text-red-600">
+                <XCircle className="mr-2 h-4 w-4" />
+                Marcar como perdido
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600" onClick={() => onDelete(deal.id)}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Eliminar
               </DropdownMenuItem>
@@ -235,54 +176,24 @@ function CustomerCard({ customer }: { customer: Customer }) {
         </div>
 
         <div className="space-y-2">
-          {customer.email && (
-            <div className="text-xs text-muted-foreground truncate">
-              {customer.email}
-            </div>
-          )}
-          
-          {customer.phone && (
-            <div className="flex items-center text-xs text-muted-foreground">
-              <Phone className="h-3 w-3 mr-1" />
-              {customer.phone}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between pt-2 border-t">
-            <div className="flex items-center space-x-1">
-              <Star className="h-3 w-3 text-yellow-400" />
-              <span className={`text-xs font-medium ${leadScoreInfo.color}`}>
-                {customer.leadScore}
-              </span>
-            </div>
-            
-            {customer.assignedToName && (
-              <div className="flex items-center text-xs text-muted-foreground">
-                <User className="h-3 w-3 mr-1" />
-                {customer.assignedToName}
-              </div>
-            )}
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-bold">
+              ${deal.amount.toLocaleString()} {deal.currency || 'USD'}
+            </span>
+            <Badge variant="outline">
+              {deal.probability}%
+            </Badge>
           </div>
 
-          {customer.lastContactAt && (
-            <div className="flex items-center text-xs text-muted-foreground pt-1">
-              <Calendar className="h-3 w-3 mr-1" />
-              Último contacto: {new Date(customer.lastContactAt).toLocaleDateString('es-ES')}
+          {deal.expectedCloseDate && (
+            <div className="text-xs text-muted-foreground">
+              Cierre esperado: {new Date(deal.expectedCloseDate).toLocaleDateString('es-ES')}
             </div>
           )}
 
-          {customer.tags && customer.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 pt-1">
-              {customer.tags.slice(0, 2).map((tag, index) => (
-                <Badge key={index} variant="outline" className="text-xs px-1 py-0">
-                  {tag}
-                </Badge>
-              ))}
-              {customer.tags.length > 2 && (
-                <Badge variant="outline" className="text-xs px-1 py-0">
-                  +{customer.tags.length - 2}
-                </Badge>
-              )}
+          {deal.assignedToUser && (
+            <div className="text-xs text-muted-foreground">
+              Asignado a: {deal.assignedToUser.firstName} {deal.assignedToUser.lastName}
             </div>
           )}
         </div>
@@ -294,53 +205,60 @@ function CustomerCard({ customer }: { customer: Customer }) {
 // Pipeline column component
 function PipelineColumn({ 
   stage, 
-  customers,
+  deals,
   onDragStart,
   onDragOver,
-  onDrop
+  onDrop,
+  onEdit,
+  onDelete,
 }: { 
-  stage: typeof PIPELINE_STAGES[number];
-  customers: Customer[];
-  onDragStart: (e: React.DragEvent, customerId: string) => void;
+  stage: DealStage;
+  deals: Deal[];
+  onDragStart: (e: React.DragEvent, dealId: string) => void;
   onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent, targetStage: string) => void;
+  onDrop: (e: React.DragEvent, targetStageId: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
-  const stageCustomers = customers.filter(c => c.type === stage.type);
-  const totalValue = stageCustomers.reduce((sum, c) => sum + (c.creditLimit || 0), 0);
+  const stageDeals = deals.filter(d => d.stageId === stage.id && d.status === 'open');
+  const totalAmount = stageDeals.reduce((sum, d) => sum + d.amount, 0);
+  const weightedAmount = stageDeals.reduce((sum, d) => sum + (d.amount * d.probability / 100), 0);
 
   return (
     <div 
       className="flex-1 min-w-[300px]"
       onDragOver={onDragOver}
-      onDrop={(e) => onDrop(e, stage.type)}
+      onDrop={(e) => onDrop(e, stage.id)}
     >
       <Card className="h-full">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${stage.color}`}></div>
-              <CardTitle className="text-base">{stage.name}</CardTitle>
+              {stage.color && (
+                <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: stage.color }}></div>
+              )}
+              <CardTitle className="text-base">{stage.displayName}</CardTitle>
             </div>
-            <Badge variant="secondary">{stageCustomers.length}</Badge>
+            <Badge variant="secondary">{stageDeals.length}</Badge>
           </div>
           <CardDescription className="text-xs">
-            Valor: ${totalValue.toLocaleString()}
+            ${totalAmount.toLocaleString()} (${weightedAmount.toLocaleString()} ponderado)
           </CardDescription>
         </CardHeader>
         <CardContent className="max-h-[calc(100vh-400px)] overflow-y-auto">
-          {stageCustomers.length === 0 ? (
+          {stageDeals.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <p className="text-sm">No hay clientes en esta etapa</p>
+              <p className="text-sm">No hay deals en esta etapa</p>
             </div>
           ) : (
             <div>
-              {stageCustomers.map((customer) => (
+              {stageDeals.map((deal) => (
                 <div
-                  key={customer.id}
+                  key={deal.id}
                   draggable
-                  onDragStart={(e) => onDragStart(e, customer.id)}
+                  onDragStart={(e) => onDragStart(e, deal.id)}
                 >
-                  <CustomerCard customer={customer} />
+                  <DealCard deal={deal} onEdit={onEdit} onDelete={onDelete} />
                 </div>
               ))}
             </div>
@@ -352,33 +270,62 @@ function PipelineColumn({
 }
 
 export default function PipelinePage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { isOffline } = useNetworkStatus();
   
   // Filters state
   const [assignedToFilter, setAssignedToFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('open');
   
   // Drag and drop state
-  const [draggedCustomerId, setDraggedCustomerId] = useState<string | null>(null);
+  const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
   
-  // Fetch customers - only leads, prospects, and active
-  const { data: customers, isLoading, isError, error, refetch } = useCustomers({
-    type: undefined, // Get all types, we'll filter in the UI
-    sortBy: 'leadScore',
-    sortOrder: 'desc',
+  // Fetch deals and stages
+  const { data: dealsData, isLoading: dealsLoading, isError: dealsError, refetch: refetchDeals } = useQuery({
+    queryKey: ['deals', assignedToFilter, statusFilter],
+    queryFn: () => dealsApi.getAll({
+      status: statusFilter,
+      assignedTo: assignedToFilter === 'me' ? 'me' : assignedToFilter === 'all' ? undefined : assignedToFilter,
+    }),
   });
 
-  // Filter customers for pipeline (only lead, prospect, active)
-  const pipelineCustomers = useMemo(() => {
-    if (!customers) return [];
-    return customers.filter((c: Customer) => 
-      ['lead', 'prospect', 'active'].includes(c.type)
-    );
-  }, [customers]);
+  const { data: stagesData, isLoading: stagesLoading } = useQuery({
+    queryKey: ['deal-stages'],
+    queryFn: () => dealStagesApi.getAll(),
+  });
+
+  const deals = dealsData?.data?.data || [];
+  const stages = stagesData?.data?.data || [];
+
+  // Change stage mutation
+  const changeStageMutation = useMutation({
+    mutationFn: ({ dealId, stageId }: { dealId: string; stageId: string }) =>
+      dealsApi.changeStage(dealId, stageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      toast.success('Etapa del deal actualizada');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Error al actualizar la etapa');
+    },
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => dealsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      toast.success('Deal eliminado');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Error al eliminar el deal');
+    },
+  });
 
   // Drag and drop handlers
-  const handleDragStart = (e: React.DragEvent, customerId: string) => {
-    setDraggedCustomerId(customerId);
+  const handleDragStart = (e: React.DragEvent, dealId: string) => {
+    setDraggedDealId(dealId);
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -387,37 +334,40 @@ export default function PipelinePage() {
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = (e: React.DragEvent, targetStage: string) => {
+  const handleDrop = (e: React.DragEvent, targetStageId: string) => {
     e.preventDefault();
     
-    if (!draggedCustomerId) return;
+    if (!draggedDealId) return;
     
-    // Find the customer
-    const customer = pipelineCustomers.find((c: Customer) => c.id === draggedCustomerId);
-    
-    if (!customer) return;
-    
-    // Check if stage changed
-    if (customer.type === targetStage) {
-      setDraggedCustomerId(null);
+    const deal = deals.find((d: Deal) => d.id === draggedDealId);
+    if (!deal || deal.stageId === targetStageId) {
+      setDraggedDealId(null);
       return;
     }
     
-    // TODO: Call API to update customer type
-    toast.success(`Cliente movido a ${PIPELINE_STAGES.find(s => s.type === targetStage)?.name}`);
-    
-    setDraggedCustomerId(null);
-    
-    // Refetch to update the UI
-    refetch();
+    changeStageMutation.mutate({ dealId: draggedDealId, stageId: targetStageId });
+    setDraggedDealId(null);
   };
+
+  const handleEdit = (id: string) => {
+    router.push(`/crm/deals/${id}`);
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm('¿Estás seguro de eliminar este deal?')) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const isLoading = dealsLoading || stagesLoading;
+  const isError = dealsError;
 
   return (
     <ErrorBoundary>
       <div>
         <PageHeader
-          title="Pipeline de Ventas"
-          description="Vista Kanban del proceso de ventas"
+          title="Pipeline de Oportunidades"
+          description="Vista Kanban del pipeline de ventas"
           variant="gradient"
           actions={
             <>
@@ -429,9 +379,9 @@ export default function PipelinePage() {
               )}
               
               <Button asChild>
-                <TenantLink href="/crm/customers/new">
+                <TenantLink href="/crm/deals/new">
                   <Plus className="h-4 w-4 mr-2" />
-                  Nuevo Lead
+                  Nuevo Deal
                 </TenantLink>
               </Button>
             </>
@@ -442,32 +392,49 @@ export default function PipelinePage() {
         <QueryLoading
           isLoading={isLoading}
           isError={isError}
-          error={error as Error}
+          error={dealsError as Error}
           isEmpty={false}
-          onRetry={refetch}
+          onRetry={refetchDeals}
         >
-          {pipelineCustomers && <PipelineMetrics customers={pipelineCustomers} />}
+          {deals && stages && <PipelineMetrics deals={deals} stages={stages} />}
         </QueryLoading>
 
         {/* Filters */}
-        <PipelineFilters
-          assignedToFilter={assignedToFilter}
-          setAssignedToFilter={setAssignedToFilter}
-          dateFilter={dateFilter}
-          setDateFilter={setDateFilter}
-        />
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <Select value={assignedToFilter} onValueChange={setAssignedToFilter}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Filtrar por vendedor" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los vendedores</SelectItem>
+              <SelectItem value="me">Mis deals</SelectItem>
+              <SelectItem value="unassigned">Sin asignar</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="open">Abiertos</SelectItem>
+              <SelectItem value="won">Ganados</SelectItem>
+              <SelectItem value="lost">Perdidos</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Kanban Board */}
         <QueryLoading
           isLoading={isLoading}
           isError={isError}
-          error={error as Error}
-          isEmpty={!pipelineCustomers || pipelineCustomers.length === 0}
-          onRetry={refetch}
+          error={dealsError as Error}
+          isEmpty={!deals || deals.length === 0}
+          onRetry={refetchDeals}
           loadingFallback={
             <div className="flex gap-4 overflow-x-auto">
-              {PIPELINE_STAGES.map((stage) => (
-                <div key={stage.id} className="flex-1 min-w-[300px]">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex-1 min-w-[300px]">
                   <Card>
                     <CardHeader>
                       <div className="animate-pulse space-y-2">
@@ -477,8 +444,8 @@ export default function PipelinePage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {Array.from({ length: 3 }).map((_, i) => (
-                          <div key={i} className="animate-pulse p-4 border rounded-lg">
+                        {Array.from({ length: 3 }).map((_, j) => (
+                          <div key={j} className="animate-pulse p-4 border rounded-lg">
                             <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
                             <div className="h-3 bg-muted rounded w-1/2"></div>
                           </div>
@@ -493,30 +460,35 @@ export default function PipelinePage() {
           emptyFallback={
             <div className="text-center py-12">
               <TrendingUp className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No hay clientes en el pipeline</h3>
+              <h3 className="text-lg font-medium mb-2">No hay deals en el pipeline</h3>
               <p className="text-muted-foreground mb-4">
-                Comienza agregando leads para iniciar tu proceso de ventas
+                Comienza agregando oportunidades para iniciar tu proceso de ventas
               </p>
               <Button asChild>
-                <TenantLink href="/crm/customers/new">
+                <TenantLink href="/crm/deals/new">
                   <Plus className="h-4 w-4 mr-2" />
-                  Agregar Lead
+                  Agregar Deal
                 </TenantLink>
               </Button>
             </div>
           }
         >
           <div className="flex gap-4 overflow-x-auto pb-4">
-            {PIPELINE_STAGES.map((stage) => (
-              <PipelineColumn
-                key={stage.id}
-                stage={stage}
-                customers={pipelineCustomers || []}
-                onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-              />
-            ))}
+            {stages
+              .filter((s: DealStage) => s.isActive)
+              .sort((a: DealStage, b: DealStage) => a.sortOrder - b.sortOrder)
+              .map((stage: DealStage) => (
+                <PipelineColumn
+                  key={stage.id}
+                  stage={stage}
+                  deals={deals}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+              ))}
           </div>
         </QueryLoading>
       </div>
