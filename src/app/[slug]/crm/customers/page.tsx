@@ -548,9 +548,9 @@ export default function CustomersListPage() {
             </div>
           </div>
 
-        {/* Pagination */}
-        {pagination && pagination.total > 0 && (
-          <div className="mt-6 flex items-center justify-between">
+          {/* Pagination */}
+          {pagination && pagination.total > 0 && (
+            <div className="mt-6 flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
               Mostrando {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} clientes
             </div>
@@ -597,8 +597,9 @@ export default function CustomersListPage() {
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </ErrorBoundary>
   );
