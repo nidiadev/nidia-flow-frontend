@@ -554,14 +554,22 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     Clasificación
-                    <TooltipProvider delayDuration={200}>
-                      <Tooltip>
+                    <TooltipProvider delayDuration={300} skipDelayDuration={0}>
+                      <Tooltip delayDuration={300}>
                         <TooltipTrigger asChild>
-                          <button type="button" className="inline-flex">
+                          <button 
+                            type="button" 
+                            className="inline-flex items-center justify-center"
+                            aria-label="Información sobre Lead Score"
+                          >
                             <Info className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
                           </button>
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
+                        <TooltipContent 
+                          side="top" 
+                          align="start"
+                          className="max-w-xs z-[100]"
+                        >
                           <p className="font-semibold mb-1">Lead Score</p>
                           <p className="text-sm">
                             Sistema de puntuación (0-100) que evalúa la probabilidad de conversión de un lead en cliente. 
