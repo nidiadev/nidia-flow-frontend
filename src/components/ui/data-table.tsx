@@ -62,6 +62,7 @@ import {
   ChevronDown,
   GripVertical,
   X,
+  Users,
 } from 'lucide-react';
 
 export interface DataTableAction<T> {
@@ -595,11 +596,16 @@ export function DataTable<T>({
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={tableColumns.length} className="h-24 text-center">
-                  <div className="flex flex-col items-center justify-center text-muted-foreground">
-                    <p>{emptyMessage}</p>
+                <TableCell colSpan={tableColumns.length} className="h-64">
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <div className="mb-3">
+                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                        <Search className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    </div>
+                    <p className="text-base font-medium text-foreground mb-1">{emptyMessage}</p>
                     {emptyDescription && (
-                      <p className="text-sm mt-1">{emptyDescription}</p>
+                      <p className="text-sm text-muted-foreground max-w-md">{emptyDescription}</p>
                     )}
                   </div>
                 </TableCell>
