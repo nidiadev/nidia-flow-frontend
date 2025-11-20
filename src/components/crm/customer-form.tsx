@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useImperativeHandle } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -86,6 +86,8 @@ interface CustomerFormProps {
   onSuccess?: (customer: Customer) => void;
   onCancel?: () => void;
   className?: string;
+  onSubmitTrigger?: () => void;
+  isLoading?: boolean;
 }
 
 // Lead sources options
@@ -121,7 +123,7 @@ const SEGMENTS = [
   { value: 'Non-profit', label: 'Sin ánimo de lucro' },
 ];
 
-export function CustomerForm({ customer, onSuccess, onCancel, className }: CustomerFormProps) {
+export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmitTrigger, isLoading: externalIsLoading }: CustomerFormProps) {
   const [tags, setTags] = useState<string[]>(customer?.tags || []);
   const [newTag, setNewTag] = useState('');
   
@@ -203,40 +205,22 @@ export function CustomerForm({ customer, onSuccess, onCancel, className }: Custo
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  const isLoading = createCustomer.isPending || updateCustomer.isPending;
+  const isLoading = externalIsLoading ?? (createCustomer.isPending || updateCustomer.isPending);
+  
+  // Create a ref for the form element
+  const formRef = useRef<HTMLFormElement>(null);
+  
+  // Expose submit function if onSubmitTrigger is provided
+  if (onSubmitTrigger && typeof onSubmitTrigger === 'object' && 'current' in onSubmitTrigger) {
+    (onSubmitTrigger as any).current = {
+      submit: () => formRef.current?.requestSubmit(),
+    };
+  }
 
   return (
     <div className={className}>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold font-outfit">
-                {isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}
-              </h2>
-              <p className="text-muted-foreground">
-                {isEditing 
-                  ? 'Actualiza la información del cliente'
-                  : 'Completa la información para crear un nuevo cliente'
-                }
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {onCancel && (
-                <Button type="button" variant="outline" onClick={onCancel}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancelar
-                </Button>
-              )}
-              <Button type="submit" disabled={isLoading}>
-                <Save className="h-4 w-4 mr-2" />
-                {isLoading ? 'Guardando...' : 'Guardar'}
-              </Button>
-            </div>
-          </div>
-
+        <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Information */}
             <div className="lg:col-span-2 space-y-6">
