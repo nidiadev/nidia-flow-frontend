@@ -554,10 +554,12 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     Clasificación
-                    <TooltipProvider>
+                    <TooltipProvider delayDuration={200}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                          <button type="button" className="inline-flex">
+                            <Info className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                          </button>
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p className="font-semibold mb-1">Lead Score</p>
