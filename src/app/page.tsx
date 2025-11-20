@@ -18,6 +18,7 @@ import { WaitlistModal } from '@/components/waitlist/waitlist-modal';
 import { useQuery } from '@tanstack/react-query';
 import { publicApi, PublicPlan } from '@/lib/api/public';
 import { formatCurrency, cn } from '@/lib/utils';
+import { AppLoading } from '@/components/ui/app-loading';
 import { Loader2, 
   Users, 
   ShoppingCart, 
