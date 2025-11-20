@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useImperativeHandle } from 'react';
+import { useState, useRef, useImperativeHandle, RefObject } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -86,7 +86,7 @@ interface CustomerFormProps {
   onSuccess?: (customer: Customer) => void;
   onCancel?: () => void;
   className?: string;
-  onSubmitTrigger?: () => void;
+  onSubmitTrigger?: RefObject<{ submit: () => void }>;
   isLoading?: boolean;
 }
 
