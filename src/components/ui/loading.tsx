@@ -95,32 +95,46 @@ export function ErrorFallback({
   description = 'Ha ocurrido un error inesperado. Puedes intentar recargar la página.'
 }: ErrorFallbackProps) {
   return (
-    <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4 p-6">
-      <div className="flex items-center space-x-2 text-destructive">
-        <AlertCircle className="h-6 w-6" />
-        <h2 className="text-lg font-semibold">{title}</h2>
-      </div>
-      
-      <p className="text-center text-sm text-muted-foreground max-w-md">
-        {description}
-      </p>
-      
-      {process.env.NODE_ENV === 'development' && (
-        <details className="mt-4 w-full max-w-md">
-          <summary className="cursor-pointer text-sm font-medium text-muted-foreground">
-            Detalles del error (desarrollo)
-          </summary>
-          <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto">
-            {error.message}
-            {error.stack}
-          </pre>
-        </details>
-      )}
-      
-      <Button onClick={resetError} variant="outline" className="mt-4">
-        <RefreshCw className="mr-2 h-4 w-4" />
-        Intentar nuevamente
-      </Button>
+    <div className="flex min-h-[400px] flex-col items-center justify-center space-y-6 p-6 bg-gradient-to-br from-background via-background to-muted/10">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="max-w-md w-full bg-card/95 backdrop-blur-sm border-2 border-destructive/20 rounded-xl shadow-xl p-8 space-y-6"
+      >
+        <div className="flex items-center justify-center space-x-3">
+          <div className="relative">
+            <div className="absolute inset-0 bg-destructive/20 rounded-full blur-lg animate-pulse" />
+            <AlertCircle className="h-8 w-8 text-destructive relative z-10" />
+          </div>
+          <h2 className="text-xl font-bold text-destructive">{title}</h2>
+        </div>
+        
+        <p className="text-center text-sm text-muted-foreground leading-relaxed">
+          {description}
+        </p>
+        
+        {process.env.NODE_ENV === 'development' && (
+          <details className="mt-4 bg-muted/50 rounded-lg border border-border overflow-hidden">
+            <summary className="cursor-pointer px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
+              Detalles del error (desarrollo)
+            </summary>
+            <pre className="mt-2 px-4 pb-4 text-xs bg-background/80 p-3 rounded-md overflow-auto max-h-40 border-t border-border">
+              {error.message}
+              {error.stack && `\n\n${error.stack}`}
+            </pre>
+          </details>
+        )}
+        
+        <Button 
+          onClick={resetError} 
+          variant="outline" 
+          className="w-full mt-4 border-2 hover:bg-muted/50 transition-all"
+        >
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Intentar nuevamente
+        </Button>
+      </motion.div>
     </div>
   );
 }
