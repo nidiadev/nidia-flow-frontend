@@ -554,21 +554,17 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     Clasificación
-                    <TooltipProvider delayDuration={300} skipDelayDuration={0}>
-                      <Tooltip delayDuration={300}>
+                    <TooltipProvider>
+                      <Tooltip>
                         <TooltipTrigger asChild>
-                          <button 
-                            type="button" 
-                            className="inline-flex items-center justify-center"
-                            aria-label="Información sobre Lead Score"
-                          >
-                            <Info className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
-                          </button>
+                          <span className="inline-flex items-center justify-center cursor-help">
+                            <Info className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                          </span>
                         </TooltipTrigger>
                         <TooltipContent 
                           side="top" 
                           align="start"
-                          className="max-w-xs z-[100]"
+                          className="max-w-xs"
                         >
                           <p className="font-semibold mb-1">Lead Score</p>
                           <p className="text-sm">
