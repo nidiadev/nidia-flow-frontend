@@ -20,6 +20,7 @@ import { useSubscription } from '@/hooks/use-subscription';
 import { AuthService } from '@/lib/auth';
 import { SidebarItem } from './sidebar-item';
 import { SidebarFooter } from './sidebar-footer';
+import { SidebarNotifications } from './sidebar-notifications';
 import { Module } from '@/lib/auth';
 
 interface NavItem {
@@ -194,14 +195,14 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'flex h-full flex-col border-r bg-sidebar transition-all duration-300 overflow-hidden',
+        'flex h-full flex-col bg-sidebar transition-all duration-300 overflow-hidden',
         isCollapsed ? 'w-16' : 'w-64',
         className
       )}
     >
       {/* Header - Isotipo con botón toggle */}
       <div className={cn(
-        "flex h-14 items-center justify-between border-b border-sidebar-border px-3",
+        "flex h-14 items-center justify-between px-3",
         isCollapsed ? "justify-center" : ""
       )}>
         <Link href={addTenantSlug('/dashboard')} className="flex items-center gap-2.5">
@@ -233,16 +234,18 @@ export function Sidebar({ className }: SidebarProps) {
             )}
           </AnimatePresence>
         </Link>
-        {!isCollapsed && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsCollapsed(true)}
-            className="h-8 w-8 p-0 text-sidebar-foreground hover:bg-sidebar-accent"
-          >
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="h-8 w-8 p-0 text-sidebar-foreground hover:bg-sidebar-accent shrink-0"
+        >
+          {isCollapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
             <ChevronLeft className="h-4 w-4" />
-          </Button>
-        )}
+          )}
+        </Button>
       </div>
 
       {/* Navigation */}
@@ -270,11 +273,13 @@ export function Sidebar({ className }: SidebarProps) {
         )}
       </nav>
 
+      {/* Notifications Section */}
+      <SidebarNotifications isCollapsed={isCollapsed} />
+
       {/* Footer con usuario y plan */}
       <SidebarFooter 
         isCollapsed={isCollapsed} 
         variant="client" 
-        onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
       />
     </aside>
   );
