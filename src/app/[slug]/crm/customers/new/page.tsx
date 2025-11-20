@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from @/components/ui/section-header';
 import { FormSkeleton } from '@/components/ui/loading';
 import { CustomerForm } from '@/components/crm/customer-form';
 import { Customer } from '@/types/customer';
@@ -24,10 +24,9 @@ export default function NewCustomerPage() {
   return (
     <ErrorBoundary>
       <div>
-        <PageHeader
+        <SectionHeader
           title="Nuevo Cliente"
           description="Completa la información para crear un nuevo cliente"
-          variant="gradient"
           showBack
         />
 

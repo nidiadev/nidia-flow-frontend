@@ -27,7 +27,7 @@ import {
 import { TenantLink } from '@/components/ui/tenant-link';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from '@/components/ui/section-header';
 import { toast } from 'sonner';
 import { inboxApi, Conversation } from '@/lib/api/crm';
 
@@ -83,10 +83,9 @@ export default function InboxPage() {
   return (
     <ErrorBoundary>
       <div>
-        <PageHeader
+        <SectionHeader
           title="Bandeja de Comunicaciones"
           description="Todas tus conversaciones unificadas en un solo lugar"
-          variant="gradient"
         />
 
         {/* Filters */}

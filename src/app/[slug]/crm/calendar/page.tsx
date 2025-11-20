@@ -28,7 +28,7 @@ import {
 import { TenantLink } from '@/components/ui/tenant-link';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from @/components/ui/section-header';
 import { toast } from 'sonner';
 import { calendarApi, Activity } from '@/lib/api/crm';
 import { format } from 'date-fns';
@@ -123,10 +123,9 @@ export default function CalendarPage() {
   return (
     <ErrorBoundary>
       <div>
-        <PageHeader
+        <SectionHeader
           title="Calendario de Actividades"
           description="Gestiona tus tareas, llamadas y reuniones"
-          variant="gradient"
           actions={
             <Button asChild>
               <TenantLink href="/crm/activities/new">

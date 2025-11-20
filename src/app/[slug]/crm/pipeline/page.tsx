@@ -57,7 +57,7 @@ import {
 import { TenantLink } from '@/components/ui/tenant-link';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from '@/components/ui/section-header';
 import { useNetworkStatus } from '@/hooks/use-network-status';
 import { toast } from 'sonner';
 import { dealsApi, dealStagesApi, Deal, DealStage } from '@/lib/api/crm';
@@ -171,16 +171,16 @@ function SortableDealCard({ deal, onEdit, onDelete }: { deal: Deal; onEdit: (id:
     }
     router.push(`/crm/deals/${deal.id}`);
   };
-
+  
   return (
     <div ref={setNodeRef} style={style} className="mb-3">
       <Card 
         className="hover:shadow-md transition-shadow cursor-pointer"
         onClick={handleCardClick}
       >
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex-1">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <div 
                   {...attributes} 
@@ -193,7 +193,7 @@ function SortableDealCard({ deal, onEdit, onDelete }: { deal: Deal; onEdit: (id:
                 </div>
                 <h4 className="font-medium text-sm">
                   {deal.name}
-                </h4>
+            </h4>
               </div>
               {deal.customer && (
                 <div className="text-xs text-muted-foreground mb-1 ml-6">
@@ -201,45 +201,45 @@ function SortableDealCard({ deal, onEdit, onDelete }: { deal: Deal; onEdit: (id:
                    `${deal.customer.firstName || ''} ${deal.customer.lastName || ''}`.trim() ||
                    deal.customer.email ||
                    'Sin cliente'}
-                </div>
-              )}
-            </div>
-            
-            <DropdownMenu>
+              </div>
+            )}
+          </div>
+          
+          <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button variant="ghost" className="h-6 w-6 p-0">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+              <Button variant="ghost" className="h-6 w-6 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); router.push(`/crm/deals/${deal.id}`); }}>
                   <Eye className="mr-2 h-4 w-4" />
                   Ver detalle
-                </DropdownMenuItem>
+              </DropdownMenuItem>
                 <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(deal.id); }}>
                   <Edit className="mr-2 h-4 w-4" />
                   Editar
-                </DropdownMenuItem>
+              </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-green-600">
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Marcar como ganado
-                </DropdownMenuItem>
+              </DropdownMenuItem>
                 <DropdownMenuItem className="text-red-600">
                   <XCircle className="mr-2 h-4 w-4" />
                   Marcar como perdido
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-red-600" onClick={(e) => { e.stopPropagation(); onDelete(deal.id); }}>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Eliminar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Eliminar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-          <div className="space-y-2">
+        <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold">
                 ${deal.amount.toLocaleString()} {deal.currency || 'USD'}
@@ -248,7 +248,7 @@ function SortableDealCard({ deal, onEdit, onDelete }: { deal: Deal; onEdit: (id:
                 {deal.probability}%
               </Badge>
             </div>
-
+            
             {deal.expectedCloseDate && (
               <div className="text-xs text-muted-foreground">
                 Cierre esperado: {new Date(deal.expectedCloseDate).toLocaleDateString('es-ES')}
@@ -258,11 +258,11 @@ function SortableDealCard({ deal, onEdit, onDelete }: { deal: Deal; onEdit: (id:
             {deal.assignedToUser && (
               <div className="text-xs text-muted-foreground">
                 Asignado a: {deal.assignedToUser.firstName} {deal.assignedToUser.lastName}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
     </div>
   );
 }
@@ -309,7 +309,7 @@ function PipelineColumn({
             </div>
           ) : (
             <SortableContext items={dealIds} strategy={verticalListSortingStrategy}>
-              <div>
+            <div>
                 {stageDeals.map((deal) => (
                   <SortableDealCard
                     key={deal.id}
@@ -317,8 +317,8 @@ function PipelineColumn({
                     onEdit={onEdit}
                     onDelete={onDelete}
                   />
-                ))}
-              </div>
+              ))}
+            </div>
             </SortableContext>
           )}
         </CardContent>
@@ -442,10 +442,9 @@ export default function PipelinePage() {
   return (
     <ErrorBoundary>
       <div>
-        <PageHeader
+        <SectionHeader
           title="Pipeline de Oportunidades"
           description="Vista Kanban del pipeline de ventas"
-          variant="gradient"
           actions={
             <>
               {isOffline && (
@@ -556,22 +555,22 @@ export default function PipelinePage() {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}
-          >
-            <div className="flex gap-4 overflow-x-auto pb-4">
+        >
+          <div className="flex gap-4 overflow-x-auto pb-4">
               {stages
                 .filter((s: DealStage) => s.isActive)
                 .sort((a: DealStage, b: DealStage) => a.sortOrder - b.sortOrder)
                 .map((stage: DealStage) => (
                   <div key={stage.id} id={stage.id} className="flex-1 min-w-[300px]">
-                    <PipelineColumn
-                      stage={stage}
+              <PipelineColumn
+                stage={stage}
                       deals={deals}
                       onEdit={handleEdit}
                       onDelete={handleDelete}
                     />
                   </div>
-                ))}
-            </div>
+            ))}
+          </div>
             <DragOverlay>
               {activeDeal ? (
                 <div className="opacity-90 rotate-3">

@@ -37,7 +37,7 @@ import {
 import { useCustomer } from '@/hooks/use-api';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from @/components/ui/section-header';
 import { Customer, CUSTOMER_TYPE_CONFIG, getLeadScoreInfo, Interaction } from '@/types/customer';
 import { LeadScoreDetailed } from '@/components/crm/lead-score-indicator';
 import { useTenantRoutes } from '@/hooks/use-tenant-routes';
@@ -407,10 +407,9 @@ export default function CustomerDetailPage() {
   return (
     <ErrorBoundary>
       <div>
-        <PageHeader
+        <SectionHeader
           title="Detalle del Cliente"
           description="Información completa y historial de interacciones"
-          variant="gradient"
           showBack
           actions={
             customer && (

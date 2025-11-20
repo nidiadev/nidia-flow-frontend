@@ -50,7 +50,7 @@ import { toast } from 'sonner';
 import { Customer, CUSTOMER_TYPE_CONFIG, getLeadScoreInfo } from '@/types/customer';
 import { CustomerStats } from '@/components/crm/customer-stats';
 import { CustomerExport } from '@/components/crm/customer-export';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from '@/components/ui/section-header';
 import { DataTable, DataTableAction } from '@/components/ui/data-table';
 
 // Filters component
@@ -384,10 +384,9 @@ export default function CustomersListPage() {
     <ErrorBoundary>
       <div>
         {/* Header */}
-        <PageHeader
+        <SectionHeader
           title="Lista de Clientes"
           description="Gestiona y organiza tu base de clientes y leads"
-          variant="gradient"
           actions={
             <>
               {isOffline && (

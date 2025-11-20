@@ -205,7 +205,7 @@ export function Sidebar({ className }: SidebarProps) {
       <aside
         className={cn(
           'flex h-full flex-col bg-sidebar transition-all duration-300 overflow-hidden',
-          isCollapsed ? 'w-16' : 'w-60',
+          isCollapsed ? 'w-20' : 'w-60',
           className
         )}
       >

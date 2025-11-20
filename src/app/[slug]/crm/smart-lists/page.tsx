@@ -25,7 +25,7 @@ import {
 import { TenantLink } from '@/components/ui/tenant-link';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from @/components/ui/section-header';
 import { toast } from 'sonner';
 import { smartListsApi, SmartList } from '@/lib/api/crm';
 
@@ -54,10 +54,9 @@ export default function SmartListsPage() {
   return (
     <ErrorBoundary>
       <div>
-        <PageHeader
+        <SectionHeader
           title="Listas Inteligentes"
           description="Segmentación dinámica de clientes con filtros avanzados"
-          variant="gradient"
           actions={
             <Button asChild>
               <TenantLink href="/crm/smart-lists/new">

@@ -27,7 +27,7 @@ import {
 import { TenantLink } from '@/components/ui/tenant-link';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from @/components/ui/section-header';
 import { toast } from 'sonner';
 import { workflowsApi, Workflow } from '@/lib/api/crm';
 
@@ -65,10 +65,9 @@ export default function WorkflowsPage() {
   return (
     <ErrorBoundary>
       <div>
-        <PageHeader
+        <SectionHeader
           title="Automatizaciones"
           description="Crea workflows para automatizar tareas repetitivas"
-          variant="gradient"
           actions={
             <Button asChild>
               <TenantLink href="/crm/workflows/new">

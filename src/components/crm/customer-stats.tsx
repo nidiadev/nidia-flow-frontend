@@ -36,8 +36,8 @@ export function CustomerStats({ className }: CustomerStatsProps) {
 
   if (isLoading) {
     return (
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${className}`}>
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className={`grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 ${className}`}>
+        {Array.from({ length: 6 }).map((_, i) => (
           <CardSkeleton key={i} />
         ))}
       </div>
@@ -60,7 +60,7 @@ export function CustomerStats({ className }: CustomerStatsProps) {
   }
 
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ${className}`}>
+    <div className={`grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 ${className}`}>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Clientes</CardTitle>

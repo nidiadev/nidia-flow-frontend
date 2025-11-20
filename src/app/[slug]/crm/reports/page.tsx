@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from @/components/ui/section-header';
 import { crmReportsApi } from '@/lib/api/crm';
 
 export default function CrmReportsPage() {
@@ -53,10 +53,9 @@ export default function CrmReportsPage() {
   return (
     <ErrorBoundary>
       <div>
-        <PageHeader
+        <SectionHeader
           title="Reportes CRM"
           description="Análisis y métricas del pipeline de ventas"
-          variant="gradient"
           actions={
             <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />
