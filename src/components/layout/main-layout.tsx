@@ -41,7 +41,7 @@ export function MainLayout({ children, className }: MainLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden pt-2 pr-2 pb-2">
+      <div className="flex flex-1 flex-col overflow-hidden pt-4 pr-4 pb-4">
         {/* Content area */}
         <main className="flex-1 overflow-y-auto">
           {/* Page content with rounded corners - Breadcrumbs inside */}
