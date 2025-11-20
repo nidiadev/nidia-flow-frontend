@@ -133,31 +133,31 @@ export const CUSTOMER_TYPE_CONFIG = {
   lead: { 
     label: 'Lead', 
     variant: 'info' as const, 
-    color: 'bg-nidia-blue/20 text-nidia-blue dark:bg-nidia-blue/30 dark:text-nidia-blue',
+    color: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400 border-blue-500/20',
     description: 'Contacto inicial, potencial cliente'
   },
   prospect: { 
     label: 'Prospecto', 
     variant: 'warning' as const, 
-    color: 'bg-muted text-muted-foreground',
+    color: 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400 border-amber-500/20',
     description: 'Lead calificado, en proceso de evaluación'
   },
   active: { 
     label: 'Activo', 
     variant: 'success' as const, 
-    color: 'bg-nidia-green/20 text-nidia-green dark:bg-nidia-green/30 dark:text-nidia-green',
+    color: 'bg-green-500/10 text-green-600 dark:bg-green-500/15 dark:text-green-400 border-green-500/20',
     description: 'Cliente activo con compras recientes'
   },
   inactive: { 
     label: 'Inactivo', 
     variant: 'secondary' as const, 
-    color: 'bg-muted text-muted-foreground',
+    color: 'bg-gray-500/10 text-gray-600 dark:bg-gray-500/15 dark:text-gray-400 border-gray-500/20',
     description: 'Cliente sin actividad reciente'
   },
   churned: { 
     label: 'Perdido', 
     variant: 'destructive' as const, 
-    color: 'bg-destructive/20 text-destructive dark:bg-destructive/30 dark:text-destructive',
+    color: 'bg-red-500/10 text-red-600 dark:bg-red-500/15 dark:text-red-400 border-red-500/20',
     description: 'Cliente que se ha ido a la competencia'
   },
 } as const;

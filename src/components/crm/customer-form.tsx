@@ -28,6 +28,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { 
   User, 
@@ -39,7 +40,8 @@ import {
   Save,
   X,
   Plus,
-  Trash2
+  Trash2,
+  Info
 } from 'lucide-react';
 import { Customer, CustomerType, CUSTOMER_TYPE_CONFIG, getLeadScoreInfo } from '@/types/customer';
 import { LeadScoreRanges } from './lead-score-indicator';
@@ -550,7 +552,23 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
               {/* Customer Type & Lead Score */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Clasificación</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Clasificación
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="font-semibold mb-1">Lead Score</p>
+                          <p className="text-sm">
+                            Sistema de puntuación (0-100) que evalúa la probabilidad de conversión de un lead en cliente. 
+                            Se calcula automáticamente según comportamiento, interacciones y datos demográficos.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
