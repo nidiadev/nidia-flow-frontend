@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Switch } from '@/components/ui/switch';
+// import { Switch } from '@/components/ui/switch'; // TODO: Add Switch component
 import { 
   Zap,
   Plus,
@@ -167,12 +167,19 @@ export default function WorkflowsPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Estado</span>
                       <div className="flex items-center gap-2">
-                        <Switch
-                          checked={workflow.isActive}
-                          onCheckedChange={(checked) =>
-                            toggleActiveMutation.mutate({ id: workflow.id, isActive: checked })
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            toggleActiveMutation.mutate({ id: workflow.id, isActive: !workflow.isActive })
                           }
-                        />
+                        >
+                          {workflow.isActive ? (
+                            <Pause className="h-4 w-4" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </Button>
                         <Badge variant={workflow.isActive ? 'default' : 'secondary'}>
                           {workflow.isActive ? 'Activa' : 'Inactiva'}
                         </Badge>
