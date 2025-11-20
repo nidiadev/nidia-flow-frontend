@@ -41,7 +41,7 @@ export function MainLayout({ children, className }: MainLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden pr-2 pb-2">
+      <div className="flex flex-1 flex-col overflow-hidden pt-2 pr-2 pb-2">
         {/* Content area */}
         <main className="flex-1 overflow-y-auto">
           {/* Page content with rounded corners - Breadcrumbs inside */}
@@ -56,7 +56,7 @@ export function MainLayout({ children, className }: MainLayoutProps) {
             )}
           >
             {/* Breadcrumbs inside container */}
-            <div className="flex h-12 items-center px-4 border-b border-border">
+            <div className="flex h-12 items-center px-4">
               <Breadcrumbs className="text-sm" />
             </div>
 
