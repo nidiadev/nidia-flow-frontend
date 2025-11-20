@@ -160,17 +160,14 @@ export function Sidebar({ className }: SidebarProps) {
             });
         }
 
-        // Un módulo está habilitado si tiene al menos un submódulo habilitado
-        // Si no tiene submódulos, usar isEnabled del módulo
-        const moduleIsEnabled = children.length > 0
-          ? children.some(child => child.isEnabled === true)
-          : (module.isEnabled ?? true);
-
+        // Los módulos principales SIEMPRE están habilitados visualmente
+        // Solo los submódulos muestran el estado de habilitado/deshabilitado
+        // El módulo principal nunca debe mostrar el candado
         items.push({
           title: module.displayName,
           href: addTenantSlug(module.path),
           icon: getIconComponent(module.icon),
-          isEnabled: moduleIsEnabled,
+          isEnabled: true, // Los módulos principales siempre están habilitados visualmente
           module: module,
           children: children.length > 0 ? children : undefined,
         });
