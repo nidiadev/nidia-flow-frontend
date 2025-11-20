@@ -18,13 +18,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Save } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ArrowLeft, Save, Plus } from 'lucide-react';
 import { TenantLink } from '@/components/ui/tenant-link';
 import { PageHeader } from '@/components/ui/page-header';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { toast } from 'sonner';
 import { dealsApi, dealStagesApi, CreateDealDto } from '@/lib/api/crm';
-import { useCustomers } from '@/hooks/use-api';
+import { useCustomers, useCreateCustomer } from '@/hooks/use-api';
 
 const createDealSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -43,9 +51,13 @@ type CreateDealForm = z.infer<typeof createDealSchema>;
 export default function NewDealPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [showCreateCustomerDialog, setShowCreateCustomerDialog] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [newCustomerEmail, setNewCustomerEmail] = useState('');
 
-  const { data: customersData } = useCustomers({ limit: 100 });
+  const { data: customersData, refetch: refetchCustomers } = useCustomers({ limit: 100 });
   const customers = customersData?.data?.data || [];
+  const createCustomer = useCreateCustomer();
 
   const { data: stagesData } = useQuery({
     queryKey: ['deal-stages'],
@@ -94,6 +106,39 @@ export default function NewDealPage() {
     });
   };
 
+  const handleCreateCustomer = async () => {
+    if (!newCustomerName.trim() || !newCustomerEmail.trim()) {
+      toast.error('Nombre y email son requeridos');
+      return;
+    }
+
+    try {
+      const [firstName, ...lastNameParts] = newCustomerName.trim().split(' ');
+      const lastName = lastNameParts.join(' ') || firstName;
+
+      const newCustomer = await createCustomer.mutateAsync({
+        firstName: firstName || newCustomerName,
+        lastName: lastName || '',
+        email: newCustomerEmail.trim(),
+        type: 'lead',
+        leadScore: 50,
+      });
+
+      toast.success('Cliente creado exitosamente');
+      setShowCreateCustomerDialog(false);
+      setNewCustomerName('');
+      setNewCustomerEmail('');
+      
+      // Refetch customers and select the new one
+      await refetchCustomers();
+      if (newCustomer?.data?.id) {
+        setValue('customerId', newCustomer.data.id);
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Error al crear el cliente');
+    }
+  };
+
   return (
     <ErrorBoundary>
       <div>
@@ -124,7 +169,7 @@ export default function NewDealPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Nombre del Deal *</Label>
+                    <Label htmlFor="name" className="mb-2 block">Nombre del Deal *</Label>
                     <Input
                       id="name"
                       {...register('name')}
@@ -136,8 +181,21 @@ export default function NewDealPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="customerId">Cliente *</Label>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label htmlFor="customerId">Cliente *</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowCreateCustomerDialog(true)}
+                        className="h-7 text-xs"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Nuevo Cliente
+                      </Button>
+                    </div>
                     <Select
+                      value={watch('customerId')}
                       onValueChange={(value) => setValue('customerId', value)}
                     >
                       <SelectTrigger>
@@ -164,8 +222,9 @@ export default function NewDealPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="stageId">Etapa *</Label>
+                      <Label htmlFor="stageId" className="mb-2 block">Etapa *</Label>
                       <Select
+                        value={watch('stageId')}
                         onValueChange={(value) => setValue('stageId', value)}
                       >
                         <SelectTrigger>
@@ -188,7 +247,7 @@ export default function NewDealPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="probability">Probabilidad (%)</Label>
+                      <Label htmlFor="probability" className="mb-2 block">Probabilidad (%)</Label>
                       <Input
                         id="probability"
                         type="number"
@@ -204,7 +263,7 @@ export default function NewDealPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="amount">Monto *</Label>
+                      <Label htmlFor="amount" className="mb-2 block">Monto *</Label>
                       <Input
                         id="amount"
                         type="number"
@@ -219,9 +278,9 @@ export default function NewDealPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="currency">Moneda</Label>
+                      <Label htmlFor="currency" className="mb-2 block">Moneda</Label>
                       <Select
-                        defaultValue="USD"
+                        value={watch('currency') || 'USD'}
                         onValueChange={(value) => setValue('currency', value)}
                       >
                         <SelectTrigger>
@@ -241,7 +300,7 @@ export default function NewDealPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="expectedCloseDate">Fecha de Cierre Esperada</Label>
+                      <Label htmlFor="expectedCloseDate" className="mb-2 block">Fecha de Cierre Esperada</Label>
                       <Input
                         id="expectedCloseDate"
                         type="date"
@@ -250,8 +309,9 @@ export default function NewDealPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="assignedTo">Asignado a</Label>
+                      <Label htmlFor="assignedTo" className="mb-2 block">Asignado a</Label>
                       <Select
+                        value={watch('assignedTo') || 'none'}
                         onValueChange={(value) => {
                           // "none" means unassigned, set to undefined
                           setValue('assignedTo', value === 'none' ? undefined : value);
@@ -269,7 +329,7 @@ export default function NewDealPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="notes">Notas</Label>
+                    <Label htmlFor="notes" className="mb-2 block">Notas</Label>
                     <Textarea
                       id="notes"
                       {...register('notes')}
@@ -326,6 +386,69 @@ export default function NewDealPage() {
             </div>
           </div>
         </form>
+
+        {/* Create Customer Dialog */}
+        <Dialog open={showCreateCustomerDialog} onOpenChange={setShowCreateCustomerDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Crear Nuevo Cliente</DialogTitle>
+              <DialogDescription>
+                Crea un cliente rápidamente para asociarlo a este deal
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="newCustomerName" className="mb-2 block">Nombre Completo *</Label>
+                <Input
+                  id="newCustomerName"
+                  value={newCustomerName}
+                  onChange={(e) => setNewCustomerName(e.target.value)}
+                  placeholder="Ej: Juan Pérez o Empresa XYZ"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCreateCustomer();
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <Label htmlFor="newCustomerEmail" className="mb-2 block">Email *</Label>
+                <Input
+                  id="newCustomerEmail"
+                  type="email"
+                  value={newCustomerEmail}
+                  onChange={(e) => setNewCustomerEmail(e.target.value)}
+                  placeholder="cliente@ejemplo.com"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleCreateCustomer();
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowCreateCustomerDialog(false);
+                  setNewCustomerName('');
+                  setNewCustomerEmail('');
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCreateCustomer}
+                disabled={createCustomer.isPending || !newCustomerName.trim() || !newCustomerEmail.trim()}
+              >
+                {createCustomer.isPending ? 'Creando...' : 'Crear Cliente'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </ErrorBoundary>
   );
