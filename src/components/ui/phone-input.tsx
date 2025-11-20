@@ -138,21 +138,15 @@ export function PhoneInput({
         className={cn(
           'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground',
           'h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base transition-[color,box-shadow] outline-none',
-          'bg-background relative',
+          'bg-background border-border relative',
           borderClasses,
-          'dark:bg-input dark:border-[#2A2D35] dark:text-foreground dark:shadow-sm dark:hover:border-[#353842] dark:focus:border-ring',
+          'dark:bg-input dark:border-[#2A2D35] dark:text-foreground dark:shadow-sm dark:hover:border-[#353842]',
           'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-          'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
+          'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px] focus-within:ring-offset-0',
           'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
           className
         )}
       >
-        {isFocused && (
-          <div 
-            className="absolute inset-0 rounded-md backdrop-blur-md pointer-events-none z-0"
-            style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
-          />
-        )}
         <div className="flex items-center gap-2 h-full relative z-10">
           <button
             type="button"
