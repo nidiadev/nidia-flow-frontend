@@ -52,7 +52,7 @@ import { toast } from 'sonner';
 // Campos obligatorios según backend: type, firstName
 const customerSchema = z.object({
   firstName: z.string().min(1, 'El nombre es requerido').max(100, 'Máximo 100 caracteres'),
-  lastName: z.string().optional().max(100, 'Máximo 100 caracteres'),
+  lastName: z.string().max(100, 'Máximo 100 caracteres').optional(),
   email: z.string().optional().refine((val) => {
     if (!val || val === '') return true;
     return z.string().email().safeParse(val).success;
@@ -180,7 +180,7 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
 
   const leadScore = form.watch('leadScore');
   const leadScoreInfo = getLeadScoreInfo(leadScore);
-  const customerType = form.watch('type');
+  const customerType = form.watch('type') as CustomerType;
   const typeConfig = CUSTOMER_TYPE_CONFIG[customerType];
 
   const onSubmit = async (data: CustomerFormData) => {
