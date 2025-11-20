@@ -18,6 +18,7 @@ import { useSubscription } from '@/hooks/use-subscription';
 import { AuthService } from '@/lib/auth';
 import { SidebarItem } from './sidebar-item';
 import { SidebarFooter } from './sidebar-footer';
+import { SidebarHeader } from './sidebar-header';
 import { Module } from '@/lib/auth';
 
 interface NavItem {
@@ -199,7 +200,7 @@ export function Sidebar({ className }: SidebarProps) {
     >
       {/* Header - Isotipo */}
       <div className={cn(
-        "flex h-16 items-center border-b border-sidebar-border px-3",
+        "flex h-14 items-center border-b border-sidebar-border px-3",
         isCollapsed ? "justify-center" : ""
       )}>
         <Link href={addTenantSlug('/dashboard')} className="flex items-center gap-2.5">
@@ -232,6 +233,9 @@ export function Sidebar({ className }: SidebarProps) {
           </AnimatePresence>
         </Link>
       </div>
+
+      {/* User Header with Notifications */}
+      <SidebarHeader isCollapsed={isCollapsed} />
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-3 overflow-y-auto">

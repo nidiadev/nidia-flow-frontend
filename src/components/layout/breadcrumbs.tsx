@@ -97,7 +97,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   return (
     <nav
       className={cn(
-        'flex items-center space-x-1 text-sm text-muted-foreground',
+        'flex items-center space-x-1.5 text-sm',
         className
       )}
       aria-label="Breadcrumb"
@@ -105,7 +105,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
       {/* Home link */}
       <Link
         href={addTenantSlug('/dashboard')}
-        className="flex items-center hover:text-foreground transition-colors"
+        className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
       >
         <Home className="h-4 w-4" />
         <span className="sr-only">Dashboard</span>
@@ -113,11 +113,11 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
 
       {breadcrumbItems.map((item, index) => (
         <div key={index} className="flex items-center">
-          <ChevronRight className="h-4 w-4 mx-1" />
+          <ChevronRight className="h-3.5 w-3.5 mx-1 text-muted-foreground/50" />
           {item.href && index < breadcrumbItems.length - 1 ? (
             <Link
               href={addTenantSlug(item.href)}
-              className="hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               {item.label}
             </Link>

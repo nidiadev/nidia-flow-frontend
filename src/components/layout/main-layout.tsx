@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from './sidebar';
-import { Header } from './header';
 import { Breadcrumbs } from './breadcrumbs';
 import { cn } from '@/lib/utils';
 
@@ -43,15 +42,12 @@ export function MainLayout({ children, className }: MainLayoutProps) {
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Header */}
-        <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-
         {/* Content area */}
         <main className="flex-1 overflow-y-auto">
-          {/* Breadcrumbs */}
-          <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="w-full px-6 py-3">
-              <Breadcrumbs />
+          {/* Compact Breadcrumbs Bar */}
+          <div className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex h-12 items-center px-6">
+              <Breadcrumbs className="text-sm" />
             </div>
           </div>
 
