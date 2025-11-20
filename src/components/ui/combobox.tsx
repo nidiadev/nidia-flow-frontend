@@ -89,7 +89,7 @@ export function Combobox({
             "w-full justify-between font-normal h-9 px-3 py-1 text-base md:text-sm",
             "bg-background border-border",
             "dark:bg-input dark:border-[#2A2D35] dark:text-foreground dark:shadow-sm dark:hover:border-[#353842]",
-            "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:ring-offset-0",
+            "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-1 focus-visible:ring-offset-0",
             "hover:bg-background hover:border-border",
             "dark:hover:bg-input dark:hover:border-[#353842]",
             className

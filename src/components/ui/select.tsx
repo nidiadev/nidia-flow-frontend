@@ -22,7 +22,7 @@ const SelectTrigger = React.forwardRef<
       "dark:bg-input dark:border-[#2A2D35] dark:text-foreground dark:shadow-sm dark:hover:border-[#353842] dark:focus:border-ring",
       "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium",
       "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-      "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:ring-offset-0",
+      "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-1 focus-visible:ring-offset-0",
       "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
       "[&>span]:line-clamp-1",
       className

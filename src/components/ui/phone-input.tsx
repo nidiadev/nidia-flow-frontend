@@ -154,7 +154,7 @@ export function PhoneInput({
           borderClasses,
           'dark:bg-input dark:border-[#2A2D35] dark:text-foreground dark:shadow-sm dark:hover:border-[#353842]',
           'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-          'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px] focus-within:ring-offset-0',
+          'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-1 focus-within:ring-offset-0',
           'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
           className?.includes('border-destructive') && 'focus-within:ring-destructive/50',
           className
