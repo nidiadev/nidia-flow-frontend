@@ -289,8 +289,8 @@ export function Sidebar({ className }: SidebarProps) {
         size="sm"
         onClick={() => setIsCollapsed(!isCollapsed)}
         className={cn(
-          'absolute top-4 -right-3 z-50 h-6 w-6 rounded-full border-2 border-sidebar-border bg-sidebar p-0 shadow-md hover:bg-sidebar-accent hover:border-sidebar-accent transition-all',
-          'flex items-center justify-center'
+          'absolute top-3 -right-3 z-50 h-6 w-6 rounded-full border-2 border-sidebar-border bg-sidebar p-0 shadow-md hover:bg-sidebar-accent hover:border-sidebar-accent transition-all',
+          'flex items-center justify-center mt-3'
         )}
       >
         {isCollapsed ? (
