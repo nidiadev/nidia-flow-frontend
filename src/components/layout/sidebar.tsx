@@ -184,11 +184,18 @@ export function Sidebar({ className }: SidebarProps) {
   const isotipoSrc = '/isotipo.svg';
 
   const toggleExpanded = (href: string) => {
-    setExpandedItems(prev =>
-      prev.includes(href)
-        ? prev.filter(item => item !== href)
-        : [...prev, href]
-    );
+    setExpandedItems(prev => {
+      // Si el item ya está expandido, cerrarlo
+      if (prev.includes(href)) {
+        return prev.filter(item => item !== href);
+      }
+      // Si el sidebar está abierto (no colapsado), cerrar todos los demás y abrir solo este
+      if (!isCollapsed) {
+        return [href];
+      }
+      // Si está colapsado, permitir múltiples items expandidos
+      return [...prev, href];
+    });
   };
 
   const isExpanded = (href: string) => expandedItems.includes(href);
@@ -239,7 +246,7 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
+      <nav className="flex-1 space-y-2 p-3 overflow-y-auto">
         {isLoadingSubscription ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -272,7 +279,7 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Footer con usuario y plan */}
       <SidebarFooter 
         isCollapsed={isCollapsed} 
-        variant="client"
+        variant="client" 
       />
     </aside>
 

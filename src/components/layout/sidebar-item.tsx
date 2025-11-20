@@ -143,7 +143,7 @@ export function SidebarItem({
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all',
                 isEnabled
-                  ? 'hover:bg-primary/15 hover:text-foreground cursor-pointer'
+                  ? 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer'
                   : 'opacity-60 cursor-not-allowed',
                 isActive && isEnabled && 'bg-primary text-primary-foreground font-medium shadow-sm'
               )}
@@ -190,9 +190,9 @@ export function SidebarItem({
                       className={cn(
                         'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors',
                         childIsEnabled
-                          ? 'hover:bg-primary/15 hover:text-foreground cursor-pointer'
+                          ? 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer'
                           : 'opacity-60 cursor-not-allowed',
-                        isChildActive && childIsEnabled && 'bg-primary/15 text-foreground font-medium'
+                        isChildActive && childIsEnabled && 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
                       )}
                       onClick={(e) => {
                         if (!childIsEnabled) {
@@ -259,7 +259,7 @@ export function SidebarItem({
                   className={cn(
                     'relative flex items-center justify-center rounded-lg p-2.5 transition-all',
                     isEnabled
-                      ? 'hover:bg-primary/15 hover:text-foreground cursor-pointer'
+                      ? 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer'
                       : 'opacity-60 cursor-not-allowed',
                     isActive && isEnabled && 'bg-primary text-primary-foreground shadow-sm'
                   )}
@@ -335,11 +335,11 @@ export function SidebarItem({
       {hasChildren ? (
         <button
           onClick={onExpandToggle}
-          className={cn(
-            'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all',
-            'hover:bg-primary/15 hover:text-foreground',
-            isActive && 'bg-primary text-primary-foreground font-medium shadow-sm'
-          )}
+        className={cn(
+          'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all',
+          'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+          isActive && 'bg-primary text-primary-foreground font-medium shadow-sm'
+        )}
         >
           <Icon className={cn('h-5 w-5 shrink-0', isActive ? 'text-primary-foreground' : 'text-muted-foreground')} />
           <span className="flex-1 truncate text-left">{title}</span>
@@ -355,7 +355,7 @@ export function SidebarItem({
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all',
             isEnabled
-              ? 'hover:bg-primary/15 hover:text-foreground cursor-pointer'
+              ? 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer'
               : 'opacity-60 cursor-not-allowed',
             isActive && isEnabled && 'bg-primary text-primary-foreground font-medium shadow-sm'
           )}
