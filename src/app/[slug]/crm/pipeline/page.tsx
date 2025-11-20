@@ -2,6 +2,25 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  DndContext,
+  DragOverlay,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+  DragOverEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +52,7 @@ import {
   Eye,
   CheckCircle,
   XCircle,
+  GripVertical,
 } from 'lucide-react';
 import { TenantLink } from '@/components/ui/tenant-link';
 import { QueryLoading } from '@/components/ui/loading';
@@ -124,99 +144,115 @@ function PipelineMetrics({ deals, stages }: { deals: Deal[]; stages: DealStage[]
   );
 }
 
-// Deal card component for Kanban
-function DealCard({ deal, onEdit, onDelete }: { deal: Deal; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
+// Sortable Deal Card component
+function SortableDealCard({ deal, onEdit, onDelete }: { deal: Deal; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: deal.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
   return (
-    <Card className="mb-3 hover:shadow-md transition-shadow cursor-move">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <h4 className="font-medium text-sm mb-1">
-              {deal.name}
-            </h4>
-            {deal.customer && (
-              <div className="text-xs text-muted-foreground mb-1">
-                {deal.customer.companyName || `${deal.customer.firstName} ${deal.customer.lastName}`}
+    <div ref={setNodeRef} style={style} className="mb-3">
+      <Card className="hover:shadow-md transition-shadow">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground">
+                  <GripVertical className="h-4 w-4" />
+                </div>
+                <h4 className="font-medium text-sm">
+                  {deal.name}
+                </h4>
+              </div>
+              {deal.customer && (
+                <div className="text-xs text-muted-foreground mb-1 ml-6">
+                  {deal.customer.companyName || `${deal.customer.firstName} ${deal.customer.lastName}`}
+                </div>
+              )}
+            </div>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-6 w-6 p-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onEdit(deal.id)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Ver detalle
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit(deal.id)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-green-600">
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Marcar como ganado
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-red-600">
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Marcar como perdido
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-red-600" onClick={() => onDelete(deal.id)}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Eliminar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-bold">
+                ${deal.amount.toLocaleString()} {deal.currency || 'USD'}
+              </span>
+              <Badge variant="outline">
+                {deal.probability}%
+              </Badge>
+            </div>
+
+            {deal.expectedCloseDate && (
+              <div className="text-xs text-muted-foreground">
+                Cierre esperado: {new Date(deal.expectedCloseDate).toLocaleDateString('es-ES')}
+              </div>
+            )}
+
+            {deal.assignedToUser && (
+              <div className="text-xs text-muted-foreground">
+                Asignado a: {deal.assignedToUser.firstName} {deal.assignedToUser.lastName}
               </div>
             )}
           </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-6 w-6 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => onEdit(deal.id)}>
-                <Eye className="mr-2 h-4 w-4" />
-                Ver detalle
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(deal.id)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-green-600">
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Marcar como ganado
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">
-                <XCircle className="mr-2 h-4 w-4" />
-                Marcar como perdido
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600" onClick={() => onDelete(deal.id)}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Eliminar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-bold">
-              ${deal.amount.toLocaleString()} {deal.currency || 'USD'}
-            </span>
-            <Badge variant="outline">
-              {deal.probability}%
-            </Badge>
-          </div>
-
-          {deal.expectedCloseDate && (
-            <div className="text-xs text-muted-foreground">
-              Cierre esperado: {new Date(deal.expectedCloseDate).toLocaleDateString('es-ES')}
-            </div>
-          )}
-
-          {deal.assignedToUser && (
-            <div className="text-xs text-muted-foreground">
-              Asignado a: {deal.assignedToUser.firstName} {deal.assignedToUser.lastName}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
-// Pipeline column component
+// Pipeline column component with DnD support
 function PipelineColumn({ 
   stage, 
   deals,
-  onDragStart,
-  onDragOver,
-  onDrop,
   onEdit,
   onDelete,
 }: { 
   stage: DealStage;
   deals: Deal[];
-  onDragStart: (e: React.DragEvent, dealId: string) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent, targetStageId: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
@@ -224,12 +260,10 @@ function PipelineColumn({
   const totalAmount = stageDeals.reduce((sum, d) => sum + d.amount, 0);
   const weightedAmount = stageDeals.reduce((sum, d) => sum + (d.amount * d.probability / 100), 0);
 
+  const dealIds = stageDeals.map(d => d.id);
+
   return (
-    <div 
-      className="flex-1 min-w-[300px]"
-      onDragOver={onDragOver}
-      onDrop={(e) => onDrop(e, stage.id)}
-    >
+    <div className="flex-1 min-w-[300px]">
       <Card className="h-full">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -251,17 +285,18 @@ function PipelineColumn({
               <p className="text-sm">No hay deals en esta etapa</p>
             </div>
           ) : (
-            <div>
-              {stageDeals.map((deal) => (
-                <div
-                  key={deal.id}
-                  draggable
-                  onDragStart={(e) => onDragStart(e, deal.id)}
-                >
-                  <DealCard deal={deal} onEdit={onEdit} onDelete={onDelete} />
-                </div>
-              ))}
-            </div>
+            <SortableContext items={dealIds} strategy={verticalListSortingStrategy}>
+              <div>
+                {stageDeals.map((deal) => (
+                  <SortableDealCard
+                    key={deal.id}
+                    deal={deal}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                  />
+                ))}
+              </div>
+            </SortableContext>
           )}
         </CardContent>
       </Card>
@@ -279,8 +314,20 @@ export default function PipelinePage() {
   const [statusFilter, setStatusFilter] = useState('open');
   
   // Drag and drop state
-  const [draggedDealId, setDraggedDealId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
   
+  // Sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   // Fetch deals and stages
   const { data: dealsData, isLoading: dealsLoading, isError: dealsError, refetch: refetchDeals } = useQuery({
     queryKey: ['deals', assignedToFilter, statusFilter],
@@ -323,30 +370,32 @@ export default function PipelinePage() {
     },
   });
 
-  // Drag and drop handlers
-  const handleDragStart = (e: React.DragEvent, dealId: string) => {
-    setDraggedDealId(dealId);
-    e.dataTransfer.effectAllowed = 'move';
+  // Drag handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const dealId = active.id as string;
+    const targetStageId = over.id as string;
+
+    // Check if dropping on a stage (not another deal)
+    const targetStage = stages.find((s: DealStage) => s.id === targetStageId);
+    if (!targetStage) return;
+
+    const deal = deals.find((d: Deal) => d.id === dealId);
+    if (!deal || deal.stageId === targetStageId) return;
+
+    changeStageMutation.mutate({ dealId, stageId: targetStageId });
   };
 
-  const handleDrop = (e: React.DragEvent, targetStageId: string) => {
-    e.preventDefault();
-    
-    if (!draggedDealId) return;
-    
-    const deal = deals.find((d: Deal) => d.id === draggedDealId);
-    if (!deal || deal.stageId === targetStageId) {
-      setDraggedDealId(null);
-      return;
-    }
-    
-    changeStageMutation.mutate({ dealId: draggedDealId, stageId: targetStageId });
-    setDraggedDealId(null);
+  const handleDragOver = (event: DragOverEvent) => {
+    // Optional: Add visual feedback during drag
   };
 
   const handleEdit = (id: string) => {
@@ -359,8 +408,13 @@ export default function PipelinePage() {
     }
   };
 
+  const activeDeal = activeId ? deals.find((d: Deal) => d.id === activeId) : null;
+
   const isLoading = dealsLoading || stagesLoading;
   const isError = dealsError;
+
+  // Get all stage IDs for droppable areas
+  const stageIds = stages.filter((s: DealStage) => s.isActive).map((s: DealStage) => s.id);
 
   return (
     <ErrorBoundary>
@@ -424,7 +478,7 @@ export default function PipelinePage() {
           </Select>
         </div>
 
-        {/* Kanban Board */}
+        {/* Kanban Board with DnD */}
         <QueryLoading
           isLoading={isLoading}
           isError={isError}
@@ -473,23 +527,43 @@ export default function PipelinePage() {
             </div>
           }
         >
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {stages
-              .filter((s: DealStage) => s.isActive)
-              .sort((a: DealStage, b: DealStage) => a.sortOrder - b.sortOrder)
-              .map((stage: DealStage) => (
-                <PipelineColumn
-                  key={stage.id}
-                  stage={stage}
-                  deals={deals}
-                  onDragStart={handleDragStart}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              ))}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+          >
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {stages
+                .filter((s: DealStage) => s.isActive)
+                .sort((a: DealStage, b: DealStage) => a.sortOrder - b.sortOrder)
+                .map((stage: DealStage) => (
+                  <div key={stage.id} id={stage.id} className="flex-1 min-w-[300px]">
+                    <PipelineColumn
+                      stage={stage}
+                      deals={deals}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
+                  </div>
+                ))}
+            </div>
+            <DragOverlay>
+              {activeDeal ? (
+                <div className="opacity-90 rotate-3">
+                  <Card className="w-[300px]">
+                    <CardContent className="p-4">
+                      <div className="font-medium text-sm mb-1">{activeDeal.name}</div>
+                      <div className="text-lg font-bold">
+                        ${activeDeal.amount.toLocaleString()} {activeDeal.currency || 'USD'}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         </QueryLoading>
       </div>
     </ErrorBoundary>

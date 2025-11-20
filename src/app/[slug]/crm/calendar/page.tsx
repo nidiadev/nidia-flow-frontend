@@ -1,7 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import listPlugin from '@fullcalendar/list';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,15 +30,27 @@ import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { PageHeader } from '@/components/ui/page-header';
 import { toast } from 'sonner';
-import { calendarApi } from '@/lib/api/crm';
+import { calendarApi, Activity } from '@/lib/api/crm';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import type { EventClickArg, DateSelectArg, EventDropArg } from '@fullcalendar/core';
 
 export default function CalendarPage() {
-  const [view, setView] = useState<'month' | 'week' | 'day'>('month');
+  const [view, setView] = useState<'dayGridMonth' | 'timeGridWeek' | 'timeGridDay' | 'listWeek'>('dayGridMonth');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['calendar', view, currentDate.toISOString()],
-    queryFn: () => calendarApi.getView(view, currentDate.toISOString()),
+    queryFn: () => {
+      const viewMap: Record<string, 'month' | 'week' | 'day'> = {
+        dayGridMonth: 'month',
+        timeGridWeek: 'week',
+        timeGridDay: 'day',
+        listWeek: 'week',
+      };
+      return calendarApi.getView(viewMap[view] || 'month', currentDate.toISOString());
+    },
   });
 
   const activities = data?.data?.data || [];
@@ -45,16 +62,62 @@ export default function CalendarPage() {
 
   const todayActivities = todayData?.data?.data || [];
 
-  const navigateDate = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentDate);
-    if (view === 'month') {
-      newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-    } else if (view === 'week') {
-      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
-    } else {
-      newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+  // Transform activities to FullCalendar events
+  const events = useMemo(() => {
+    return activities.map((activity: Activity) => ({
+      id: activity.id,
+      title: activity.subject,
+      start: activity.scheduledAt ? new Date(activity.scheduledAt) : new Date(),
+      end: activity.scheduledEndAt ? new Date(activity.scheduledEndAt) : undefined,
+      backgroundColor: getActivityColor(activity.type, activity.status),
+      borderColor: getActivityColor(activity.type, activity.status),
+      extendedProps: {
+        type: activity.type,
+        status: activity.status,
+        priority: activity.priority,
+        location: activity.location,
+        content: activity.content,
+        customerId: activity.customerId,
+      },
+    }));
+  }, [activities]);
+
+  const updateActivityMutation = useMutation({
+    mutationFn: async ({ id, scheduledAt, scheduledEndAt }: { id: string; scheduledAt: string; scheduledEndAt?: string }) => {
+      // TODO: Implement update activity API call
+      return Promise.resolve();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      toast.success('Actividad actualizada');
+    },
+    onError: () => {
+      toast.error('Error al actualizar la actividad');
+    },
+  });
+
+  const handleEventClick = (clickInfo: EventClickArg) => {
+    const activity = activities.find((a: Activity) => a.id === clickInfo.event.id);
+    if (activity) {
+      // TODO: Open activity detail modal or navigate to detail page
+      toast.info(`Ver detalles de: ${activity.subject}`);
     }
-    setCurrentDate(newDate);
+  };
+
+  const handleDateSelect = (selectInfo: DateSelectArg) => {
+    // TODO: Open create activity modal with pre-filled date
+    toast.info(`Crear actividad desde ${format(selectInfo.start, 'PPp', { locale: es })}`);
+  };
+
+  const handleEventDrop = (dropInfo: EventDropArg) => {
+    const activity = activities.find((a: Activity) => a.id === dropInfo.event.id);
+    if (activity && dropInfo.event.start) {
+      updateActivityMutation.mutate({
+        id: activity.id,
+        scheduledAt: dropInfo.event.start.toISOString(),
+        scheduledEndAt: dropInfo.event.end?.toISOString(),
+      });
+    }
   };
 
   return (
@@ -77,31 +140,38 @@ export default function CalendarPage() {
         {/* View Controls */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
+            <Button variant="outline" size="sm" onClick={() => {
+              const cal = document.querySelector('.fc') as any;
+              if (cal) cal.getApi().prev();
+            }}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
+            <Button variant="outline" size="sm" onClick={() => {
+              const cal = document.querySelector('.fc') as any;
+              if (cal) cal.getApi().today();
+            }}>
               Hoy
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
+            <Button variant="outline" size="sm" onClick={() => {
+              const cal = document.querySelector('.fc') as any;
+              if (cal) cal.getApi().next();
+            }}>
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <span className="ml-4 font-medium">
-              {currentDate.toLocaleDateString('es-ES', {
-                month: 'long',
-                year: 'numeric',
-              })}
-            </span>
           </div>
 
-          <Select value={view} onValueChange={(v: 'month' | 'week' | 'day') => setView(v)}>
+          <Select 
+            value={view} 
+            onValueChange={(v: 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay' | 'listWeek') => setView(v)}
+          >
             <SelectTrigger className="w-[150px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="month">Mes</SelectItem>
-              <SelectItem value="week">Semana</SelectItem>
-              <SelectItem value="day">Día</SelectItem>
+              <SelectItem value="dayGridMonth">Mes</SelectItem>
+              <SelectItem value="timeGridWeek">Semana</SelectItem>
+              <SelectItem value="timeGridDay">Día</SelectItem>
+              <SelectItem value="listWeek">Lista</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -114,7 +184,7 @@ export default function CalendarPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {todayActivities.slice(0, 5).map((activity: any) => (
+                {todayActivities.slice(0, 5).map((activity: Activity) => (
                   <div key={activity.id} className="flex items-center justify-between p-2 border rounded">
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
@@ -136,7 +206,7 @@ export default function CalendarPage() {
           </Card>
         )}
 
-        {/* Calendar View */}
+        {/* FullCalendar */}
         <QueryLoading
           isLoading={isLoading}
           isError={isError}
@@ -160,38 +230,106 @@ export default function CalendarPage() {
           }
         >
           <Card>
-            <CardHeader>
-              <CardTitle>
-                Vista {view === 'month' ? 'Mensual' : view === 'week' ? 'Semanal' : 'Diaria'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {activities.map((activity: any) => (
-                  <div key={activity.id} className="p-3 border rounded-lg hover:bg-muted/50">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{activity.subject}</h4>
-                        <p className="text-sm text-muted-foreground">{activity.content}</p>
-                        {activity.scheduledAt && (
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                            <Clock className="h-3 w-3" />
-                            {new Date(activity.scheduledAt).toLocaleString('es-ES')}
-                          </div>
-                        )}
-                      </div>
-                      <Badge variant={activity.status === 'completed' ? 'default' : 'secondary'}>
-                        {activity.type}
-                      </Badge>
+            <CardContent className="p-6">
+              <div className="calendar-container">
+                <FullCalendar
+                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
+                  initialView={view}
+                  headerToolbar={false}
+                  locale="es"
+                  events={events}
+                  editable={true}
+                  droppable={true}
+                  selectable={true}
+                  selectMirror={true}
+                  dayMaxEvents={true}
+                  weekends={true}
+                  eventClick={handleEventClick}
+                  select={handleDateSelect}
+                  eventDrop={handleEventDrop}
+                  height="auto"
+                  eventClassNames="cursor-pointer"
+                  eventContent={(eventInfo) => (
+                    <div className="p-1">
+                      <div className="font-medium text-sm truncate">{eventInfo.event.title}</div>
+                      {eventInfo.event.extendedProps.location && (
+                        <div className="text-xs text-muted-foreground truncate">
+                          📍 {eventInfo.event.extendedProps.location}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  )}
+                />
               </div>
             </CardContent>
           </Card>
         </QueryLoading>
       </div>
+
+      <style jsx global>{`
+        .calendar-container {
+          width: 100%;
+        }
+        
+        .fc {
+          font-family: inherit;
+        }
+        
+        .fc-header-toolbar {
+          margin-bottom: 1rem;
+        }
+        
+        .fc-button {
+          background-color: hsl(var(--primary));
+          border-color: hsl(var(--primary));
+          color: hsl(var(--primary-foreground));
+        }
+        
+        .fc-button:hover {
+          background-color: hsl(var(--primary) / 0.9);
+        }
+        
+        .fc-button-active {
+          background-color: hsl(var(--primary));
+        }
+        
+        .fc-event {
+          border-radius: 0.375rem;
+          padding: 0.25rem;
+          cursor: pointer;
+        }
+        
+        .fc-event:hover {
+          opacity: 0.9;
+        }
+        
+        .fc-daygrid-event {
+          border-radius: 0.25rem;
+        }
+        
+        .fc-timegrid-event {
+          border-radius: 0.25rem;
+        }
+      `}</style>
     </ErrorBoundary>
   );
 }
 
+function getActivityColor(type: string, status: string): string {
+  if (status === 'completed') {
+    return '#10b981'; // green
+  }
+  if (status === 'cancelled') {
+    return '#ef4444'; // red
+  }
+  
+  const colorMap: Record<string, string> = {
+    task: '#3b82f6', // blue
+    call: '#8b5cf6', // purple
+    meeting: '#f59e0b', // amber
+    email: '#06b6d4', // cyan
+    note: '#6b7280', // gray
+  };
+  
+  return colorMap[type] || '#3b82f6';
+}
