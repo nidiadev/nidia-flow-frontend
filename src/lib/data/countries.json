@@ -194,7 +194,6 @@
   { "code": "KP", "name": "North Korea", "dialCode": "+850", "flag": "🇰🇵" },
   { "code": "MN", "name": "Mongolia", "dialCode": "+976", "flag": "🇲🇳" },
   { "code": "MO", "name": "Macau", "dialCode": "+853", "flag": "🇲🇴" },
-  { "code": "BN", "name": "Brunei", "dialCode": "+673", "flag": "🇧🇳" },
   { "code": "AG", "name": "Antigua and Barbuda", "dialCode": "+1", "flag": "🇦🇬" },
   { "code": "DM", "name": "Dominica", "dialCode": "+1", "flag": "🇩🇲" },
   { "code": "GD", "name": "Grenada", "dialCode": "+1", "flag": "🇬🇩" },
