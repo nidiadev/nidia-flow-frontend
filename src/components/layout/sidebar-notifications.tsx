@@ -129,7 +129,7 @@ export function SidebarNotifications({ isCollapsed }: SidebarNotificationsProps)
           variant="ghost"
           size="sm"
           onClick={() => setShowNotifications(!showNotifications)}
-          className="w-full justify-start gap-3 h-auto p-2 hover:bg-sidebar-accent relative"
+          className="w-full justify-start gap-3 h-auto p-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors relative"
         >
           <Bell className="h-4 w-4 shrink-0" />
           <div className="flex-1 text-left min-w-0">

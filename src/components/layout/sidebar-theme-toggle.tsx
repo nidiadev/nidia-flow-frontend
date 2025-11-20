@@ -61,7 +61,7 @@ export function SidebarThemeToggle({ isCollapsed }: SidebarThemeToggleProps) {
         variant="ghost"
         size="sm"
         onClick={toggleTheme}
-        className="w-full justify-start gap-3 h-auto p-2 hover:bg-sidebar-accent"
+        className="w-full justify-start gap-3 h-auto p-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
         aria-label="Toggle theme"
       >
         <motion.div

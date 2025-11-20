@@ -123,7 +123,7 @@ export function SidebarFooter({ isCollapsed, variant = 'client' }: SidebarFooter
         <Button
           variant="ghost"
           onClick={() => setShowUserMenu(!showUserMenu)}
-          className="w-full justify-start gap-3 h-auto p-2 hover:bg-sidebar-accent"
+          className="w-full justify-start gap-3 h-auto p-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-nidia-green to-nidia-purple shrink-0">
             <span className="text-sm font-medium text-white">
@@ -146,11 +146,11 @@ export function SidebarFooter({ isCollapsed, variant = 'client' }: SidebarFooter
           {showUserMenu && (
             <>
               <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                initial={{ opacity: 0, x: -10, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -10, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                className="absolute left-0 bottom-full mb-2 w-full rounded-lg border bg-background shadow-lg z-50 overflow-hidden"
+                className="absolute left-full top-0 ml-2 w-56 rounded-lg border bg-background shadow-lg z-50 overflow-hidden"
               >
                 <div className="p-4 border-b">
                   <p className="font-medium">{user?.firstName} {user?.lastName}</p>
