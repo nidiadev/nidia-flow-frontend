@@ -49,10 +49,18 @@ import { useCreateCustomer, useUpdateCustomer } from '@/hooks/use-api';
 import { toast } from 'sonner';
 
 // Validation schema
+// Campos obligatorios según backend: type, firstName
 const customerSchema = z.object({
   firstName: z.string().min(1, 'El nombre es requerido').max(100, 'Máximo 100 caracteres'),
-  lastName: z.string().min(1, 'El apellido es requerido').max(100, 'Máximo 100 caracteres'),
-  email: z.string().email('Email inválido').max(255, 'Máximo 255 caracteres'),
+  lastName: z.string().optional().max(100, 'Máximo 100 caracteres'),
+  email: z.string().optional().refine((val) => {
+    if (!val || val === '') return true;
+    return z.string().email().safeParse(val).success;
+  }, {
+    message: 'Email inválido'
+  }).refine((val) => !val || val.length <= 255, {
+    message: 'Máximo 255 caracteres'
+  }),
   phone: z.string().optional().refine((val) => !val || /^\+[1-9]\d{1,14}$/.test(val.replace(/\s/g, '')), {
     message: 'El teléfono debe incluir el código de país (ej: +57 300 123 4567)'
   }),
@@ -265,7 +273,7 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                       name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Apellido *</FormLabel>
+                          <FormLabel>Apellido</FormLabel>
                           <FormControl>
                             <Input placeholder="Apellido" {...field} />
                           </FormControl>
@@ -280,7 +288,7 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email *</FormLabel>
+                        <FormLabel>Email</FormLabel>
                         <FormControl>
                           <Input type="email" placeholder="email@ejemplo.com" {...field} />
                         </FormControl>
