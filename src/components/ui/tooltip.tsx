@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 const TooltipProvider = TooltipPrimitive.Provider
 
 // Enhanced TooltipProvider with immediate display
-export function TooltipProviderImmediate({ children, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+function TooltipProviderImmediate({ children, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
   return (
     <TooltipPrimitive.Provider delayDuration={0} skipDelayDuration={0} {...props}>
       {children}
