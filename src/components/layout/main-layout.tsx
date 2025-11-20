@@ -57,7 +57,7 @@ export function MainLayout({ children, className }: MainLayoutProps) {
           >
             {/* Breadcrumbs inside container */}
             <div className="flex h-12 items-center px-4">
-              <Breadcrumbs className="text-sm" />
+              <Breadcrumbs className="text-sm ml-3" />
             </div>
 
             {/* Page content */}
