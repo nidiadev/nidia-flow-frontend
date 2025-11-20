@@ -126,10 +126,10 @@ export function PhoneInput({
   const displayValue = phoneNumber ? formatPhoneNumber(phoneNumber) : '';
 
   const borderClasses = className?.includes('border-destructive')
-    ? 'border-destructive focus-visible:ring-destructive'
+    ? 'border-destructive'
     : className?.includes('border-primary')
-    ? 'border-primary/30 focus-visible:ring-primary'
-    : 'border-border';
+    ? 'border-primary/30'
+    : '';
 
   return (
     <div className="relative w-full">
@@ -144,6 +144,7 @@ export function PhoneInput({
           'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
           'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px] focus-within:ring-offset-0',
           'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
+          className?.includes('border-destructive') && 'focus-within:ring-destructive/50',
           className
         )}
       >
