@@ -202,13 +202,13 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <div className="relative h-screen">
-    <aside
-      className={cn(
+      <aside
+        className={cn(
           'flex h-full flex-col bg-sidebar transition-all duration-300 overflow-hidden',
-        isCollapsed ? 'w-16' : 'w-64',
-        className
-      )}
-    >
+          isCollapsed ? 'w-16' : 'w-56',
+          className
+        )}
+      >
       {/* Header - Isotipo */}
       <div className={cn(
         "flex h-14 items-center px-3",
