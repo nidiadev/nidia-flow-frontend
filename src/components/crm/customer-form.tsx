@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { 
   User, 
   Building2, 
@@ -301,7 +302,17 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                         <FormItem>
                           <FormLabel>Móvil</FormLabel>
                           <FormControl>
-                            <Input placeholder="+57 300 123 4567" {...field} />
+                            <PhoneInput
+                              value={field.value || ''}
+                              onChange={(value) => field.onChange(value || '')}
+                              onBlur={field.onBlur}
+                              placeholder="+57 300 123 4567"
+                              defaultCountry="CO"
+                              className={cn(
+                                'h-10',
+                                form.formState.errors.mobile && 'border-destructive focus-visible:ring-destructive'
+                              )}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -315,7 +326,17 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                         <FormItem>
                           <FormLabel>WhatsApp</FormLabel>
                           <FormControl>
-                            <Input placeholder="+57 300 123 4567" {...field} />
+                            <PhoneInput
+                              value={field.value || ''}
+                              onChange={(value) => field.onChange(value || '')}
+                              onBlur={field.onBlur}
+                              placeholder="+57 300 123 4567"
+                              defaultCountry="CO"
+                              className={cn(
+                                'h-10',
+                                form.formState.errors.whatsapp && 'border-destructive focus-visible:ring-destructive'
+                              )}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
