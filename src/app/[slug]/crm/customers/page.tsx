@@ -74,7 +74,7 @@ function CustomerFilters({
   setSortOrder: (value: string) => void;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+    <div className="flex flex-col sm:flex-row gap-3">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
@@ -87,7 +87,7 @@ function CustomerFilters({
       
       <Select value={typeFilter} onValueChange={setTypeFilter}>
         <SelectTrigger className="w-full sm:w-[180px]">
-          <SelectValue placeholder="Tipo de cliente" />
+          <SelectValue placeholder="Todos los tipos" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos los tipos</SelectItem>
@@ -104,8 +104,8 @@ function CustomerFilters({
         setSortBy(field);
         setSortOrder(order);
       }}>
-        <SelectTrigger className="w-full sm:w-[200px]">
-          <SelectValue placeholder="Ordenar por" />
+        <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectValue placeholder="Más recientes" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="createdAt-desc">Más recientes</SelectItem>
@@ -420,53 +420,62 @@ export default function CustomersListPage() {
         />
 
         {/* Stats */}
-        <CustomerStats className="mb-8" />
+        <CustomerStats className="mb-6" />
 
-        {/* Filters */}
-        <CustomerFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          typeFilter={typeFilter}
-          setTypeFilter={setTypeFilter}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-        />
+        {/* Filters and Table Section */}
+        <div className="space-y-4">
+          {/* Filters */}
+          <CustomerFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            typeFilter={typeFilter}
+            setTypeFilter={setTypeFilter}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
+          />
 
-        {/* Bulk Actions */}
-        <BulkActions
-          selectedCustomers={selectedCustomers}
-          onClearSelection={() => setSelectedCustomers([])}
-          allCustomers={customers || []}
-        />
+          {/* Bulk Actions */}
+          <BulkActions
+            selectedCustomers={selectedCustomers}
+            onClearSelection={() => setSelectedCustomers([])}
+            allCustomers={customers || []}
+          />
 
-        {/* Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Clientes</CardTitle>
-            <CardDescription>
-              {pagination 
-                ? `${pagination.total} cliente${pagination.total !== 1 ? 's' : ''} en total${pagination.totalPages > 1 ? ` (página ${pagination.page} de ${pagination.totalPages})` : ''}`
-                : isLoading 
-                  ? 'Cargando clientes...' 
-                  : 'No hay clientes'
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isOffline && (
-              <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <div className="flex items-center text-orange-800">
-                  <div className="w-2 h-2 bg-orange-600 rounded-full animate-pulse mr-2"></div>
-                  <span className="text-sm font-medium">
-                    Modo offline - Mostrando datos en caché
-                  </span>
+          {/* Table - Sin Card wrapper */}
+          <div className="rounded-lg border bg-card">
+            {/* Table Header */}
+            <div className="px-6 py-4 border-b">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">Clientes</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {pagination 
+                      ? `${pagination.total} cliente${pagination.total !== 1 ? 's' : ''} en total`
+                      : isLoading 
+                        ? 'Cargando clientes...' 
+                        : 'No hay clientes'
+                    }
+                  </p>
                 </div>
               </div>
-            )}
-            
-            <DataTable
+            </div>
+
+            {/* Table Content */}
+            <div className="p-6">
+              {isOffline && (
+                <div className="mb-4 p-3 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg">
+                  <div className="flex items-center text-orange-800 dark:text-orange-200">
+                    <div className="w-2 h-2 bg-orange-600 rounded-full animate-pulse mr-2"></div>
+                    <span className="text-sm font-medium">
+                      Modo offline - Mostrando datos en caché
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              <DataTable
               data={customers || []}
               columns={columns}
               searchPlaceholder="Buscar por nombre, email, empresa..."
@@ -531,8 +540,8 @@ export default function CustomersListPage() {
                 router.push(`/crm/customers/${customer.id}`);
               }}
             />
-          </CardContent>
-        </Card>
+            </div>
+          </div>
 
         {/* Pagination */}
         {pagination && pagination.total > 0 && (
