@@ -479,13 +479,18 @@ export default function CustomersListPage() {
               data={customers || []}
               columns={columns}
               searchPlaceholder="Buscar por nombre, email, empresa..."
-              emptyMessage="No hay clientes"
+              emptyMessage={
+                searchTerm || typeFilter !== 'all' 
+                  ? 'No se encontraron clientes'
+                  : 'No hay clientes'
+              }
               emptyDescription={
                 searchTerm || typeFilter !== 'all' 
-                  ? 'No se encontraron clientes con los filtros aplicados'
-                  : 'Comienza agregando tu primer cliente'
+                  ? 'Intenta ajustar los filtros de búsqueda para encontrar más resultados'
+                  : 'Comienza agregando tu primer cliente para gestionar tu base de contactos'
               }
               isLoading={isLoading}
+              showSearch={false}
               actions={[
                 {
                   label: 'Ver detalle',
