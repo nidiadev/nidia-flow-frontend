@@ -146,6 +146,7 @@ function PipelineMetrics({ deals, stages }: { deals: Deal[]; stages: DealStage[]
 
 // Sortable Deal Card component
 function SortableDealCard({ deal, onEdit, onDelete }: { deal: Deal; onEdit: (id: string) => void; onDelete: (id: string) => void }) {
+  const router = useRouter();
   const {
     attributes,
     listeners,
@@ -161,14 +162,33 @@ function SortableDealCard({ deal, onEdit, onDelete }: { deal: Deal; onEdit: (id:
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on dropdown, drag handle, or buttons
+    if ((e.target as HTMLElement).closest('[role="button"]') || 
+        (e.target as HTMLElement).closest('button') ||
+        (e.target as HTMLElement).closest('[data-drag-handle]')) {
+      return;
+    }
+    router.push(`/crm/deals/${deal.id}`);
+  };
+
   return (
     <div ref={setNodeRef} style={style} className="mb-3">
-      <Card className="hover:shadow-md transition-shadow">
+      <Card 
+        className="hover:shadow-md transition-shadow cursor-pointer"
+        onClick={handleCardClick}
+      >
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-2">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground">
+                <div 
+                  {...attributes} 
+                  {...listeners} 
+                  data-drag-handle
+                  className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <GripVertical className="h-4 w-4" />
                 </div>
                 <h4 className="font-medium text-sm">
@@ -177,24 +197,27 @@ function SortableDealCard({ deal, onEdit, onDelete }: { deal: Deal; onEdit: (id:
               </div>
               {deal.customer && (
                 <div className="text-xs text-muted-foreground mb-1 ml-6">
-                  {deal.customer.companyName || `${deal.customer.firstName} ${deal.customer.lastName}`}
+                  {deal.customer.companyName || 
+                   `${deal.customer.firstName || ''} ${deal.customer.lastName || ''}`.trim() ||
+                   deal.customer.email ||
+                   'Sin cliente'}
                 </div>
               )}
             </div>
             
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                 <Button variant="ghost" className="h-6 w-6 p-0">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => onEdit(deal.id)}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); router.push(`/crm/deals/${deal.id}`); }}>
                   <Eye className="mr-2 h-4 w-4" />
                   Ver detalle
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit(deal.id)}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(deal.id); }}>
                   <Edit className="mr-2 h-4 w-4" />
                   Editar
                 </DropdownMenuItem>
@@ -208,7 +231,7 @@ function SortableDealCard({ deal, onEdit, onDelete }: { deal: Deal; onEdit: (id:
                   Marcar como perdido
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600" onClick={() => onDelete(deal.id)}>
+                <DropdownMenuItem className="text-red-600" onClick={(e) => { e.stopPropagation(); onDelete(deal.id); }}>
                   <Trash2 className="mr-2 h-4 w-4" />
                   Eliminar
                 </DropdownMenuItem>
