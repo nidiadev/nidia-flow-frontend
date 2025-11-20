@@ -61,7 +61,7 @@ export function MainLayout({ children, className }: MainLayoutProps) {
             </div>
 
             {/* Page content */}
-            <div className="flex-1 overflow-y-auto px-4 py-4">
+            <div className="flex-1 overflow-y-auto px-6 py-6">
               {children}
             </div>
           </motion.div>

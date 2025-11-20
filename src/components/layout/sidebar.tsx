@@ -211,7 +211,7 @@ export function Sidebar({ className }: SidebarProps) {
       >
       {/* Header - Isotipo */}
       <div className={cn(
-        "flex h-14 items-center px-3",
+        "flex h-12 items-center px-3 mt-3",
         isCollapsed ? "justify-center" : ""
       )}>
         <Link href={addTenantSlug('/dashboard')} className="flex items-center gap-2.5">

@@ -30,7 +30,7 @@ export function SectionHeader({
   return (
     <div className={cn('flex items-start justify-between mb-6', className)}>
       <div>
-        <h1 className="text-lg font-semibold text-foreground mb-1">
+        <h1 className="text-base font-semibold text-foreground mb-1">
           {title}
         </h1>
         {description && (
