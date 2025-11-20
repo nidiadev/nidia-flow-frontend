@@ -45,7 +45,7 @@ export function MainLayout({ children, className }: MainLayoutProps) {
         {/* Content area */}
         <main className="flex-1 overflow-y-auto">
           {/* Compact Breadcrumbs Bar */}
-          <div className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-12 items-center px-6">
               <Breadcrumbs className="text-sm" />
             </div>

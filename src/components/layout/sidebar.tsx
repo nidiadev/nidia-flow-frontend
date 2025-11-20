@@ -12,13 +12,14 @@ import {
   LayoutDashboard,
   Loader2,
   Lock,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useSubscription } from '@/hooks/use-subscription';
 import { AuthService } from '@/lib/auth';
 import { SidebarItem } from './sidebar-item';
 import { SidebarFooter } from './sidebar-footer';
-import { SidebarHeader } from './sidebar-header';
 import { Module } from '@/lib/auth';
 
 interface NavItem {
@@ -198,9 +199,9 @@ export function Sidebar({ className }: SidebarProps) {
         className
       )}
     >
-      {/* Header - Isotipo */}
+      {/* Header - Isotipo con botón toggle */}
       <div className={cn(
-        "flex h-14 items-center border-b border-sidebar-border px-3",
+        "flex h-14 items-center justify-between border-b border-sidebar-border px-3",
         isCollapsed ? "justify-center" : ""
       )}>
         <Link href={addTenantSlug('/dashboard')} className="flex items-center gap-2.5">
@@ -232,10 +233,17 @@ export function Sidebar({ className }: SidebarProps) {
             )}
           </AnimatePresence>
         </Link>
+        {!isCollapsed && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsCollapsed(true)}
+            className="h-8 w-8 p-0 text-sidebar-foreground hover:bg-sidebar-accent"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        )}
       </div>
-
-      {/* User Header with Notifications */}
-      <SidebarHeader isCollapsed={isCollapsed} />
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
@@ -262,7 +270,7 @@ export function Sidebar({ className }: SidebarProps) {
         )}
       </nav>
 
-      {/* Footer */}
+      {/* Footer con usuario y plan */}
       <SidebarFooter 
         isCollapsed={isCollapsed} 
         variant="client" 
