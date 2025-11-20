@@ -51,12 +51,22 @@ export function PhoneInput({
 
   useEffect(() => {
     if (value) {
-      const country = COUNTRIES.find(c => value.startsWith(c.dialCode));
+      // Remove spaces and handle E.164 format (+[dialCode][number])
+      const cleanedValue = value.replace(/\s/g, '');
+      const country = COUNTRIES.find(c => {
+        const dialCode = c.dialCode.replace(/^\+/, '');
+        return cleanedValue.startsWith(`+${dialCode}`) || cleanedValue.startsWith(dialCode);
+      });
       if (country) {
         setSelectedCountry(country);
-        setPhoneNumber(value.replace(country.dialCode, '').trim());
+        // Extract phone number without dial code
+        const dialCode = country.dialCode.replace(/^\+/, '');
+        const phoneWithoutDial = cleanedValue.replace(/^\+?/, '').replace(new RegExp(`^${dialCode}`), '');
+        setPhoneNumber(phoneWithoutDial);
       } else {
-        setPhoneNumber(value);
+        // If no country match, try to extract just the number part
+        const phoneOnly = cleanedValue.replace(/^\+?[0-9]{1,3}/, '');
+        setPhoneNumber(phoneOnly);
       }
     } else {
       setPhoneNumber('');
