@@ -279,7 +279,7 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Footer con usuario y plan */}
       <SidebarFooter 
         isCollapsed={isCollapsed} 
-        variant="client" 
+        variant="client"
       />
     </aside>
   );
