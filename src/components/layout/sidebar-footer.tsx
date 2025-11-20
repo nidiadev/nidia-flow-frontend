@@ -14,7 +14,7 @@ interface SidebarFooterProps {
   variant?: 'admin' | 'client';
 }
 
-export function SidebarFooter({ isCollapsed, variant = 'client': SidebarFooterProps) {
+export function SidebarFooter({ isCollapsed, variant = 'client' }: SidebarFooterProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { user, logout } = useAuth();
   const { data: subscription } = useSubscription();
