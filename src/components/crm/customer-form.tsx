@@ -728,6 +728,9 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
               </Card>
             </div>
           </div>
+          
+          {/* Hidden submit button for external triggers */}
+          <button type="submit" className="hidden" aria-hidden="true" />
         </form>
       </Form>
     </div>
