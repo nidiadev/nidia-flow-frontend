@@ -604,7 +604,8 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                         </TooltipTrigger>
                         <TooltipContent 
                           side="top" 
-                          align="start"
+                          align="center"
+                          sideOffset={10}
                           className="max-w-xs"
                         >
                           <p className="font-semibold mb-1.5 text-nidia-green">Lead Score</p>
