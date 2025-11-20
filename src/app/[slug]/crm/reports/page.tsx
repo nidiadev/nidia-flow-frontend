@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { SectionHeader } from @/components/ui/section-header';
+import { SectionHeader } from '@/components/ui/section-header';
 import { crmReportsApi } from '@/lib/api/crm';
 
 export default function CrmReportsPage() {

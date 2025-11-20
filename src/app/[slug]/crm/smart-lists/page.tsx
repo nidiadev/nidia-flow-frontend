@@ -25,7 +25,7 @@ import {
 import { TenantLink } from '@/components/ui/tenant-link';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { SectionHeader } from @/components/ui/section-header';
+import { SectionHeader } from '@/components/ui/section-header';
 import { toast } from 'sonner';
 import { smartListsApi, SmartList } from '@/lib/api/crm';
 

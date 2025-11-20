@@ -28,6 +28,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { CountrySelect } from '@/components/ui/country-select';
+import { IndustrySelect } from '@/components/ui/industry-select';
+import { SegmentSelect } from '@/components/ui/segment-select';
 import { Tooltip, TooltipContent, TooltipProviderImmediate, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { 
@@ -73,20 +76,20 @@ const customerSchema = z.object({
   companyName: z.string().default(''),
   type: z.enum(['lead', 'prospect', 'active', 'inactive', 'churned']),
   leadScore: z.number().min(0).max(100),
-  leadSource: z.string().default(''),
+  leadSource: z.string().min(1, 'El origen del lead es requerido'),
   
-  // Address
-  addressLine1: z.string().default(''),
-  addressLine2: z.string().default(''),
-  city: z.string().default(''),
-  state: z.string().default(''),
-  postalCode: z.string().default(''),
-  country: z.string().default('CO'),
+  // Address - Required fields
+  addressLine1: z.string().min(1, 'La dirección principal es requerida'),
+  addressLine2: z.string().optional(),
+  city: z.string().min(1, 'La ciudad es requerida'),
+  state: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().min(1, 'El país es requerido').default('CO'),
   
-  // Business info
-  industry: z.string().default(''),
-  segment: z.string().default(''),
-  taxId: z.string().default(''),
+  // Business info - Required fields
+  industry: z.string().min(1, 'La industria es requerida'),
+  segment: z.string().min(1, 'El segmento es requerido'),
+  taxId: z.string().min(1, 'El NIT/Documento es requerido'),
   
   // Financial
   creditLimit: z.number().optional(),
@@ -120,26 +123,7 @@ const LEAD_SOURCES = [
   { value: 'other', label: 'Otro' },
 ];
 
-// Industries options
-const INDUSTRIES = [
-  { value: 'technology', label: 'Tecnología' },
-  { value: 'healthcare', label: 'Salud' },
-  { value: 'finance', label: 'Finanzas' },
-  { value: 'education', label: 'Educación' },
-  { value: 'retail', label: 'Retail' },
-  { value: 'manufacturing', label: 'Manufactura' },
-  { value: 'construction', label: 'Construcción' },
-  { value: 'services', label: 'Servicios' },
-  { value: 'other', label: 'Otro' },
-];
-
-// Segments options
-const SEGMENTS = [
-  { value: 'B2B', label: 'B2B (Empresa a Empresa)' },
-  { value: 'B2C', label: 'B2C (Empresa a Consumidor)' },
-  { value: 'Government', label: 'Gobierno' },
-  { value: 'Non-profit', label: 'Sin ánimo de lucro' },
-];
+// Industries and Segments are now loaded from JSON files via components
 
 export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmitTrigger, isLoading: externalIsLoading }: CustomerFormProps) {
   const [tags, setTags] = useState<string[]>(customer?.tags || []);
@@ -202,6 +186,7 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
         city: data.city?.trim() || undefined,
         state: data.state?.trim() || undefined,
         postalCode: data.postalCode?.trim() || undefined,
+        country: data.country?.trim() || 'CO',
         industry: data.industry?.trim() || undefined,
         segment: data.segment?.trim() || undefined,
         taxId: data.taxId?.trim() || undefined,
@@ -417,21 +402,14 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                       name="industry"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Industria</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar industria" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {INDUSTRIES.map((industry) => (
-                                <SelectItem key={industry.value} value={industry.value}>
-                                  {industry.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormLabel className="mb-2 block">Industria *</FormLabel>
+                          <FormControl>
+                            <IndustrySelect
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              placeholder="Selecciona una industria"
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -442,21 +420,14 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                       name="segment"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Segmento</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar segmento" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {SEGMENTS.map((segment) => (
-                                <SelectItem key={segment.value} value={segment.value}>
-                                  {segment.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormLabel className="mb-2 block">Segmento *</FormLabel>
+                          <FormControl>
+                            <SegmentSelect
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              placeholder="Selecciona un segmento"
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -468,7 +439,7 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                     name="taxId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>NIT / Documento</FormLabel>
+                        <FormLabel className="mb-2 block">NIT / Documento *</FormLabel>
                         <FormControl>
                           <Input placeholder="123456789-0" {...field} />
                         </FormControl>
@@ -493,7 +464,7 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                     name="addressLine1"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Dirección Principal</FormLabel>
+                        <FormLabel className="mb-2 block">Dirección Principal *</FormLabel>
                         <FormControl>
                           <Input placeholder="Calle 123 #45-67" {...field} />
                         </FormControl>
@@ -522,7 +493,7 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                       name="city"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Ciudad</FormLabel>
+                          <FormLabel className="mb-2 block">Ciudad *</FormLabel>
                           <FormControl>
                             <Input placeholder="Bogotá" {...field} />
                           </FormControl>
@@ -559,6 +530,24 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                       )}
                     />
                   </div>
+
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="mb-2 block">País *</FormLabel>
+                        <FormControl>
+                          <CountrySelect
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            placeholder="Selecciona un país"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </CardContent>
               </Card>
 
@@ -714,30 +703,30 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                     }}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="leadSource"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fuente del Lead</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar fuente" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {LEAD_SOURCES.map((source) => (
-                              <SelectItem key={source.value} value={source.value}>
-                                {source.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="leadSource"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="mb-2 block">Fuente del Lead *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar fuente" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {LEAD_SOURCES.map((source) => (
+                                <SelectItem key={source.value} value={source.value}>
+                                  {source.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                   {/* Lead Score Ranges Info */}
                   <div className="mt-4 p-3 bg-muted rounded-lg">

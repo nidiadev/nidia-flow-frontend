@@ -1,0 +1,11 @@
+[
+  { "value": "B2B", "label": "B2B - Business to Business" },
+  { "value": "B2C", "label": "B2C - Business to Consumer" },
+  { "value": "B2G", "label": "B2G - Business to Government" },
+  { "value": "B2B2C", "label": "B2B2C - Business to Business to Consumer" },
+  { "value": "C2C", "label": "C2C - Consumer to Consumer" },
+  { "value": "G2C", "label": "G2C - Government to Consumer" },
+  { "value": "G2B", "label": "G2B - Government to Business" },
+  { "value": "G2G", "label": "G2G - Government to Government" }
+]
+

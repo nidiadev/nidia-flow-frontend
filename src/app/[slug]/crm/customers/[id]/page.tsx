@@ -37,7 +37,7 @@ import {
 import { useCustomer } from '@/hooks/use-api';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { SectionHeader } from @/components/ui/section-header';
+import { SectionHeader } from '@/components/ui/section-header';
 import { Customer, CUSTOMER_TYPE_CONFIG, getLeadScoreInfo, Interaction } from '@/types/customer';
 import { LeadScoreDetailed } from '@/components/crm/lead-score-indicator';
 import { useTenantRoutes } from '@/hooks/use-tenant-routes';
