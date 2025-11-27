@@ -172,31 +172,34 @@ export function SuspenseWrapper({
 // Query loading states for TanStack Query
 interface QueryLoadingProps {
   isLoading: boolean;
-  isError: boolean;
+  isError?: boolean;
   error?: Error | null;
   isEmpty?: boolean;
-  children: ReactNode;
+  children?: ReactNode;
   loadingFallback?: ReactNode;
   errorFallback?: ReactNode;
   emptyFallback?: ReactNode;
+  emptyMessage?: string;
   onRetry?: () => void;
 }
 
 export function QueryLoading({
   isLoading,
-  isError,
+  isError = false,
   error,
   isEmpty = false,
   children,
   loadingFallback = <PageLoading />,
   errorFallback,
-  emptyFallback = (
-    <div className="flex min-h-[200px] items-center justify-center">
-      <p className="text-muted-foreground">No hay datos disponibles</p>
-    </div>
-  ),
+  emptyFallback,
+  emptyMessage = "No hay datos disponibles",
   onRetry,
 }: QueryLoadingProps) {
+  const defaultEmptyFallback = (
+    <div className="flex min-h-[200px] items-center justify-center">
+      <p className="text-muted-foreground">{emptyMessage}</p>
+    </div>
+  );
   if (isLoading) {
     return <>{loadingFallback}</>;
   }
@@ -217,7 +220,7 @@ export function QueryLoading({
   }
 
   if (isEmpty) {
-    return <>{emptyFallback}</>;
+    return <>{emptyFallback || defaultEmptyFallback}</>;
   }
 
   return <>{children}</>;

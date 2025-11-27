@@ -31,8 +31,8 @@ const createRuleSchema = z.object({
   description: z.string().optional(),
   category: z.enum(['demographic', 'engagement', 'behavior', 'fit', 'negative']),
   points: z.number().min(-100, 'Mínimo -100').max(100, 'Máximo 100'),
-  isActive: z.boolean().default(true),
-  priority: z.number().min(0).default(0),
+  isActive: z.boolean().optional().default(true),
+  priority: z.number().min(0).optional().default(0),
   condition: z.object({
     field: z.string().min(1, 'Campo requerido'),
     operator: z.enum(['equals', 'contains', 'greater_than', 'less_than', 'in', 'not_in']),
@@ -40,7 +40,19 @@ const createRuleSchema = z.object({
   }),
 });
 
-type CreateRuleForm = z.infer<typeof createRuleSchema>;
+type CreateRuleForm = {
+  name: string;
+  description?: string;
+  category: 'demographic' | 'engagement' | 'behavior' | 'fit' | 'negative';
+  points: number;
+  isActive: boolean;
+  priority: number;
+  condition: {
+    field: string;
+    operator: 'equals' | 'contains' | 'greater_than' | 'less_than' | 'in' | 'not_in';
+    value: any;
+  };
+};
 
 const FIELD_OPTIONS = [
   { value: 'leadScore', label: 'Lead Score' },
@@ -76,7 +88,7 @@ export default function NewLeadScoringRulePage() {
     setValue,
     watch,
   } = useForm<CreateRuleForm>({
-    resolver: zodResolver(createRuleSchema),
+    resolver: zodResolver(createRuleSchema) as any,
     defaultValues: {
       isActive: true,
       priority: 0,

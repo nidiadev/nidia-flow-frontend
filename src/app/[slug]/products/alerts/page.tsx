@@ -129,7 +129,7 @@ export default function StockAlertsPage() {
     page,
     limit,
     isResolved: statusFilter === 'pending' ? false : statusFilter === 'resolved' ? true : undefined,
-    alertType: alertTypeFilter !== 'all' ? alertTypeFilter : undefined,
+    alertType: alertTypeFilter !== 'all' ? alertTypeFilter as 'low_stock' | 'out_of_stock' : undefined,
   }), [statusFilter, alertTypeFilter, page, limit]);
 
   // Fetch alerts

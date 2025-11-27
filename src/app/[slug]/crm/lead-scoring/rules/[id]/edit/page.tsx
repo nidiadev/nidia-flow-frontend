@@ -87,7 +87,7 @@ export default function EditLeadScoringRulePage() {
         category: rule.category,
         points: rule.points,
         isActive: rule.isActive,
-        priority: rule.priority || 0,
+        priority: (rule as any).priority || 0,
       });
     }
   }, [rule, reset]);

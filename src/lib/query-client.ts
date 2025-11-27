@@ -123,6 +123,7 @@ export const queryKeys = {
       detail: (id: string) => ['crm', 'deals', id] as const,
       statistics: () => ['crm', 'deals', 'statistics'] as const,
     },
+    deal: (id: string) => ['crm', 'deals', id] as const,
     dealStages: {
       all: () => ['crm', 'deal-stages'] as const,
       detail: (id: string) => ['crm', 'deal-stages', id] as const,

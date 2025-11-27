@@ -470,7 +470,7 @@ export default function NewProductPage() {
                       <div className="flex gap-2">
                         <div className="flex-1">
                           <Combobox
-                            options={categories.map((cat) => ({
+                            options={categories.map((cat: { id: string; name: string }) => ({
                               value: cat.id,
                               label: cat.name,
                             }))}

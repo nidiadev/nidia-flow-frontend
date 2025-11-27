@@ -43,7 +43,7 @@ import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useTenantRoutes } from '@/hooks/use-tenant-routes';
 import { toast } from 'sonner';
-import { productsApi, Product } from '@/lib/api/products';
+import { productsApi, Product, ProductType } from '@/lib/api/products';
 import { Table } from '@/components/table';
 import { TableRowAction } from '@/components/table/types';
 import {
@@ -748,7 +748,7 @@ export default function PricingManagementPage() {
   const apiFilters = useMemo(() => ({
     page: 1,
     limit: 100,
-    type: typeFilter !== 'all' ? typeFilter : undefined,
+    type: typeFilter !== 'all' ? typeFilter as ProductType : undefined,
   }), [typeFilter]);
 
   const { data: productsData, isLoading, error, refetch } = useQuery({

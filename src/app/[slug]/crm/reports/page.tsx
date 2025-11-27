@@ -603,7 +603,7 @@ export default function CrmReportsPage() {
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {leadSourcesChartData.map((entry, index) => (
+                        {leadSourcesChartData.map((entry: { name: string; value: number }, index: number) => (
                           <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                         ))}
                       </Pie>

@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
@@ -162,7 +162,7 @@ export function EmptyStateEnhanced({
       <div className="mb-6 flex items-center justify-center">
         {icon ? (
           typeof icon === 'function' ? (
-            <icon className="h-16 w-16 text-muted-foreground opacity-50" />
+            React.createElement(icon, { className: "h-16 w-16 text-muted-foreground opacity-50" })
           ) : (
             <div className="text-muted-foreground opacity-50">{icon}</div>
           )

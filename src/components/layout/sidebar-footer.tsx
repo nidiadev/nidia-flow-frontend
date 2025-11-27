@@ -12,9 +12,10 @@ import { cn } from '@/lib/utils';
 interface SidebarFooterProps {
   isCollapsed: boolean;
   variant?: 'admin' | 'client';
+  onToggleCollapse?: () => void;
 }
 
-export function SidebarFooter({ isCollapsed, variant = 'client' }: SidebarFooterProps) {
+export function SidebarFooter({ isCollapsed, variant = 'client', onToggleCollapse }: SidebarFooterProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { user, logout } = useAuth();
   const { data: subscription } = useSubscription();

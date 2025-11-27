@@ -100,8 +100,9 @@ interface CustomerFormProps {
   customer?: Customer;
   onSuccess?: (customer: Customer) => void;
   onCancel?: () => void;
+  onError?: (error: Error) => void;
   className?: string;
-  onSubmitTrigger?: RefObject<{ submit: () => void }>;
+  onSubmitTrigger?: RefObject<{ submit: () => void } | null>;
   isLoading?: boolean;
 }
 
@@ -145,10 +146,13 @@ export function CustomerForm({ customer, onSuccess, onCancel, onError, className
   
   // Reset loading state on error
   useEffect(() => {
-    if (createCustomer.isError || updateCustomer.isError) {
-      onError?.();
+    if (createCustomer.isError) {
+      onError?.(createCustomer.error as Error);
     }
-  }, [createCustomer.isError, updateCustomer.isError, onError]);
+    if (updateCustomer.isError) {
+      onError?.(updateCustomer.error as Error);
+    }
+  }, [createCustomer.isError, updateCustomer.isError, createCustomer.error, updateCustomer.error, onError]);
   
   const form = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema) as any,
@@ -247,7 +251,7 @@ export function CustomerForm({ customer, onSuccess, onCancel, onError, className
     } catch (error: any) {
       // Error is handled by the mutation hook and API interceptor
       // Notify parent to reset loading state
-      onError?.();
+      onError?.(error instanceof Error ? error : new Error(error?.message || 'Error desconocido'));
       // Don't re-throw, the error is already handled and shown to user
     }
   };
@@ -1138,7 +1142,7 @@ export function CustomerForm({ customer, onSuccess, onCancel, onError, className
                       <Button 
                         type="button" 
                         size="sm" 
-                        onClick={addTag}
+                        onClick={() => addTag()}
                         disabled={!newTag.trim()}
                         className="shrink-0"
                       >

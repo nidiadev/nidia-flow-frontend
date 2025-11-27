@@ -24,7 +24,8 @@ import {
   ShoppingCart,
   FileText,
   Activity,
-  Settings
+  Settings,
+  Plus,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -39,7 +40,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { TenantLink } from '@/components/ui/tenant-link';
 import { useTenantRoutes } from '@/hooks/use-tenant-routes';
 import { toast } from 'sonner';
-import { productsApi, variantsApi, Product, ProductType, PRODUCT_TYPE_CONFIG } from '@/lib/api/products';
+import { productsApi, variantsApi, Product, ProductType } from '@/lib/api/products';
 import { QueryLoading } from '@/components/ui/loading';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -128,7 +129,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const typeConfig = PRODUCT_TYPE_CONFIG_UI[product.type];
+  const typeConfig = PRODUCT_TYPE_CONFIG_UI[product.type as ProductType];
   const margin = product.cost ? ((product.price - product.cost) / product.price * 100).toFixed(1) : '0';
   const stockStatus = product.trackInventory 
     ? (product.stockQuantity || 0) === 0 
@@ -332,7 +333,7 @@ export default function ProductDetailPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
-                        {product.tags.map((tag) => (
+                        {product.tags.map((tag: string) => (
                           <Badge key={tag} variant="secondary">
                             <Tag className="h-3 w-3 mr-1" />
                             {tag}
@@ -480,7 +481,7 @@ export default function ProductDetailPage() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {variants.slice(0, 5).map((variant) => {
+                      {variants.slice(0, 5).map((variant: { id: string; name: string; sku?: string; priceAdjustment?: number; stockQuantity?: number }) => {
                         const finalPrice = product.price + (variant.priceAdjustment || 0);
                         return (
                           <div key={variant.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -526,7 +527,7 @@ export default function ProductDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {product.comboItems.map((item, index) => (
+                    {product.comboItems.map((item: { quantity: number; product?: { name?: string; sku?: string; price?: number } }, index: number) => (
                       <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <div className="font-medium">

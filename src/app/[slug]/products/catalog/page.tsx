@@ -360,7 +360,7 @@ export default function ProductCatalogPage() {
           }}
           cards={{
             enabled: true,
-            gridCols: 4,
+            gridCols: { default: 1, sm: 2, lg: 3, xl: 4 },
             renderCard: (product) => (
               <ProductCard
                 key={product.id}

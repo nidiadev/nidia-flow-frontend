@@ -30,10 +30,15 @@ const createWorkflowSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido').max(255, 'Máximo 255 caracteres'),
   description: z.string().optional(),
   triggerType: z.string().min(1, 'El tipo de trigger es requerido'),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean().optional().default(true),
 });
 
-type CreateWorkflowForm = z.infer<typeof createWorkflowSchema>;
+type CreateWorkflowForm = {
+  name: string;
+  description?: string;
+  triggerType: string;
+  isActive: boolean;
+};
 
 const TRIGGER_TYPES = [
   { value: 'customer_created', label: 'Cliente Creado' },
@@ -69,7 +74,7 @@ export default function NewWorkflowPage() {
     setValue,
     watch,
   } = useForm<CreateWorkflowForm>({
-    resolver: zodResolver(createWorkflowSchema),
+    resolver: zodResolver(createWorkflowSchema) as any,
     defaultValues: {
       isActive: true,
       triggerType: '',

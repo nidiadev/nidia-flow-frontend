@@ -22,10 +22,14 @@ import { webFormsApi } from '@/lib/api/crm';
 const createWebFormSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido').max(255, 'Máximo 255 caracteres'),
   description: z.string().optional(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean().optional().default(true),
 });
 
-type CreateWebFormForm = z.infer<typeof createWebFormSchema>;
+type CreateWebFormForm = {
+  name: string;
+  description?: string;
+  isActive: boolean;
+};
 
 export default function NewWebFormPage() {
   const router = useRouter();
@@ -51,7 +55,7 @@ export default function NewWebFormPage() {
     formState: { errors, isSubmitting },
     watch,
   } = useForm<CreateWebFormForm>({
-    resolver: zodResolver(createWebFormSchema),
+    resolver: zodResolver(createWebFormSchema) as any,
     defaultValues: {
       isActive: true,
     },

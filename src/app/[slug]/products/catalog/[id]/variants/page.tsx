@@ -74,9 +74,9 @@ function getColumns(productPrice: number): ColumnDef<ProductVariant>[] {
             <div className="font-semibold text-foreground">
               ${finalPrice.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            {variant.priceAdjustment !== 0 && (
+            {(variant.priceAdjustment ?? 0) !== 0 && (
               <div className="text-xs text-muted-foreground">
-                {variant.priceAdjustment > 0 ? '+' : ''}${variant.priceAdjustment.toFixed(2)}
+                {(variant.priceAdjustment ?? 0) > 0 ? '+' : ''}${(variant.priceAdjustment ?? 0).toFixed(2)}
               </div>
             )}
           </div>

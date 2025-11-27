@@ -231,7 +231,7 @@ function QuickActions() {
         <Button 
           className="w-full justify-start" 
           variant="outline"
-          onClick={() => router.push(route('/crm/customers'))}
+          onClick={() => router.push(`/${params.slug}/crm/customers`)}
         >
           <Users className="mr-2 h-4 w-4" />
           Ver Lista de Clientes
@@ -240,7 +240,7 @@ function QuickActions() {
         <Button 
           className="w-full justify-start" 
           variant="outline"
-          onClick={() => router.push(route('/crm/pipeline'))}
+          onClick={() => router.push(`/${params.slug}/crm/pipeline`)}
         >
           <Users className="mr-2 h-4 w-4" />
           Ver Pipeline de Ventas
