@@ -564,12 +564,28 @@ export default function VariantsPage() {
   const [selectedVariant, setSelectedVariant] = useState<VariantWithProduct | null>(null);
   const [showHelpDrawer, setShowHelpDrawer] = useState(false);
 
-  // Fetch all products to populate filter
-  const { data: productsData } = useQuery({
-    queryKey: ['products', 'all'],
+  // Fetch all products to populate filter (paginated to get all)
+  const { data: productsData, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['products', 'for-variants-filter'],
     queryFn: async () => {
-      const response = await productsApi.getAll({ limit: 1000 });
-      return response;
+      // First request to get total count
+      const firstPage = await productsApi.getAll({ page: 1, limit: 100 });
+      const total = firstPage?.data?.pagination?.total || 0;
+      
+      if (total <= 100) {
+        return firstPage;
+      }
+      
+      // If more than 100, fetch remaining pages
+      const totalPages = Math.ceil(total / 100);
+      const allProducts = [...(firstPage?.data?.data || [])];
+      
+      for (let page = 2; page <= totalPages; page++) {
+        const pageData = await productsApi.getAll({ page, limit: 100 });
+        allProducts.push(...(pageData?.data?.data || []));
+      }
+      
+      return { data: { data: allProducts, pagination: { total } } };
     },
   });
 

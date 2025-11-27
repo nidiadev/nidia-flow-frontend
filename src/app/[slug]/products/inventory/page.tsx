@@ -329,12 +329,28 @@ export default function InventoryPage() {
   const [page, setPage] = useState(1);
   const limit = 20;
 
-  // Fetch products for dialog
-  const { data: productsData } = useQuery({
-    queryKey: ['products', 'all'],
+  // Fetch products for dialog (paginated to get all)
+  const { data: productsData, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['products', 'for-inventory-filter'],
     queryFn: async () => {
-      const response = await productsApi.getAll({ limit: 1000 });
-      return response;
+      // First request to get total count
+      const firstPage = await productsApi.getAll({ page: 1, limit: 100 });
+      const total = firstPage?.data?.pagination?.total || 0;
+      
+      if (total <= 100) {
+        return firstPage;
+      }
+      
+      // If more than 100, fetch remaining pages
+      const totalPages = Math.ceil(total / 100);
+      const allProducts = [...(firstPage?.data?.data || [])];
+      
+      for (let page = 2; page <= totalPages; page++) {
+        const pageData = await productsApi.getAll({ page, limit: 100 });
+        allProducts.push(...(pageData?.data?.data || []));
+      }
+      
+      return { data: { data: allProducts, pagination: { total } } };
     },
   });
 
