@@ -18,6 +18,7 @@ import { WaitlistModal } from '@/components/waitlist/waitlist-modal';
 import { useQuery } from '@tanstack/react-query';
 import { publicApi, PublicPlan } from '@/lib/api/public';
 import { formatCurrency, cn } from '@/lib/utils';
+import { AppLoading } from '@/components/ui/app-loading';
 import { Loader2, 
   Users, 
   ShoppingCart, 
@@ -483,14 +484,7 @@ export default function Home() {
   const logoSrc = mounted && resolvedTheme === 'dark' ? '/logo.svg' : '/logo-light.svg';
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-nidia-green" />
-          <p className="font-outfit text-foreground">Cargando...</p>
-        </div>
-      </div>
-    );
+    return <AppLoading message="Cargando aplicación..." />;
   }
 
   return (

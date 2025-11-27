@@ -1,44 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import * as LucideIcons from 'lucide-react';
 import {
   LayoutDashboard,
-  Users,
-  Package,
-  ShoppingCart,
-  CheckSquare,
-  DollarSign,
-  MessageSquare,
-  BarChart3,
-  Settings,
+  Loader2,
+  Lock,
   ChevronLeft,
   ChevronRight,
-  Building2,
-  FileText,
-  Calendar,
-  MapPin,
-  Bell,
-  Loader2,
-  Layers,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { useSubscription } from '@/hooks/use-subscription';
 import { AuthService } from '@/lib/auth';
 import { SidebarItem } from './sidebar-item';
 import { SidebarFooter } from './sidebar-footer';
+import { SidebarNotifications } from './sidebar-notifications';
+import { SidebarThemeToggle } from './sidebar-theme-toggle';
+import { Module } from '@/lib/auth';
 
 interface NavItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
-  moduleName?: string; // Nombre del módulo para filtrar por suscripción
   children?: Array<{ 
     title: string; 
     href: string; 
@@ -50,88 +40,52 @@ interface NavItem {
   module?: any;
 }
 
-// Navegación simplificada - sin sub-rutas para "crear"
-const navigationItems: NavItem[] = [
-  {
-    title: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    // Dashboard siempre disponible
-  },
-  {
-    title: 'CRM',
-    href: '/crm',
-    icon: Users,
-    moduleName: 'crm',
-    children: [
-      { title: 'Clientes', href: '/crm/customers', icon: Users },
-      { title: 'Pipeline', href: '/crm/pipeline', icon: BarChart3 },
-    ],
-  },
-  {
-    title: 'Productos',
-    href: '/products',
-    icon: Package,
-    moduleName: 'products',
-    children: [
-      { title: 'Catálogo', href: '/products/catalog', icon: Package },
-      { title: 'Categorías', href: '/products/categories', icon: Package },
-      { title: 'Alertas Stock', href: '/products/alerts', icon: Bell },
-    ],
-  },
-  {
-    title: 'Órdenes',
-    href: '/orders',
-    icon: ShoppingCart,
-    moduleName: 'orders',
-    children: [
-      { title: 'Todas las Órdenes', href: '/orders', icon: ShoppingCart },
-      { title: 'Pagos', href: '/orders/payments', icon: DollarSign },
-    ],
-  },
-  {
-    title: 'Operaciones',
-    href: '/tasks',
-    icon: CheckSquare,
-    moduleName: 'tasks',
-    children: [
-      { title: 'Tareas', href: '/tasks', icon: CheckSquare },
-      { title: 'Mapa', href: '/operations/map', icon: MapPin },
-    ],
-  },
-  {
-    title: 'Contabilidad',
-    href: '/accounting',
-    icon: DollarSign,
-    moduleName: 'accounting',
-    children: [
-      { title: 'Transacciones', href: '/accounting/transactions', icon: DollarSign },
-      { title: 'Cuentas Bancarias', href: '/accounting/accounts', icon: Building2 },
-      { title: 'Reportes', href: '/accounting/reports', icon: FileText },
-    ],
-  },
-  {
-    title: 'Reportes',
-    href: '/reports',
-    icon: BarChart3,
-    moduleName: 'reports',
-    children: [
-      { title: 'Dashboard', href: '/reports', icon: BarChart3 },
-      { title: 'Reportes Guardados', href: '/reports/saved', icon: FileText },
-    ],
-  },
-  {
-    title: 'Configuración',
-    href: '/settings',
-    icon: Settings,
-    // Configuración siempre disponible
-    children: [
-      { title: 'Empresa', href: '/settings/company', icon: Building2 },
-      { title: 'Usuarios', href: '/settings/users', icon: Users },
-      { title: 'Integraciones', href: '/settings/integrations', icon: Settings },
-    ],
-  },
-];
+// Mapeo de nombres de iconos del backend a componentes de Lucide React
+const getIconComponent = (iconName?: string): React.ComponentType<{ className?: string }> => {
+  if (!iconName) {
+    return LayoutDashboard;
+  }
+
+  // Convertir el nombre del icono a PascalCase si es necesario
+  const iconKey = iconName
+    .split(/[-_]/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join('');
+
+  // Buscar el icono en LucideIcons
+  const IconComponent = (LucideIcons as any)[iconKey] || (LucideIcons as any)[iconName];
+  
+  if (IconComponent) {
+    return IconComponent;
+  }
+
+  // Fallback a iconos comunes si no se encuentra
+  const fallbackMap: Record<string, React.ComponentType<{ className?: string }>> = {
+    users: LucideIcons.Users,
+    user: LucideIcons.User,
+    package: LucideIcons.Package,
+    shoppingcart: LucideIcons.ShoppingCart,
+    checksquare: LucideIcons.CheckSquare,
+    dollarsign: LucideIcons.DollarSign,
+    barchart3: LucideIcons.BarChart3,
+    messagesquare: LucideIcons.MessageSquare,
+    mappin: LucideIcons.MapPin,
+    settings: LucideIcons.Settings,
+    filetext: LucideIcons.FileText,
+    calendar: LucideIcons.Calendar,
+    inbox: LucideIcons.Inbox,
+    list: LucideIcons.List,
+    trendingup: LucideIcons.TrendingUp,
+    zap: LucideIcons.Zap,
+    fileedit: LucideIcons.FileEdit,
+    building2: LucideIcons.Building2,
+    bell: LucideIcons.Bell,
+    layers: LucideIcons.Layers,
+  };
+
+  const normalizedName = iconName.toLowerCase().replace(/[-_]/g, '');
+  return fallbackMap[normalizedName] || LayoutDashboard;
+};
 
 interface SidebarProps {
   className?: string;
@@ -171,122 +125,93 @@ export function Sidebar({ className }: SidebarProps) {
     return `/${tenantSlug}/${href}`;
   };
 
-  // Procesar navigationItems para agregar el slug del tenant
-  const processedNavigationItems: NavItem[] = navigationItems.map(item => ({
-    ...item,
-    href: addTenantSlug(item.href),
-    children: item.children?.map(child => ({
-      ...child,
-      href: addTenantSlug(child.href),
-    })),
-  }));
+  // Construir navegación completamente desde los módulos del backend
+  const navigationItems = useMemo(() => {
+    const items: NavItem[] = [];
 
-  // Obtener módulos del usuario (vienen del endpoint /auth/me)
-  const userModules = user?.modules || [];
-  const moduleMap = new Map(userModules.map(m => [m.name, m]));
+    // 1. Dashboard siempre disponible (no viene del backend)
+    items.push({
+      title: 'Dashboard',
+      href: addTenantSlug('/dashboard'),
+      icon: LayoutDashboard,
+      isEnabled: true,
+    });
 
-  // Mostrar todos los módulos, pero marcar los no habilitados
-  const filteredNavigationItems = processedNavigationItems.map(item => {
-    if (!item.moduleName) {
-      return { ...item, isEnabled: true };
-    }
+    // 2. Obtener módulos del usuario (vienen del endpoint /auth/me)
+    const userModules = (user?.modules || []) as Module[];
 
-    const module = moduleMap.get(item.moduleName);
-    const isVisible = module?.isVisible ?? true;
+    // 3. Procesar cada módulo del backend
+    userModules
+      .filter((module) => module.isVisible) // Solo módulos visibles
+      .sort((a, b) => a.sortOrder - b.sortOrder) // Ordenar por sortOrder
+      .forEach((module) => {
+        // Construir hijos desde los submódulos del backend
+        const children: NavItem['children'] = [];
 
-    // Si el módulo no es visible, no mostrarlo
-    if (!isVisible) {
-      return null;
-    }
+        if (module.subModules && module.subModules.length > 0) {
+          // Procesar todos los submódulos visibles
+          module.subModules
+            .filter((sm) => sm.isVisible) // Solo submódulos visibles
+            .sort((a, b) => a.sortOrder - b.sortOrder) // Ordenar por sortOrder
+            .forEach((subModule) => {
+              children.push({
+                title: subModule.displayName,
+                href: addTenantSlug(subModule.path || `${module.path}/${subModule.name}`),
+                icon: getIconComponent(subModule.icon),
+                isEnabled: subModule.isEnabled, // Marcar si está habilitado o no
+                subModule: subModule,
+              });
+            });
+        }
 
-    // Si el módulo tiene submódulos, agregarlos como hijos (mostrar todos los visibles, pero marcar los deshabilitados)
-    let childrenWithSubModules = item.children || [];
-    
-    if (module?.subModules && module.subModules.length > 0) {
-      // Mostrar todos los submódulos visibles, no solo los habilitados
-      // Esto permite mostrar submódulos bloqueados con indicador visual
-      const visibleSubModules = module.subModules
-        .filter(sm => sm.isVisible) // Solo filtrar por visibilidad
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map(sm => {
-          // Intentar obtener el icono del submódulo o usar uno por defecto
-          const getIcon = () => {
-            // Si el submódulo tiene un icono definido, intentar usarlo
-            // Por ahora usamos un icono genérico, pero podrías mapear iconos
-            return Layers; // Icono por defecto para submódulos
-          };
-
-          return {
-            title: sm.displayName,
-            href: sm.path || `${item.href}/${sm.name}`,
-            icon: getIcon(),
-            isEnabled: sm.isEnabled, // Marcar si está habilitado o no
-            subModule: sm,
-          };
+        // Los módulos principales SIEMPRE están habilitados visualmente
+        // Solo los submódulos muestran el estado de habilitado/deshabilitado
+        // El módulo principal nunca debe mostrar el candado
+        items.push({
+          title: module.displayName,
+          href: addTenantSlug(module.path),
+          icon: getIconComponent(module.icon),
+          isEnabled: true, // Los módulos principales siempre están habilitados visualmente
+          module: module,
+          children: children.length > 0 ? children : undefined,
         });
-
-      // Combinar hijos existentes con submódulos visibles
-      childrenWithSubModules = [...(item.children || []), ...visibleSubModules];
-    }
-
-    // NUEVA LÓGICA: Un módulo está habilitado SIEMPRE que tenga al menos 1 submódulo/hijo activo
-    // Verificar en TODOS los hijos combinados (tanto hardcodeados como del backend)
-    // Si tiene 0 submódulos/hijos activos, está bloqueado
-    // Si no tiene submódulos definidos, usar la lógica anterior (isEnabled del módulo)
-    let isEnabled: boolean;
-    if (module?.subModules && module.subModules.length > 0) {
-      // Si tiene submódulos del backend, verificar si al menos uno está habilitado
-      // Verificar en todos los hijos combinados:
-      // - Los submódulos del backend tienen isEnabled explícito
-      // - Los hijos hardcodeados sin isEnabled se consideran habilitados por defecto
-      const hasActiveSubModules = childrenWithSubModules.some(child => {
-        // Si no tiene isEnabled definido, se considera habilitado (hijos hardcodeados)
-        if (child.isEnabled === undefined) return true;
-        // Si tiene isEnabled explícito, verificar su valor
-        return child.isEnabled === true;
       });
-      isEnabled = hasActiveSubModules;
-    } else if (childrenWithSubModules.length > 0) {
-      // Si no tiene submódulos del backend pero tiene hijos hardcodeados, verificar si alguno está habilitado
-      const hasActiveChildren = childrenWithSubModules.some(child => child.isEnabled !== false);
-      isEnabled = hasActiveChildren;
-    } else {
-      // Si no tiene submódulos ni hijos, usar la lógica anterior
-      isEnabled = module ? (module.isEnabled ?? true) : true;
-    }
 
-    return { 
-      ...item, 
-      isEnabled, 
-      module,
-      children: childrenWithSubModules.length > 0 ? childrenWithSubModules : item.children,
-    };
-  }).filter((item): item is NonNullable<typeof item> => item !== null);
+    return items;
+  }, [user?.modules, tenantSlug]);
 
   // Usar isotipo.svg siempre
   const isotipoSrc = '/isotipo.svg';
 
   const toggleExpanded = (href: string) => {
-    setExpandedItems(prev =>
-      prev.includes(href)
-        ? prev.filter(item => item !== href)
-        : [...prev, href]
-    );
+    setExpandedItems(prev => {
+      // Si el item ya está expandido, cerrarlo
+      if (prev.includes(href)) {
+        return prev.filter(item => item !== href);
+      }
+      // Si el sidebar está abierto (no colapsado), cerrar todos los demás y abrir solo este
+      if (!isCollapsed) {
+        return [href];
+      }
+      // Si está colapsado, permitir múltiples items expandidos
+      return [...prev, href];
+    });
   };
 
   const isExpanded = (href: string) => expandedItems.includes(href);
 
   return (
-    <aside
-      className={cn(
-        'flex h-full flex-col border-r bg-sidebar transition-all duration-300 overflow-hidden',
-        isCollapsed ? 'w-16' : 'w-64',
-        className
-      )}
-    >
+    <div className="relative h-screen">
+      <aside
+        className={cn(
+          'flex h-full flex-col bg-sidebar transition-all duration-300 overflow-hidden',
+          isCollapsed ? 'w-20' : 'w-60',
+          className
+        )}
+      >
       {/* Header - Isotipo */}
       <div className={cn(
-        "flex h-16 items-center border-b border-sidebar-border px-3",
+        "flex h-12 items-center px-3 mt-3",
         isCollapsed ? "justify-center" : ""
       )}>
         <Link href={addTenantSlug('/dashboard')} className="flex items-center gap-2.5">
@@ -321,13 +246,13 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
+      <nav className="flex-1 space-y-2 p-3 overflow-y-auto">
         {isLoadingSubscription ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          filteredNavigationItems.map((item) => (
+          navigationItems.map((item) => (
             <SidebarItem
               key={item.href}
               title={item.title}
@@ -345,12 +270,35 @@ export function Sidebar({ className }: SidebarProps) {
         )}
       </nav>
 
-      {/* Footer */}
+      {/* Notifications Section */}
+      <SidebarNotifications isCollapsed={isCollapsed} />
+
+      {/* Theme Toggle Section */}
+      <SidebarThemeToggle isCollapsed={isCollapsed} />
+
+      {/* Footer con usuario y plan */}
       <SidebarFooter 
         isCollapsed={isCollapsed} 
         variant="client" 
-        onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
       />
     </aside>
+
+      {/* Floating Toggle Button - Top position */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className={cn(
+          'absolute top-3 -right-3 z-50 h-6 w-6 rounded-full border-2 border-sidebar-border bg-sidebar p-0 shadow-md hover:bg-sidebar-accent hover:border-sidebar-accent transition-all',
+          'flex items-center justify-center mt-3'
+        )}
+      >
+        {isCollapsed ? (
+          <ChevronRight className="h-3 w-3 text-sidebar-foreground" />
+        ) : (
+          <ChevronLeft className="h-3 w-3 text-sidebar-foreground" />
+        )}
+      </Button>
+    </div>
   );
 }

@@ -170,6 +170,84 @@ export function useNotificationEvents(onNotification?: (notification: any) => vo
   }, [subscribe, onNotification]);
 }
 
+export function useCustomerEvents(
+  onCustomerCreated?: (customer: any) => void,
+  onCustomerUpdated?: (customer: any) => void,
+  onCustomerStatusChanged?: (customer: any) => void
+) {
+  const { subscribe } = useWebSocket();
+
+  useEffect(() => {
+    const unsubscribers: (() => void)[] = [];
+
+    if (onCustomerCreated) {
+      unsubscribers.push(subscribe('customer:created', onCustomerCreated));
+    }
+    if (onCustomerUpdated) {
+      unsubscribers.push(subscribe('customer:updated', onCustomerUpdated));
+    }
+    if (onCustomerStatusChanged) {
+      unsubscribers.push(subscribe('customer:status-changed', onCustomerStatusChanged));
+    }
+
+    return () => {
+      unsubscribers.forEach((unsub) => unsub());
+    };
+  }, [subscribe, onCustomerCreated, onCustomerUpdated, onCustomerStatusChanged]);
+}
+
+export function useInteractionEvents(
+  onInteractionCreated?: (interaction: any) => void,
+  onInteractionUpdated?: (interaction: any) => void,
+  onInteractionStatusChanged?: (interaction: any) => void
+) {
+  const { subscribe } = useWebSocket();
+
+  useEffect(() => {
+    const unsubscribers: (() => void)[] = [];
+
+    if (onInteractionCreated) {
+      unsubscribers.push(subscribe('interaction:created', onInteractionCreated));
+    }
+    if (onInteractionUpdated) {
+      unsubscribers.push(subscribe('interaction:updated', onInteractionUpdated));
+    }
+    if (onInteractionStatusChanged) {
+      unsubscribers.push(subscribe('interaction:status-changed', onInteractionStatusChanged));
+    }
+
+    return () => {
+      unsubscribers.forEach((unsub) => unsub());
+    };
+  }, [subscribe, onInteractionCreated, onInteractionUpdated, onInteractionStatusChanged]);
+}
+
+export function useCustomerNoteEvents(
+  onNoteCreated?: (note: any) => void,
+  onNoteUpdated?: (note: any) => void,
+  onNoteDeleted?: (note: any) => void
+) {
+  const { subscribe } = useWebSocket();
+
+  useEffect(() => {
+    const unsubscribers: (() => void)[] = [];
+
+    if (onNoteCreated) {
+      unsubscribers.push(subscribe('customer:note:created', onNoteCreated));
+    }
+    if (onNoteUpdated) {
+      unsubscribers.push(subscribe('customer:note:updated', onNoteUpdated));
+    }
+    if (onNoteDeleted) {
+      unsubscribers.push(subscribe('customer:note:deleted', onNoteDeleted));
+    }
+
+    return () => {
+      unsubscribers.forEach((unsub) => unsub());
+    };
+  }, [subscribe, onNoteCreated, onNoteUpdated, onNoteDeleted]);
+}
+
 export function useUserPresence(
   onUserOnline?: (user: any) => void,
   onUserOffline?: (user: any) => void
@@ -201,4 +279,39 @@ export function useMetricsUpdates(onMetricsUpdated?: (metrics: any) => void) {
     const unsubscribe = subscribe('metrics:updated', onMetricsUpdated);
     return () => unsubscribe();
   }, [subscribe, onMetricsUpdated]);
+}
+
+// Deal events hook
+export function useDealEvents(
+  onDealCreated?: (deal: any) => void,
+  onDealUpdated?: (deal: any) => void,
+  onDealStageChanged?: (deal: any) => void,
+  onDealWon?: (deal: any) => void,
+  onDealLost?: (deal: any) => void
+) {
+  const { subscribe } = useWebSocket();
+
+  useEffect(() => {
+    const unsubscribers: (() => void)[] = [];
+
+    if (onDealCreated) {
+      unsubscribers.push(subscribe('deal:created', onDealCreated));
+    }
+    if (onDealUpdated) {
+      unsubscribers.push(subscribe('deal:updated', onDealUpdated));
+    }
+    if (onDealStageChanged) {
+      unsubscribers.push(subscribe('deal:stage:changed', onDealStageChanged));
+    }
+    if (onDealWon) {
+      unsubscribers.push(subscribe('deal:won', onDealWon));
+    }
+    if (onDealLost) {
+      unsubscribers.push(subscribe('deal:lost', onDealLost));
+    }
+
+    return () => {
+      unsubscribers.forEach((unsub) => unsub());
+    };
+  }, [subscribe, onDealCreated, onDealUpdated, onDealStageChanged, onDealWon, onDealLost]);
 }

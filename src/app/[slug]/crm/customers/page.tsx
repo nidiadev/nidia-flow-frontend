@@ -2,191 +2,39 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
-import { 
-  Search, 
-  Filter, 
   Plus, 
   Edit, 
   Trash2, 
   Mail, 
   Phone,
   Download,
-  UserPlus,
-  Users,
   Star,
   Building2,
   Calendar,
   MapPin,
-  Eye
+  Eye,
+  Users,
+  UserPlus,
+  TrendingUp,
+  Target
 } from 'lucide-react';
 import { TenantLink } from '@/components/ui/tenant-link';
 import { useTenantRoutes } from '@/hooks/use-tenant-routes';
 import { useRouter } from 'next/navigation';
-import { useCustomersWithPagination, useDeleteCustomer } from '@/hooks/use-api';
-import { QueryLoading } from '@/components/ui/loading';
+import { useCustomersWithPagination, useDeleteCustomer, useCustomerStatistics } from '@/hooks/use-api';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { useNetworkStatus } from '@/hooks/use-network-status';
 import { usePermissions } from '@/hooks/use-permissions';
 import { toast } from 'sonner';
 import { Customer, CUSTOMER_TYPE_CONFIG, getLeadScoreInfo } from '@/types/customer';
-import { CustomerStats } from '@/components/crm/customer-stats';
 import { CustomerExport } from '@/components/crm/customer-export';
-import { PageHeader } from '@/components/ui/page-header';
-import { DataTable, DataTableAction } from '@/components/ui/data-table';
-
-// Filters component
-function CustomerFilters({ 
-  searchTerm, 
-  setSearchTerm, 
-  typeFilter, 
-  setTypeFilter,
-  sortBy,
-  setSortBy,
-  sortOrder,
-  setSortOrder 
-}: {
-  searchTerm: string;
-  setSearchTerm: (value: string) => void;
-  typeFilter: string;
-  setTypeFilter: (value: string) => void;
-  sortBy: string;
-  setSortBy: (value: string) => void;
-  sortOrder: string;
-  setSortOrder: (value: string) => void;
-}) {
-  return (
-    <div className="flex flex-col sm:flex-row gap-4 mb-6">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        <Input
-          placeholder="Buscar por nombre, email, empresa..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-      
-      <Select value={typeFilter} onValueChange={setTypeFilter}>
-        <SelectTrigger className="w-full sm:w-[180px]">
-          <SelectValue placeholder="Tipo de cliente" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todos los tipos</SelectItem>
-          <SelectItem value="lead">Leads</SelectItem>
-          <SelectItem value="prospect">Prospectos</SelectItem>
-          <SelectItem value="active">Activos</SelectItem>
-          <SelectItem value="inactive">Inactivos</SelectItem>
-          <SelectItem value="churned">Perdidos</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value: string) => {
-        const [field, order] = value.split('-');
-        setSortBy(field);
-        setSortOrder(order);
-      }}>
-        <SelectTrigger className="w-full sm:w-[200px]">
-          <SelectValue placeholder="Ordenar por" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="createdAt-desc">Más recientes</SelectItem>
-          <SelectItem value="createdAt-asc">Más antiguos</SelectItem>
-          <SelectItem value="firstName-asc">Nombre A-Z</SelectItem>
-          <SelectItem value="firstName-desc">Nombre Z-A</SelectItem>
-          <SelectItem value="leadScore-desc">Score mayor</SelectItem>
-          <SelectItem value="leadScore-asc">Score menor</SelectItem>
-          <SelectItem value="lastContactAt-desc">Último contacto</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
-// Bulk actions component
-function BulkActions({ 
-  selectedCustomers, 
-  onClearSelection,
-  allCustomers
-}: { 
-  selectedCustomers: Customer[]; 
-  onClearSelection: () => void;
-  allCustomers: Customer[];
-}) {
-  const handleBulkAction = (action: string) => {
-    toast.info(`Acción "${action}" aplicada a ${selectedCustomers.length} cliente${selectedCustomers.length !== 1 ? 's' : ''}`);
-    onClearSelection();
-  };
-
-  if (selectedCustomers.length === 0) return null;
-
-  return (
-    <div className="flex items-center justify-between bg-muted p-4 rounded-lg mb-4">
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">
-          {selectedCustomers.length} cliente{selectedCustomers.length !== 1 ? 's' : ''} seleccionado{selectedCustomers.length !== 1 ? 's' : ''}
-        </span>
-      </div>
-      
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleBulkAction('Asignar vendedor')}
-        >
-          <UserPlus className="h-4 w-4 mr-2" />
-          Asignar
-        </Button>
-        
-        <CustomerExport 
-          customers={allCustomers}
-          selectedCustomers={selectedCustomers.map(c => c.id)}
-          trigger={
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar
-            </Button>
-          }
-        />
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleBulkAction('Cambiar tipo')}
-        >
-          <Users className="h-4 w-4 mr-2" />
-          Cambiar tipo
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onClearSelection}
-        >
-          Cancelar
-        </Button>
-      </div>
-    </div>
-  );
-}
+import { SectionHeader } from '@/components/ui/section-header';
+import { CustomerCard } from '@/components/crm/customer-card';
+import { Table } from '@/components/table';
+import { TableRowAction } from '@/components/table/types';
 
 // Define columns for DataTable
 function getColumns(): ColumnDef<Customer>[] {
@@ -197,17 +45,17 @@ function getColumns(): ColumnDef<Customer>[] {
       cell: ({ row }) => {
         const customer = row.original;
         return (
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 group">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-gradient-to-r from-nidia-green to-nidia-purple rounded-full flex items-center justify-center text-white text-sm font-medium">
+              <div className="w-10 h-10 bg-gradient-to-br from-nidia-green/80 to-nidia-purple/80 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-sm group-hover:shadow-md transition-shadow">
                 {customer.firstName?.[0]}{customer.lastName?.[0]}
               </div>
             </div>
-            <div>
-              <div className="font-medium text-foreground">
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-foreground group-hover:text-nidia-green transition-colors">
                 {customer.firstName} {customer.lastName}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground truncate">
                 {customer.email}
               </div>
             </div>
@@ -221,35 +69,44 @@ function getColumns(): ColumnDef<Customer>[] {
       cell: ({ row }) => {
         const customer = row.original;
         return (
-          <div className="space-y-1">
+          <div className="space-y-2">
             {customer.companyName && (
-              <div className="flex items-center text-sm">
-                <Building2 className="h-3 w-3 mr-1 text-muted-foreground" />
-                {customer.companyName}
+              <div className="flex items-center gap-1.5 text-sm">
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-foreground font-medium truncate">{customer.companyName}</span>
               </div>
             )}
-            {customer.phone && (
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Phone className="h-3 w-3 mr-1" />
-                {customer.phone}
-              </div>
-            )}
-            {customer.city && (
-              <div className="flex items-center text-sm text-muted-foreground">
-                <MapPin className="h-3 w-3 mr-1" />
-                {customer.city}
-              </div>
-            )}
+            <div className="flex items-center gap-3 flex-wrap">
+              {customer.whatsapp && (
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Phone className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{customer.whatsapp.replace(/^\+57\s?/, '')}</span>
+                </div>
+              )}
+              {customer.city && (
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{customer.city}</span>
+                </div>
+              )}
+            </div>
             {customer.tags && customer.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {customer.tags.slice(0, 2).map((tag, index) => (
-                  <Badge key={index} variant="outline" className="text-xs px-1 py-0">
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {customer.tags.slice(0, 3).map((tag, index) => (
+                  <Badge 
+                    key={index} 
+                    variant="secondary" 
+                    className="text-xs px-2 py-0.5 h-5 bg-muted/60 hover:bg-muted border-border/50 text-foreground/80 font-medium"
+                  >
                     {tag}
                   </Badge>
                 ))}
-                {customer.tags.length > 2 && (
-                  <Badge variant="outline" className="text-xs px-1 py-0">
-                    +{customer.tags.length - 2}
+                {customer.tags.length > 3 && (
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs px-2 py-0.5 h-5 text-muted-foreground border-border/50"
+                  >
+                    +{customer.tags.length - 3}
                   </Badge>
                 )}
               </div>
@@ -266,7 +123,7 @@ function getColumns(): ColumnDef<Customer>[] {
         return (
           <Badge 
             variant={typeConfig.variant}
-            className={typeConfig.color}
+            className={`${typeConfig.color} text-xs font-medium px-2.5 py-0.5`}
           >
             {typeConfig.label}
           </Badge>
@@ -280,9 +137,9 @@ function getColumns(): ColumnDef<Customer>[] {
         const customer = row.original;
         const leadScoreInfo = getLeadScoreInfo(customer.leadScore);
         return (
-          <div className="flex items-center space-x-1">
-            <Star className="h-3 w-3 text-yellow-400" />
-            <span className={`${leadScoreInfo.color} font-medium`}>
+          <div className="flex items-center gap-1.5">
+            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+            <span className={`${leadScoreInfo.color} font-semibold text-sm`}>
               {customer.leadScore}
             </span>
           </div>
@@ -294,7 +151,9 @@ function getColumns(): ColumnDef<Customer>[] {
       header: 'Asignado a',
       cell: ({ row }) => (
         <div className="text-sm text-muted-foreground">
-          {row.original.assignedToName || row.original.assignedTo || 'Sin asignar'}
+          {row.original.assignedToName || row.original.assignedTo || (
+            <span className="text-muted-foreground/60 italic">Sin asignar</span>
+          )}
         </div>
       ),
     },
@@ -305,13 +164,20 @@ function getColumns(): ColumnDef<Customer>[] {
         const customer = row.original;
         return (
           <div className="space-y-1">
-            <div className="text-sm">
-              {new Date(customer.createdAt).toLocaleDateString('es-ES')}
+            <div className="text-sm font-medium text-foreground">
+              {new Date(customer.createdAt).toLocaleDateString('es-ES', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+              })}
             </div>
             {customer.lastContactAt && (
-              <div className="text-xs text-muted-foreground flex items-center">
-                <Calendar className="h-3 w-3 mr-1" />
-                Último: {new Date(customer.lastContactAt).toLocaleDateString('es-ES')}
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                <span>Último: {new Date(customer.lastContactAt).toLocaleDateString('es-ES', { 
+                  day: '2-digit', 
+                  month: '2-digit' 
+                })}</span>
               </div>
             )}
           </div>
@@ -327,7 +193,6 @@ export default function CustomersListPage() {
   const router = useRouter();
   
   // Filters state
-  const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -336,39 +201,36 @@ export default function CustomersListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   
-  // Selection state
-  const [selectedCustomers, setSelectedCustomers] = useState<Customer[]>([]);
-  
   // Define columns
   const columns = useMemo(() => getColumns(), []);
   
+  // Get tenant routes helper
+  const { route } = useTenantRoutes();
+  
   // Build filters for API
   const filters = useMemo(() => ({
-    search: searchTerm || undefined,
     type: typeFilter !== 'all' ? typeFilter : undefined,
     sortBy,
     sortOrder,
     page: currentPage,
     limit: itemsPerPage,
-  }), [searchTerm, typeFilter, sortBy, sortOrder, currentPage]);
+  }), [typeFilter, sortBy, sortOrder, currentPage]);
   
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, typeFilter, sortBy, sortOrder]);
+  }, [typeFilter, sortBy, sortOrder]);
   
   // Fetch customers with pagination
   const { data: customersData, isLoading, isError, error, refetch } = useCustomersWithPagination(filters);
   const customers = customersData?.data || [];
   const pagination = customersData?.pagination;
   
+  // Fetch statistics
+  const { data: statistics } = useCustomerStatistics();
+  
   // Delete customer mutation
   const deleteCustomer = useDeleteCustomer();
-  
-  // Handle row selection from DataTable
-  const handleRowSelectionChange = (selectedRows: Customer[]) => {
-    setSelectedCustomers(selectedRows);
-  };
   
   const handleDelete = async (id: string) => {
     try {
@@ -380,211 +242,198 @@ export default function CustomersListPage() {
     }
   };
 
+  // Stats data
+  const statsData = useMemo(() => {
+    const total = statistics?.totalCustomers || 0;
+    const leads = statistics?.byType?.lead || 0;
+    const prospects = statistics?.byType?.prospect || 0;
+    const active = statistics?.byType?.active || 0;
+    const conversionRate = statistics?.conversionRate || 0;
+    const avgScore = Math.round(statistics?.averageLeadScore || 0);
+    
+    return [
+      {
+        label: 'Clientes',
+        value: total,
+        description: `${active} activos`,
+        icon: <Users className="h-4 w-4 text-muted-foreground" />,
+      },
+      {
+        label: 'Leads y Prospectos',
+        value: leads + prospects,
+        description: `${leads} leads, ${prospects} prospectos`,
+        icon: <UserPlus className="h-4 w-4 text-blue-500" />,
+      },
+      {
+        label: 'Tasa Conversión',
+        value: `${conversionRate.toFixed(1)}%`,
+        description: 'Leads a clientes activos',
+        icon: <TrendingUp className="h-4 w-4 text-green-500" />,
+      },
+      {
+        label: 'Score Promedio',
+        value: avgScore,
+        description: 'Calidad promedio de leads',
+        icon: <Target className="h-4 w-4 text-yellow-500" />,
+      },
+    ];
+  }, [statistics]);
+
+  // Row actions
+  const rowActions: TableRowAction<Customer>[] = useMemo(() => [
+    {
+      label: 'Ver detalle',
+      icon: <Eye className="h-4 w-4" />,
+      onClick: (customer) => {
+        router.push(route(`/crm/customers/${customer.id}`));
+      },
+      requiredPermission: ['crm:read', 'crm:customers:read'],
+    },
+    {
+      label: 'Editar',
+      icon: <Edit className="h-4 w-4" />,
+      onClick: (customer) => {
+        router.push(route(`/crm/customers/${customer.id}/edit`));
+      },
+      requiredPermission: ['crm:write', 'crm:customers:write'],
+    },
+    {
+      label: 'Enviar email',
+      icon: <Mail className="h-4 w-4" />,
+      onClick: () => {
+        toast.info('Función de email próximamente');
+      },
+      requiredPermission: ['crm:write', 'crm:customers:write'],
+    },
+    {
+      label: 'Llamar',
+      icon: <Phone className="h-4 w-4" />,
+      onClick: () => {
+        toast.info('Función de llamada próximamente');
+      },
+    },
+    {
+      label: 'Eliminar',
+      icon: <Trash2 className="h-4 w-4" />,
+      variant: 'destructive',
+      separator: true,
+      onClick: (customer) => {
+        if (confirm(`¿Estás seguro de que deseas eliminar a ${customer.firstName} ${customer.lastName}?`)) {
+          handleDelete(customer.id);
+        }
+      },
+      requiredPermission: ['crm:delete', 'crm:customers:delete'],
+    },
+  ], [route, router]);
+
   return (
     <ErrorBoundary>
-      <div>
+      <div className="space-y-4">
         {/* Header */}
-        <PageHeader
-          title="Lista de Clientes"
+        <SectionHeader
+          title="Clientes"
           description="Gestiona y organiza tu base de clientes y leads"
-          variant="gradient"
           actions={
-            <>
-              {isOffline && (
-                <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 px-3 py-2 rounded-lg">
-                  <div className="w-2 h-2 bg-orange-600 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium">Modo Offline</span>
-                </div>
-              )}
-              
-              <CustomerExport 
-                customers={customers || []}
-                trigger={
-                  <Button variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Exportar
-                  </Button>
-                }
-              />
-              
-              {hasPermission('crm:write') || hasPermission('crm:customers:write') ? (
-                <Button asChild>
-                  <TenantLink href="/crm/customers/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nuevo Cliente
-                  </TenantLink>
-                </Button>
-              ) : null}
-            </>
+            isOffline ? (
+              <div className="flex items-center space-x-2 text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950 px-3 py-1.5 rounded-md text-xs font-medium">
+                <div className="w-1.5 h-1.5 bg-orange-600 dark:bg-orange-400 rounded-full animate-pulse"></div>
+                <span>Offline</span>
+              </div>
+            ) : null
           }
         />
 
-        {/* Stats */}
-        <CustomerStats className="mb-8" />
-
-        {/* Filters */}
-        <CustomerFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          typeFilter={typeFilter}
-          setTypeFilter={setTypeFilter}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-        />
-
-        {/* Bulk Actions */}
-        <BulkActions
-          selectedCustomers={selectedCustomers}
-          onClearSelection={() => setSelectedCustomers([])}
-          allCustomers={customers || []}
-        />
-
-        {/* Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Clientes</CardTitle>
-            <CardDescription>
-              {pagination 
-                ? `${pagination.total} cliente${pagination.total !== 1 ? 's' : ''} en total${pagination.totalPages > 1 ? ` (página ${pagination.page} de ${pagination.totalPages})` : ''}`
-                : isLoading 
-                  ? 'Cargando clientes...' 
-                  : 'No hay clientes'
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isOffline && (
-              <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <div className="flex items-center text-orange-800">
-                  <div className="w-2 h-2 bg-orange-600 rounded-full animate-pulse mr-2"></div>
-                  <span className="text-sm font-medium">
-                    Modo offline - Mostrando datos en caché
-                  </span>
-                </div>
-              </div>
-            )}
-            
-            <DataTable
-              data={customers || []}
-              columns={columns}
-              searchPlaceholder="Buscar por nombre, email, empresa..."
-              emptyMessage="No hay clientes"
-              emptyDescription={
-                searchTerm || typeFilter !== 'all' 
-                  ? 'No se encontraron clientes con los filtros aplicados'
-                  : 'Comienza agregando tu primer cliente'
-              }
-              isLoading={isLoading}
-              actions={[
-                {
-                  label: 'Ver detalle',
-                  icon: <Eye className="h-4 w-4" />,
-                  onClick: (customer) => {
-                    router.push(`/crm/customers/${customer.id}`);
-                  },
-                  requiredPermission: ['crm:read', 'crm:customers:read'],
-                },
-                {
-                  label: 'Editar',
-                  icon: <Edit className="h-4 w-4" />,
-                  onClick: (customer) => {
-                    router.push(`/crm/customers/${customer.id}/edit`);
-                  },
-                  requiredPermission: ['crm:write', 'crm:customers:write'],
-                },
-                {
-                  label: 'Enviar email',
-                  icon: <Mail className="h-4 w-4" />,
-                  onClick: () => {
-                    toast.info('Función de email próximamente');
-                  },
-                  requiredPermission: ['crm:write', 'crm:customers:write'],
-                },
-                {
-                  label: 'Llamar',
-                  icon: <Phone className="h-4 w-4" />,
-                  onClick: () => {
-                    toast.info('Función de llamada próximamente');
-                  },
-                },
-                {
-                  label: 'Eliminar',
-                  icon: <Trash2 className="h-4 w-4" />,
-                  variant: 'destructive',
-                  separator: true,
-                  onClick: (customer) => {
-                    if (confirm(`¿Estás seguro de que deseas eliminar a ${customer.firstName} ${customer.lastName}?`)) {
-                      handleDelete(customer.id);
-                    }
-                  },
-                  requiredPermission: ['crm:delete', 'crm:customers:delete'],
-                },
-              ]}
-              enableRowSelection={true}
-              onRowSelectionChange={handleRowSelectionChange}
-              enableColumnVisibility={true}
-              enableColumnSizing={true}
-              getRowId={(row) => row.id}
-              onRowClick={(customer) => {
-                router.push(`/crm/customers/${customer.id}`);
-              }}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Pagination */}
-        {pagination && pagination.total > 0 && (
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              Mostrando {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} clientes
-            </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    className={pagination.page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                  />
-                </PaginationItem>
-                
-                {/* Page numbers */}
-                {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                  let pageNum: number;
-                  if (pagination.totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (pagination.page <= 3) {
-                    pageNum = i + 1;
-                  } else if (pagination.page >= pagination.totalPages - 2) {
-                    pageNum = pagination.totalPages - 4 + i;
-                  } else {
-                    pageNum = pagination.page - 2 + i;
+        {/* Tabla con componente global - Stats integradas */}
+        <Table
+          id="customers"
+          data={customers}
+          columns={columns}
+          search={{
+            enabled: true,
+            placeholder: 'Buscar por nombre, email, empresa...',
+          }}
+          pagination={{
+            enabled: true,
+            pageSize: itemsPerPage,
+            serverSide: true,
+            total: pagination?.total,
+            onPageChange: (newPage) => setCurrentPage(newPage),
+          }}
+          rowActions={rowActions}
+          actions={[
+            {
+              label: 'Exportar',
+              icon: <Download className="h-4 w-4" />,
+              variant: 'outline',
+              render: () => (
+                <CustomerExport 
+                  customers={customers || []}
+                  trigger={
+                    <Button variant="outline" size="default">
+                      <Download className="h-4 w-4 mr-2" />
+                      Exportar
+                    </Button>
                   }
-                  
-                  return (
-                    <PaginationItem key={pageNum}>
-                      <PaginationLink
-                        onClick={() => setCurrentPage(pageNum)}
-                        isActive={pagination.page === pageNum}
-                        className="cursor-pointer"
-                      >
-                        {pageNum}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                })}
-                
-                <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
-                    className={pagination.page >= pagination.totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        )}
+                />
+              ),
+            },
+            ...(hasPermission('crm:write') || hasPermission('crm:customers:write') ? [{
+              label: 'Nuevo Cliente',
+              icon: <Plus className="h-4 w-4" />,
+              onClick: () => router.push(route('/crm/customers/new')),
+            }] : []),
+          ]}
+          stats={{
+            enabled: true,
+            stats: statsData,
+          }}
+          cards={{
+            enabled: true,
+            gridCols: { default: 1, sm: 2, lg: 3, xl: 4 },
+            renderCard: (customer) => (
+              <CustomerCard
+                key={customer.id}
+                customer={customer}
+                viewUrl={route(`/crm/customers/${customer.id}`)}
+                editUrl={route(`/crm/customers/${customer.id}/edit`)}
+                onDelete={(id) => {
+                  if (confirm(`¿Estás seguro de que deseas eliminar a ${customer.firstName} ${customer.lastName}?`)) {
+                    handleDelete(id);
+                  }
+                }}
+              />
+            ),
+          }}
+          emptyState={{
+            icon: <Users className="h-16 w-16 text-muted-foreground/50" />,
+            title: typeFilter !== 'all' 
+              ? 'No se encontraron clientes'
+              : 'No hay clientes',
+            description: typeFilter !== 'all' 
+              ? 'Intenta ajustar los filtros para encontrar más resultados'
+              : 'Comienza agregando tu primer cliente para gestionar tu base de contactos',
+            action: (hasPermission('crm:write') || hasPermission('crm:customers:write')) ? (
+              <Button asChild>
+                <TenantLink href={route('/crm/customers/new')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Cliente
+                </TenantLink>
+              </Button>
+            ) : undefined,
+          }}
+          isLoading={isLoading}
+          isError={isError}
+          error={error as Error | null}
+          onRetry={refetch}
+          features={{
+            columnVisibility: true,
+            columnSizing: true,
+          }}
+          getRowId={(row) => row.id}
+          onRowClick={(customer) => {
+            router.push(route(`/crm/customers/${customer.id}`));
+          }}
+        />
       </div>
     </ErrorBoundary>
   );

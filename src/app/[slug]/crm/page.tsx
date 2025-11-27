@@ -178,9 +178,17 @@ function QuickActions() {
         firstName: 'Cliente',
         lastName: 'Demo',
         email: `demo${Date.now()}@example.com`,
-        type: 'lead',
-        leadScore: Math.floor(Math.random() * 100),
+        whatsapp: '+573001234567',
         companyName: 'Empresa Demo',
+        type: 'lead',
+        leadSource: 'other',
+        leadScore: Math.floor(Math.random() * 100),
+        addressLine1: 'Calle Demo 123',
+        city: 'Bogotá',
+        country: 'CO',
+        industry: 'Tecnología',
+        segment: 'B2B',
+        taxId: '900123456-1',
       });
       toast.success('Cliente demo creado exitosamente');
     } catch (error) {

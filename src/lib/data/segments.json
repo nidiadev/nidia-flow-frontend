@@ -1,0 +1,10 @@
+[
+  { "value": "B2B", "label": "Vendo a otras empresas" },
+  { "value": "B2C", "label": "Vendo directamente a clientes finales" },
+  { "value": "B2B2C", "label": "Vendo a empresas que luego venden a clientes" },
+  { "value": "B2G", "label": "Vendo a entidades del gobierno" },
+  { "value": "C2C", "label": "Facilito ventas entre personas" },
+  { "value": "MIXTO", "label": "Vendo tanto a empresas como a clientes finales" },
+  { "value": "OTRO", "label": "Otro tipo de negocio" }
+]
+

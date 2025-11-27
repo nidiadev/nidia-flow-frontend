@@ -59,7 +59,7 @@ export function FloatingMenu({
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
           >
-            <div className="p-1.5">
+            <div className="p-2">
               {items.map((item, index) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                 const Icon = item.icon;
@@ -71,7 +71,7 @@ export function FloatingMenu({
                       <TooltipTrigger asChild>
                         <div
                           className={cn(
-                            'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+                            'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors mb-1',
                             itemIsEnabled
                               ? 'hover:bg-primary/15 hover:text-foreground cursor-pointer'
                               : 'opacity-60 cursor-not-allowed',

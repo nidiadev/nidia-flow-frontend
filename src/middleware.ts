@@ -251,9 +251,10 @@ export function middleware(request: NextRequest) {
       const url = new URL(apiUrl);
       // Extract origin (protocol + hostname + port if present)
       connectSrc += ` ${url.origin}`;
-      // Also allow WebSocket Secure (wss://) for the same origin
+      // Also allow WebSocket protocols for the same origin
       if (url.protocol === 'https:') {
-        connectSrc += ` wss://${url.host}`;
+        // In production (https), allow both wss:// and ws:// (fallback)
+        connectSrc += ` wss://${url.host} ws://${url.host}`;
       } else if (url.protocol === 'http:') {
         connectSrc += ` ws://${url.host}`;
       }

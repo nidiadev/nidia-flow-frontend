@@ -4,10 +4,29 @@ import axios from 'axios';
 import { getApiBaseURL } from './api';
 
 // JWT token utilities
+// IMPORTANTE: Esta interfaz debe coincidir con JwtPayload del backend
 interface JWTPayload {
+  // Campos estándar JWT
   exp?: number;
   iat?: number;
-  sub?: string;
+  
+  // Identificadores de usuario
+  sub: string; // ID del usuario en la BD del tenant (para operaciones en tenant DB)
+  email: string;
+  superAdminUserId?: string; // ID del usuario en SuperAdmin DB (para referencias y auditoría)
+  tenantUserId?: string; // ID del usuario en Tenant DB (alias de sub, para claridad)
+  
+  // Información del tenant
+  tenantId?: string; // SIEMPRE presente para usuarios de tenant (nunca null)
+  tenantSlug?: string; // Slug del tenant para URLs amigables (ej: "mi-empresa")
+  dbName?: string; // SIEMPRE presente para usuarios de tenant: "tenant_{uuid}_{env}"
+  
+  // Roles y permisos
+  systemRole: string; // 'super_admin' | 'tenant_admin' | 'tenant_user' | 'support'
+  role?: string; // Rol dentro del tenant: 'admin' | 'manager' | 'sales' | etc (solo para tenant_user)
+  permissions?: string[]; // Permisos específicos del usuario
+  
+  // Campos adicionales (para compatibilidad)
   [key: string]: any;
 }
 
@@ -59,6 +78,7 @@ export const registerSchema = z.object({
     .min(2, 'El slug debe tener al menos 2 caracteres')
     .regex(/^[a-z0-9-]+$/, 'El slug solo puede contener letras minúsculas, números y guiones'),
   phone: z.string().optional(),
+  planId: z.string().optional(), // Plan ID opcional para asignar al tenant
 });
 
 export const forgotPasswordSchema = z.object({

@@ -13,7 +13,27 @@ class WebSocketService {
       return;
     }
 
-    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
+    // Get WebSocket URL, automatically use wss:// if API URL is https://
+    let wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    
+    // If API URL is https://, ensure WebSocket uses wss://
+    if (apiUrl && apiUrl.startsWith('https://')) {
+      // Convert ws:// to wss:// or http:// to https://
+      if (wsUrl.startsWith('ws://')) {
+        wsUrl = wsUrl.replace('ws://', 'wss://');
+      } else if (wsUrl.startsWith('http://')) {
+        wsUrl = wsUrl.replace('http://', 'wss://');
+      } else if (!wsUrl.startsWith('wss://')) {
+        // If no protocol specified, extract host from API URL and use wss://
+        try {
+          const apiUrlObj = new URL(apiUrl);
+          wsUrl = `wss://${apiUrlObj.host}`;
+        } catch (e) {
+          console.warn('Could not parse API URL for WebSocket, using default');
+        }
+      }
+    }
 
     this.socket = io(wsUrl, {
       auth: {
@@ -32,9 +52,10 @@ class WebSocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('WebSocket connected:', this.socket?.id);
+      const socketId = this.socket?.id || 'unknown';
+      console.log('WebSocket connected:', socketId);
       this.reconnectAttempts = 0;
-      this.emit('connection:success', { socketId: this.socket?.id });
+      this.emit('connection:success', { socketId });
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -62,6 +83,18 @@ class WebSocketService {
     this.socket.on('order:created', (data) => this.emit('order:created', data));
     this.socket.on('order:updated', (data) => this.emit('order:updated', data));
     this.socket.on('order:assigned', (data) => this.emit('order:assigned', data));
+
+    this.socket.on('customer:created', (data) => this.emit('customer:created', data));
+    this.socket.on('customer:updated', (data) => this.emit('customer:updated', data));
+    this.socket.on('customer:status-changed', (data) => this.emit('customer:status-changed', data));
+
+    this.socket.on('interaction:created', (data) => this.emit('interaction:created', data));
+    this.socket.on('interaction:updated', (data) => this.emit('interaction:updated', data));
+    this.socket.on('interaction:status-changed', (data) => this.emit('interaction:status-changed', data));
+
+    this.socket.on('customer:note:created', (data) => this.emit('customer:note:created', data));
+    this.socket.on('customer:note:updated', (data) => this.emit('customer:note:updated', data));
+    this.socket.on('customer:note:deleted', (data) => this.emit('customer:note:deleted', data));
 
     this.socket.on('task:created', (data) => this.emit('task:created', data));
     this.socket.on('task:updated', (data) => this.emit('task:updated', data));

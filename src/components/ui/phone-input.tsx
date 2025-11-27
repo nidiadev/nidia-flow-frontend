@@ -51,12 +51,22 @@ export function PhoneInput({
 
   useEffect(() => {
     if (value) {
-      const country = COUNTRIES.find(c => value.startsWith(c.dialCode));
+      // Remove spaces and handle E.164 format (+[dialCode][number])
+      const cleanedValue = value.replace(/\s/g, '');
+      const country = COUNTRIES.find(c => {
+        const dialCode = c.dialCode.replace(/^\+/, '');
+        return cleanedValue.startsWith(`+${dialCode}`) || cleanedValue.startsWith(dialCode);
+      });
       if (country) {
         setSelectedCountry(country);
-        setPhoneNumber(value.replace(country.dialCode, '').trim());
+        // Extract phone number without dial code
+        const dialCode = country.dialCode.replace(/^\+/, '');
+        const phoneWithoutDial = cleanedValue.replace(/^\+?/, '').replace(new RegExp(`^${dialCode}`), '');
+        setPhoneNumber(phoneWithoutDial);
       } else {
-        setPhoneNumber(value);
+        // If no country match, try to extract just the number part
+        const phoneOnly = cleanedValue.replace(/^\+?[0-9]{1,3}/, '');
+        setPhoneNumber(phoneOnly);
       }
     } else {
       setPhoneNumber('');
@@ -103,16 +113,18 @@ export function PhoneInput({
     setSelectedCountry(country);
     setIsDropdownOpen(false);
     setSearchQuery('');
-    const fullNumber = country.dialCode + phoneNumber;
-    onChange?.(fullNumber || undefined);
+    // Format: +[dialCode][number] without spaces (E.164 format)
+    const fullNumber = phoneNumber ? `${country.dialCode}${phoneNumber}` : undefined;
+    onChange?.(fullNumber);
     inputRef.current?.focus();
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value.replace(/\D/g, '');
     setPhoneNumber(newValue);
-    const fullNumber = selectedCountry.dialCode + (newValue ? ' ' + newValue : '');
-    onChange?.(fullNumber || undefined);
+    // Format: +[dialCode][number] without spaces (E.164 format)
+    const fullNumber = newValue ? `${selectedCountry.dialCode}${newValue}` : undefined;
+    onChange?.(fullNumber);
   };
 
   const formatPhoneNumber = (value: string): string => {
@@ -126,10 +138,10 @@ export function PhoneInput({
   const displayValue = phoneNumber ? formatPhoneNumber(phoneNumber) : '';
 
   const borderClasses = className?.includes('border-destructive')
-    ? 'border-destructive focus-visible:ring-destructive'
+    ? 'border-destructive'
     : className?.includes('border-primary')
-    ? 'border-primary/30 focus-visible:ring-primary'
-    : 'border-border';
+    ? 'border-primary/30'
+    : '';
 
   return (
     <div className="relative w-full">
@@ -137,34 +149,31 @@ export function PhoneInput({
         ref={containerRef}
         className={cn(
           'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground',
-          'w-full min-w-0 rounded-md border px-3 py-1 text-base transition-[color,box-shadow] outline-none',
-          'bg-background relative',
-          borderClasses,
-          'dark:bg-input dark:border-[#2A2D35] dark:text-foreground dark:shadow-sm dark:hover:border-[#353842] dark:focus:border-ring',
+          'h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base transition-[color,box-shadow] outline-none',
+          'bg-background border-border',
+          'dark:bg-input dark:border-[#2A2D35] dark:text-foreground dark:shadow-sm dark:hover:border-[#353842]',
+          'file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium',
           'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-          'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]',
+          'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-1',
           'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
+          borderClasses,
+          className?.includes('border-destructive') && 'border-destructive focus-within:ring-destructive/50',
           className
         )}
       >
-        {isFocused && (
-          <div 
-            className="absolute inset-0 rounded-md backdrop-blur-md pointer-events-none z-0"
-            style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
-          />
-        )}
-        <div className="flex items-center gap-2 h-full relative z-10">
+        <div className="flex items-center h-full w-full">
           <button
             type="button"
             onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
             disabled={disabled}
-            className="flex items-center gap-1.5 flex-shrink-0 text-foreground hover:opacity-80 transition-opacity focus:outline-none relative z-10"
-            style={{ backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
+            className="flex items-center gap-1.5 flex-shrink-0 text-foreground hover:opacity-80 transition-opacity focus:outline-none pr-2"
           >
             <span className="text-lg leading-none">{selectedCountry.flag}</span>
             <span className="text-sm font-medium">{selectedCountry.dialCode}</span>
             <ChevronDown className={cn('h-3 w-3 transition-transform', isDropdownOpen && 'rotate-180')} />
           </button>
+          <div className="w-px h-5 bg-border/30 flex-shrink-0" />
+          <div className="flex-1 min-w-0 h-full flex items-center pl-2">
           <input
             ref={inputRef}
             id={id}
@@ -174,16 +183,16 @@ export function PhoneInput({
             onChange={handlePhoneChange}
             onBlur={(e) => {
               setIsFocused(false);
-              // Pasar el evento a onBlur si está definido (react-hook-form espera el evento)
               onBlur?.(e);
             }}
             onFocus={() => setIsFocused(true)}
             disabled={disabled}
             placeholder={placeholder.replace(/^\+\d+\s/, '')}
-            className="flex-1 bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground text-sm sm:text-base font-outfit h-full relative z-10"
-            style={{ backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
+              className="w-full h-full bg-transparent border-0 outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus:border-0 focus:outline-none focus-visible:outline-none text-foreground placeholder:text-muted-foreground text-sm md:text-sm"
+              style={{ boxShadow: 'none', WebkitAppearance: 'none', appearance: 'none' }}
             autoComplete="tel"
           />
+          </div>
         </div>
       </div>
 

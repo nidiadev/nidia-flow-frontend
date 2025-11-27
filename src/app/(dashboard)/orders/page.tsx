@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import { AppLoading } from '@/components/ui/app-loading';
 
 interface Order {
   id: string;
@@ -165,7 +166,7 @@ export default function OrdersPage() {
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center">
-                  Cargando...
+                  <AppLoading message="Cargando órdenes..." fullScreen={false} showLogo={false} />
                 </TableCell>
               </TableRow>
             ) : orders.length === 0 ? (

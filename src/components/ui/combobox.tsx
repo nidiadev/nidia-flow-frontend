@@ -18,9 +18,13 @@ interface ComboboxProps {
   placeholder?: string;
   searchPlaceholder?: string;
   emptyText?: string;
+  emptyMessage?: string; // Alias for emptyText
   allowCustom?: boolean;
   className?: string;
+  disabled?: boolean;
 }
+
+export type { ComboboxProps };
 
 export function Combobox({
   options,
@@ -28,10 +32,13 @@ export function Combobox({
   onValueChange,
   placeholder = "Seleccionar o escribir...",
   searchPlaceholder = "Buscar...",
-  emptyText = "No se encontraron opciones.",
+  emptyText,
+  emptyMessage,
   allowCustom = true,
   className,
+  disabled = false,
 }: ComboboxProps) {
+  const emptyLabel = emptyText || emptyMessage || "No se encontraron opciones.";
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState("")
 
@@ -79,15 +86,25 @@ export function Combobox({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={disabled ? false : open} onOpenChange={disabled ? undefined : setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between font-normal", className)}
+          disabled={disabled}
+          className={cn(
+            "w-full justify-between font-normal h-9 px-3 py-1 text-base md:text-sm",
+            "bg-background border-border",
+            "dark:bg-input dark:border-[#2A2D35] dark:text-foreground dark:shadow-sm dark:hover:border-[#353842]",
+            "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-1 focus-visible:ring-offset-0",
+            "hover:bg-background hover:border-border",
+            "dark:hover:bg-input dark:hover:border-[#353842]",
+            disabled && "opacity-50 cursor-not-allowed",
+            className
+          )}
         >
-          {displayValue || placeholder}
+          <span className="truncate text-left flex-1">{displayValue || placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -128,7 +145,7 @@ export function Combobox({
           >
             {filteredOptions.length === 0 && inputValue ? (
               <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                {emptyText}
+                {emptyLabel}
                 {allowCustom && (
                   <button
                     onClick={() => {

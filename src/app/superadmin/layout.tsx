@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/contexts/auth-context';
 import { AdminLayout } from '@/components/layout/admin-layout';
-import { Loader2 } from 'lucide-react';
+import { AppLoading } from '@/components/ui/app-loading';
 import { useEffect, useState, useRef } from 'react';
 
 export default function AdminLayoutWrapper({
@@ -33,26 +33,12 @@ export default function AdminLayoutWrapper({
 
   // Mostrar loader mientras se verifica autenticación
   if (isLoading || isChecking) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-nidia-green" />
-          <p className="text-muted-foreground">Cargando...</p>
-        </div>
-      </div>
-    );
+    return <AppLoading message="Cargando administración..." />;
   }
 
   // Si no está autenticado, mostrar loader (middleware redirigirá)
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-nidia-green" />
-          <p className="text-muted-foreground">Verificando autenticación...</p>
-        </div>
-      </div>
-    );
+    return <AppLoading message="Verificando autenticación..." />;
   }
 
   // Verificar rol del usuario (priorizar systemRole)
@@ -62,14 +48,7 @@ export default function AdminLayoutWrapper({
   // Solo verificar si realmente no es super_admin (no si userRole es null/undefined)
   // Si userRole es null/undefined, confiar en el middleware y renderizar
   if (userRole && userRole !== 'super_admin') {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-nidia-green" />
-          <p className="text-muted-foreground">Verificando permisos...</p>
-        </div>
-      </div>
-    );
+    return <AppLoading message="Verificando permisos..." />;
   }
 
   // Renderizar el layout de admin con los children

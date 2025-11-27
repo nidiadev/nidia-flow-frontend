@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { registerSchema, type RegisterData } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,8 @@ export default function RegisterPage() {
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const { register: registerUser, isLoading } = useAuth();
   const { resolvedTheme } = useTheme();
+  const searchParams = useSearchParams();
+  const planIdFromQuery = searchParams.get('planId');
 
   useEffect(() => {
     setMounted(true);
@@ -141,6 +144,12 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterData) => {
     setError(null);
     
+    // Agregar planId del query param si existe
+    const registerData: RegisterData = {
+      ...data,
+      planId: planIdFromQuery || undefined, // Incluir planId si viene del query param
+    };
+    
     // Guardar credenciales temporalmente para auto-login después del provisioning
     sessionStorage.setItem('pendingLogin', JSON.stringify({
       email: data.email,
@@ -148,7 +157,7 @@ export default function RegisterPage() {
       timestamp: Date.now(),
     }));
     
-    const result = await registerUser(data);
+    const result = await registerUser(registerData);
     
     if (!result.success) {
       setError(result.message || 'Error al registrarse');
@@ -257,7 +266,9 @@ export default function RegisterPage() {
                     Crear Cuenta
                   </CardTitle>
                   <CardDescription className="text-sm sm:text-base font-outfit text-muted-foreground">
-            Regístrate para comenzar
+            {planIdFromQuery 
+              ? 'Completa tu registro para activar tu plan'
+              : 'Regístrate para comenzar (se asignará el plan gratuito)'}
                   </CardDescription>
                 </motion.div>
         </CardHeader>

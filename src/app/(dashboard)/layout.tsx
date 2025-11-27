@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/contexts/auth-context';
 import { MainLayout } from '@/components/layout/main-layout';
-import { Loader2 } from 'lucide-react';
+import { AppLoading } from '@/components/ui/app-loading';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { AuthService } from '@/lib/auth';
@@ -20,17 +20,24 @@ export default function DashboardLayout({
     // Priorizar systemRole sobre role
     const userRole = user?.systemRole || user?.role;
     if (!isLoading && isAuthenticated && userRole === 'super_admin') {
-      console.log('🔄 Usuario superadmin detectado en layout de dashboard, redirigiendo a /superadmin/dashboard');
-      // Usar window.location.href para forzar redirección inmediata
-      window.location.href = '/superadmin/dashboard';
-      return;
+      // Solo redirigir si no estamos ya en una ruta de superadmin
+      const currentPath = window.location.pathname;
+      if (!currentPath.startsWith('/superadmin')) {
+        console.log('🔄 Usuario superadmin detectado en layout de dashboard, redirigiendo a /superadmin/dashboard');
+        window.location.href = '/superadmin/dashboard';
+        return;
+      }
     }
 
-    // Si el usuario tiene tenantSlug, redirigir a la ruta con slug
+    // Si el usuario tiene tenantSlug, solo redirigir si estamos en /dashboard exactamente
+    // No redirigir si estamos en otras rutas válidas como /crm/customers/[id]
     if (!isLoading && isAuthenticated && userRole !== 'super_admin') {
       const tenantSlug = AuthService.getTenantSlug();
-      if (tenantSlug) {
-        console.log('🔄 Usuario con tenantSlug detectado, redirigiendo a /[slug]/dashboard');
+      const currentPath = window.location.pathname;
+      
+      // Solo redirigir si estamos en /dashboard exactamente, no en otras rutas
+      if (tenantSlug && currentPath === '/dashboard') {
+        console.log('🔄 Usuario con tenantSlug detectado en /dashboard, redirigiendo a /[slug]/dashboard');
         window.location.href = `/${tenantSlug}/dashboard`;
         return;
       }
@@ -38,14 +45,7 @@ export default function DashboardLayout({
   }, [isLoading, isAuthenticated, user]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-nidia-green" />
-          <p className="text-muted-foreground">Cargando...</p>
-        </div>
-      </div>
-    );
+    return <AppLoading message="Cargando dashboard..." />;
   }
 
   if (!isAuthenticated) {

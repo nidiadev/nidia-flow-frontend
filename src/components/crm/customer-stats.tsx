@@ -36,7 +36,7 @@ export function CustomerStats({ className }: CustomerStatsProps) {
 
   if (isLoading) {
     return (
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${className}`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ${className}`}>
         {Array.from({ length: 4 }).map((_, i) => (
           <CardSkeleton key={i} />
         ))}
@@ -60,123 +60,95 @@ export function CustomerStats({ className }: CustomerStatsProps) {
   }
 
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 ${className}`}>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Clientes</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.totalCustomers.toLocaleString()}</div>
-          <p className="text-xs text-muted-foreground">
-            Clientes registrados
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Leads Activos</CardTitle>
-          <UserPlus className="h-4 w-4 text-blue-600" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-blue-600">{stats.activeLeads}</div>
-          <p className="text-xs text-muted-foreground">
-            En proceso de conversión
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Tasa Conversión</CardTitle>
-          <TrendingUp className="h-4 w-4 text-green-600" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-green-600">
-            {stats.conversionRate.toFixed(1)}%
+    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ${className}`}>
+      {/* Card 1: Clientes - Combinada (Total + Activos + Inactivos) */}
+      <Card className="hover:shadow-lg transition-all duration-200 border-border/50">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-5 pt-5">
+          <CardTitle className="text-base font-semibold text-foreground">Clientes</CardTitle>
+          <div className="p-2 rounded-lg bg-gradient-to-br from-muted/60 to-muted/40">
+            <Users className="h-4.5 w-4.5 text-foreground/70" />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Leads a clientes activos
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Score Promedio</CardTitle>
-          <Target className="h-4 w-4 text-yellow-600" />
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-yellow-600">
-            {stats.averageLeadScore.toFixed(0)}
+        <CardContent className="px-5 pb-5 pt-0">
+          <div className="flex items-baseline gap-3 mb-2">
+            <div className="text-4xl font-bold text-foreground tracking-tight">{stats.totalCustomers.toLocaleString()}</div>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-green-50 dark:bg-green-950/20">
+              <div className="w-2 h-2 rounded-full bg-green-600 shadow-sm"></div>
+              <span className="text-lg font-semibold text-green-600">{stats.activeCustomers}</span>
+            </div>
+            {stats.inactiveCustomers > 0 && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/50">
+                <div className="w-2 h-2 rounded-full bg-muted-foreground"></div>
+                <span className="text-base font-semibold text-muted-foreground">{stats.inactiveCustomers}</span>
+              </div>
+            )}
           </div>
-          <p className="text-xs text-muted-foreground">
-            Calidad de leads
-          </p>
+          <p className="text-xs text-muted-foreground font-medium">Total registrados en el sistema</p>
         </CardContent>
       </Card>
 
-      {/* Additional stats row */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Prospectos</CardTitle>
-          <UserCheck className="h-4 w-4 text-yellow-600" />
+      {/* Card 2: Leads y Prospectos - Combinada */}
+      <Card className="hover:shadow-lg transition-all duration-200 border-border/50">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-5 pt-5">
+          <CardTitle className="text-base font-semibold text-foreground">Leads y Prospectos</CardTitle>
+          <div className="p-2 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/40 dark:to-blue-900/20">
+            <UserPlus className="h-4.5 w-4.5 text-blue-600" />
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-yellow-600">{stats.prospects}</div>
-          <p className="text-xs text-muted-foreground">
-            Leads calificados
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Clientes Activos</CardTitle>
-          <Activity className="h-4 w-4 text-green-600" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-green-600">{stats.activeCustomers}</div>
-          <p className="text-xs text-muted-foreground">
-            Con compras recientes
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Interacciones</CardTitle>
-          <MessageSquare className="h-4 w-4 text-purple-600" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-purple-600">{stats.interactionsThisWeek}</div>
-          <p className="text-xs text-muted-foreground">
-            Esta semana
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Distribución</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span className="text-blue-600">Leads</span>
-              <span className="font-medium">{stats.activeLeads}</span>
+        <CardContent className="px-5 pb-5 pt-0">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-600 shadow-sm"></div>
+                <span className="text-4xl font-bold text-blue-600 tracking-tight">{stats.activeLeads}</span>
+              </div>
+              <p className="text-xs text-muted-foreground font-medium">Leads activos</p>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-yellow-600">Prospectos</span>
-              <span className="font-medium">{stats.prospects}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-green-600">Activos</span>
-              <span className="font-medium">{stats.activeCustomers}</span>
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-600 shadow-sm"></div>
+                <span className="text-4xl font-bold text-yellow-600 tracking-tight">{stats.prospects}</span>
+              </div>
+              <p className="text-xs text-muted-foreground font-medium">Prospectos</p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Card 3: Tasa Conversión */}
+      <Card className="hover:shadow-lg transition-all duration-200 border-border/50">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-5 pt-5">
+          <CardTitle className="text-base font-semibold text-foreground">Tasa Conversión</CardTitle>
+          <div className="p-2 rounded-lg bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/40 dark:to-green-900/20">
+            <TrendingUp className="h-4.5 w-4.5 text-green-600" />
+          </div>
+        </CardHeader>
+        <CardContent className="px-5 pb-5 pt-0">
+          <div className="flex items-baseline gap-2 mb-2">
+            <span className="text-4xl font-bold text-green-600 tracking-tight">
+              {stats.conversionRate.toFixed(1)}%
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground font-medium">Leads convertidos a clientes activos</p>
+        </CardContent>
+      </Card>
+
+      {/* Card 4: Score Promedio */}
+      <Card className="hover:shadow-lg transition-all duration-200 border-border/50">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 px-5 pt-5">
+          <CardTitle className="text-base font-semibold text-foreground">Score Promedio</CardTitle>
+          <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-50 to-yellow-100/50 dark:from-yellow-950/40 dark:to-yellow-900/20">
+            <Target className="h-4.5 w-4.5 text-yellow-600" />
+          </div>
+        </CardHeader>
+        <CardContent className="px-5 pb-5 pt-0">
+          <div className="flex items-baseline gap-2 mb-2">
+            <span className="text-4xl font-bold text-yellow-600 tracking-tight">
+              {stats.averageLeadScore.toFixed(0)}
+            </span>
+            <span className="text-sm text-muted-foreground font-medium">/100</span>
+          </div>
+          <p className="text-xs text-muted-foreground font-medium">Calidad promedio de leads</p>
         </CardContent>
       </Card>
     </div>

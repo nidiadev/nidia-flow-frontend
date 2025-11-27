@@ -59,16 +59,8 @@ export function SidebarItem({
   const hasChildren = children && children.length > 0;
 
   const handleClick = (e: React.MouseEvent) => {
-    if (!isEnabled) {
-      e.preventDefault();
-      toast.info('Módulo no disponible', {
-        description: `El módulo "${title}" no está incluido en tu plan actual. Actualiza tu plan para acceder a este módulo.`,
-        action: {
-          label: 'Ver Planes',
-          onClick: () => router.push('/settings/subscription'),
-        },
-      });
-    }
+    // Los módulos principales siempre están habilitados, no necesitamos bloquear clicks
+    // Solo los submódulos pueden estar bloqueados
   };
 
   // Calcular posición del menú flotante
@@ -151,21 +143,14 @@ export function SidebarItem({
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all',
                 isEnabled
-                  ? 'hover:bg-primary/15 hover:text-foreground cursor-pointer'
+                  ? 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer'
                   : 'opacity-60 cursor-not-allowed',
-                isActive && isEnabled && 'bg-primary text-primary-foreground font-medium shadow-sm'
+                isActive && isEnabled && 'bg-primary text-primary-foreground font-medium shadow-sm',
+                !isActive && isEnabled && 'text-sidebar-foreground'
               )}
             >
-              <div className="relative">
-                <Icon className={cn('h-5 w-5 shrink-0', isActive && isEnabled ? 'text-primary-foreground' : 'text-muted-foreground')} />
-                {!isEnabled && (
-                  <Lock className="absolute -top-1 -right-1 h-3 w-3 text-orange-500" />
-                )}
-              </div>
+              <Icon className={cn('h-5 w-5 shrink-0', isActive && isEnabled ? 'text-primary-foreground' : 'text-muted-foreground')} />
               <span className="flex-1 truncate">{title}</span>
-              {!isEnabled && (
-                <ArrowUpRight className="h-4 w-4 text-orange-500" />
-              )}
               {badge && (
                 <span className="ml-auto rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium">
                   {badge}
@@ -192,7 +177,7 @@ export function SidebarItem({
         ) : (
           headerContent
         )}
-        <div className="ml-8 space-y-0.5 border-l border-border pl-3">
+        <div className="ml-8 space-y-1 border-l border-border pl-3">
           {children.map((child) => {
             const ChildIcon = child.icon;
             const isChildActive = pathname === child.href || pathname.startsWith(child.href + '/');
@@ -206,9 +191,9 @@ export function SidebarItem({
                       className={cn(
                         'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors',
                         childIsEnabled
-                          ? 'hover:bg-primary/15 hover:text-foreground cursor-pointer'
+                          ? 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer text-sidebar-foreground'
                           : 'opacity-60 cursor-not-allowed',
-                        isChildActive && childIsEnabled && 'bg-primary/15 text-foreground font-medium'
+                        isChildActive && childIsEnabled && 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
                       )}
                       onClick={(e) => {
                         if (!childIsEnabled) {
@@ -275,17 +260,12 @@ export function SidebarItem({
                   className={cn(
                     'relative flex items-center justify-center rounded-lg p-2.5 transition-all',
                     isEnabled
-                      ? 'hover:bg-primary/15 hover:text-foreground cursor-pointer'
+                      ? 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer'
                       : 'opacity-60 cursor-not-allowed',
                     isActive && isEnabled && 'bg-primary text-primary-foreground shadow-sm'
                   )}
                 >
-                  <div className="relative">
-                    <Icon className={cn('h-5 w-5', isActive && isEnabled ? 'text-primary-foreground' : 'text-muted-foreground')} />
-                    {!isEnabled && (
-                      <Lock className="absolute -top-1 -right-1 h-2.5 w-2.5 text-orange-500" />
-                    )}
-                  </div>
+                  <Icon className={cn('h-5 w-5', isActive && isEnabled ? 'text-primary-foreground' : 'text-muted-foreground')} />
                   {badge && (
                     <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-destructive text-[10px] text-destructive-foreground flex items-center justify-center">
                       {badge}
@@ -332,12 +312,7 @@ export function SidebarItem({
         )}
         title={isEnabled ? title : `${title} - Actualiza tu plan`}
       >
-        <div className="relative">
-          <Icon className={cn('h-5 w-5', isActive && isEnabled ? 'text-primary-foreground' : 'text-muted-foreground')} />
-          {!isEnabled && (
-            <Lock className="absolute -top-1 -right-1 h-2.5 w-2.5 text-orange-500" />
-          )}
-        </div>
+        <Icon className={cn('h-5 w-5', isActive && isEnabled ? 'text-primary-foreground' : 'text-muted-foreground')} />
         {badge && (
           <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-destructive text-[10px] text-destructive-foreground flex items-center justify-center">
             {badge}
@@ -361,11 +336,12 @@ export function SidebarItem({
       {hasChildren ? (
         <button
           onClick={onExpandToggle}
-          className={cn(
-            'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all',
-            'hover:bg-primary/15 hover:text-foreground',
-            isActive && 'bg-primary text-primary-foreground font-medium shadow-sm'
-          )}
+        className={cn(
+          'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all',
+          'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+          isExpanded && 'bg-sidebar-accent',
+          isActive && 'bg-primary text-primary-foreground font-medium shadow-sm'
+        )}
         >
           <Icon className={cn('h-5 w-5 shrink-0', isActive ? 'text-primary-foreground' : 'text-muted-foreground')} />
           <span className="flex-1 truncate text-left">{title}</span>
@@ -381,31 +357,13 @@ export function SidebarItem({
           className={cn(
             'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all',
             isEnabled
-              ? 'hover:bg-primary/15 hover:text-foreground cursor-pointer'
+              ? 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer'
               : 'opacity-60 cursor-not-allowed',
             isActive && isEnabled && 'bg-primary text-primary-foreground font-medium shadow-sm'
           )}
         >
-          <div className="relative">
-            <Icon className={cn('h-5 w-5 shrink-0', isActive && isEnabled ? 'text-primary-foreground' : 'text-muted-foreground')} />
-            {!isEnabled && (
-              <Lock className="absolute -top-1 -right-1 h-3 w-3 text-orange-500" />
-            )}
-          </div>
+          <Icon className={cn('h-5 w-5 shrink-0', isActive && isEnabled ? 'text-primary-foreground' : 'text-muted-foreground')} />
           <span className="flex-1 truncate">{title}</span>
-          {!isEnabled && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <ArrowUpRight className="h-4 w-4 text-orange-500" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="font-medium">Módulo no disponible</p>
-                  <p className="text-xs mt-1">Actualiza tu plan para acceder a este módulo</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {badge && (
             <span className="ml-auto rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium">
               {badge}

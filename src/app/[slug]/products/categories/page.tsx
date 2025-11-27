@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -24,57 +25,14 @@ import {
   Package
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from '@/components/ui/section-header';
 import { TenantLink } from '@/components/ui/tenant-link';
 import { useNetworkStatus } from '@/hooks/use-network-status';
+import { useTenantRoutes } from '@/hooks/use-tenant-routes';
 import { toast } from 'sonner';
-import { Category } from '@/types/product';
-import { DataTable, DataTableAction } from '@/components/ui/data-table';
-import { Input } from '@/components/ui/input';
-
-// Mock data
-const mockCategories: Category[] = [
-  {
-    id: '1',
-    name: 'Computadoras',
-    description: 'Laptops, desktops y tablets',
-    isActive: true,
-    sortOrder: 1,
-    productsCount: 45,
-    createdAt: '2024-01-01T10:00:00Z',
-    updatedAt: '2024-01-01T10:00:00Z',
-  },
-  {
-    id: '2',
-    name: 'Accesorios',
-    description: 'Mouse, teclados, audífonos',
-    isActive: true,
-    sortOrder: 2,
-    productsCount: 78,
-    createdAt: '2024-01-01T10:00:00Z',
-    updatedAt: '2024-01-01T10:00:00Z',
-  },
-  {
-    id: '3',
-    name: 'Servicios',
-    description: 'Instalación, soporte y mantenimiento',
-    isActive: true,
-    sortOrder: 3,
-    productsCount: 12,
-    createdAt: '2024-01-01T10:00:00Z',
-    updatedAt: '2024-01-01T10:00:00Z',
-  },
-  {
-    id: '4',
-    name: 'Software',
-    description: 'Licencias y aplicaciones',
-    isActive: false,
-    sortOrder: 4,
-    productsCount: 21,
-    createdAt: '2024-01-01T10:00:00Z',
-    updatedAt: '2024-01-01T10:00:00Z',
-  },
-];
+import { categoriesApi, Category } from '@/lib/api/products';
+import { Table, TableRowAction } from '@/components/table';
+import { Combobox } from '@/components/ui/combobox';
 
 // Define columns for DataTable
 function getColumns(): ColumnDef<Category>[] {
@@ -91,6 +49,11 @@ function getColumns(): ColumnDef<Category>[] {
               <div className="font-medium">{category.name}</div>
               {category.description && (
                 <div className="text-sm text-muted-foreground">{category.description}</div>
+              )}
+              {category.path && category.path.length > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  {category.path.join(' > ')}
+                </div>
               )}
             </div>
           </div>
@@ -116,7 +79,7 @@ function getColumns(): ColumnDef<Category>[] {
       cell: ({ row }) => {
         const isActive = row.original.isActive;
         return (
-          <Badge variant={isActive ? 'success' : 'secondary'}>
+          <Badge variant={isActive ? 'default' : 'secondary'}>
             {isActive ? 'Activa' : 'Inactiva'}
           </Badge>
         );
@@ -137,28 +100,78 @@ function getColumns(): ColumnDef<Category>[] {
 }
 
 // New category dialog
-function NewCategoryDialog() {
-  const [open, setOpen] = useState(false);
+function NewCategoryDialog({ 
+  open, 
+  onOpenChange,
+  onSuccess 
+}: { 
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
+}) {
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    parentId: '',
+    isActive: true,
+    sortOrder: 0,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Fetch categories for parent selection
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories', 'all'],
+    queryFn: async () => {
+      const response = await categoriesApi.getAll({ limit: 100 });
+      return response;
+    },
+  });
+
+  const categories = categoriesData?.data || [];
+
+  const createCategory = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await categoriesApi.create(data);
+      return response;
+    },
+    onSuccess: async (response) => {
+      // Invalidar todas las queries de categorías para forzar refetch en tiempo real
+      await queryClient.invalidateQueries({ queryKey: ['categories'] });
+      await queryClient.invalidateQueries({ queryKey: ['category-stats'] });
+      
+      toast.success('Categoría creada exitosamente');
+      onOpenChange(false);
+      setFormData({ name: '', description: '', parentId: '', isActive: true, sortOrder: 0 });
+      onSuccess?.();
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Error al crear la categoría');
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Categoría creada exitosamente');
-    setOpen(false);
-    setFormData({ name: '', description: '' });
+    
+    if (!formData.name.trim()) {
+      toast.error('El nombre es requerido');
+      return;
+    }
+    
+    try {
+      await createCategory.mutateAsync({
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined,
+        parentId: formData.parentId || undefined,
+        isActive: formData.isActive,
+        sortOrder: formData.sortOrder,
+      });
+    } catch (error) {
+      // Error is handled by mutation
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nueva Categoría
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
@@ -190,13 +203,33 @@ function NewCategoryDialog() {
                 rows={3}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="parentId">Categoría Padre (Opcional)</Label>
+              <Combobox
+                options={categories
+                  .filter((c: Category) => c.id !== formData.parentId) // Prevent circular reference
+                  .map((category: Category) => ({
+                    value: category.id,
+                    label: category.name,
+                  }))}
+                value={formData.parentId}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, parentId: value }))}
+                placeholder="Seleccionar categoría padre..."
+                searchPlaceholder="Buscar categoría..."
+                emptyText="No se encontraron categorías"
+                allowCustom={false}
+              />
+            </div>
           </div>
           
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit">Crear Categoría</Button>
+            <Button type="submit" disabled={createCategory.isPending}>
+              {createCategory.isPending ? 'Guardando...' : 'Crear Categoría'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -206,17 +239,78 @@ function NewCategoryDialog() {
 
 export default function CategoriesPage() {
   const { isOffline } = useNetworkStatus();
+  const { route } = useTenantRoutes();
+  const queryClient = useQueryClient();
+  const [newCategoryOpen, setNewCategoryOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
+
+  // Fetch categories
+  const { data: categoriesData, isLoading, error, refetch } = useQuery({
+    queryKey: ['categories', { page, limit }],
+    queryFn: async () => {
+      const response = await categoriesApi.getAll({ page, limit });
+      return response;
+    },
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
+
+  // Fetch stats
+  const { data: statsData } = useQuery({
+    queryKey: ['category-stats'],
+    queryFn: async () => {
+      const response = await categoriesApi.getStats();
+      return response;
+    },
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await categoriesApi.delete(id);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['category-stats'] });
+      toast.success('Categoría eliminada exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Error al eliminar la categoría');
+    },
+  });
+
+  const pagination = categoriesData?.pagination;
+  const stats = statsData?.data;
   
-  const categories = mockCategories;
+  const categories = useMemo(() => {
+    // El backend devuelve { success: true, data: Category[], pagination: {...} }
+    // Entonces categoriesData.data es el array de categorías directamente
+    const cats = categoriesData?.data || [];
+    // Debug en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Categories data:', { 
+        categoriesData, 
+        cats, 
+        stats,
+        pagination,
+        totalCategories: cats.length,
+        rawData: categoriesData 
+      });
+    }
+    return cats;
+  }, [categoriesData, stats, pagination]);
   const columns = useMemo(() => getColumns(), []);
   
-  // Actions for DataTable
-  const actions: DataTableAction<Category>[] = [
+  // Actions for Table
+  const rowActions: TableRowAction<Category>[] = [
     {
       label: 'Editar',
       icon: <Edit className="h-4 w-4" />,
       onClick: (category) => {
         toast.info(`Editar categoría: ${category.name}`);
+        // TODO: Navigate to edit page
       },
     },
     {
@@ -226,22 +320,21 @@ export default function CategoriesPage() {
       separator: true,
       onClick: (category) => {
         if (confirm(`¿Estás seguro de eliminar la categoría "${category.name}"?`)) {
-          toast.success(`Categoría "${category.name}" eliminada`);
+          deleteMutation.mutate(category.id);
         }
       },
     },
   ];
 
-  const activeCategories = categories.filter(c => c.isActive).length;
-  const totalProducts = categories.reduce((sum, c) => sum + (c.productsCount || 0), 0);
+  const activeCategories = stats?.activeCategories || categories.filter((c: Category) => c.isActive).length;
+  const totalProducts = categories.reduce((sum: number, c: Category) => sum + (c.productsCount || 0), 0);
 
   return (
     <ErrorBoundary>
-      <div>
-        <PageHeader
+      <div className="space-y-4">
+        <SectionHeader
           title="Categorías"
           description="Organiza tu catálogo de productos"
-          variant="gradient"
           actions={
             <>
               {isOffline && (
@@ -250,78 +343,88 @@ export default function CategoriesPage() {
                   <span className="text-sm font-medium">Modo Offline</span>
                 </div>
               )}
-              
-              <NewCategoryDialog />
             </>
           }
         />
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Categorías</CardTitle>
-              <Layers className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{categories.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {activeCategories} activas
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Productos Totales</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalProducts}</div>
-              <p className="text-xs text-muted-foreground">
-                En todas las categorías
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Promedio</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {categories.length > 0 ? Math.round(totalProducts / categories.length) : 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Productos por categoría
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Categorías</CardTitle>
-            <CardDescription>
-              Gestiona las categorías de tu catálogo de productos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DataTable
-              data={categories}
-              columns={columns}
-              searchPlaceholder="Buscar categorías..."
-              emptyMessage="No hay categorías"
-              emptyDescription="Comienza creando tu primera categoría"
-              actions={actions}
-              enableColumnVisibility={true}
-              enableColumnSizing={true}
+        {/* Table con estadísticas integradas */}
+        <Table
+          id="categories"
+          data={categories}
+          columns={columns}
+          search={{
+            enabled: true,
+            placeholder: 'Buscar categorías...',
+          }}
+          pagination={{
+            enabled: true,
+            pageSize: limit,
+            serverSide: true,
+            total: pagination?.total,
+            onPageChange: (newPage) => setPage(newPage),
+          }}
+          rowActions={rowActions}
+          actions={[
+            {
+              label: 'Nueva Categoría',
+              icon: <Plus className="h-4 w-4" />,
+              onClick: () => setNewCategoryOpen(true),
+            },
+          ]}
+          stats={{
+            enabled: true,
+            stats: [
+              {
+                label: 'Total Categorías',
+                value: stats?.totalCategories || categories.length,
+                description: `${activeCategories} activas`,
+                icon: <Layers className="h-4 w-4 text-muted-foreground" />,
+              },
+              {
+                label: 'Productos Totales',
+                value: totalProducts,
+                description: 'En todas las categorías',
+                icon: <Package className="h-4 w-4 text-muted-foreground" />,
+              },
+              {
+                label: 'Promedio',
+                value: categories.length > 0 ? Math.round(totalProducts / categories.length) : 0,
+                description: 'Productos por categoría',
+                icon: <Package className="h-4 w-4 text-muted-foreground" />,
+              },
+            ],
+          }}
+          emptyState={{
+            title: 'No hay categorías aún',
+            description: 'Organiza tu catálogo creando categorías para agrupar tus productos de manera eficiente',
+            action: (
+              <Button onClick={() => setNewCategoryOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Categoría
+              </Button>
+            ),
+          }}
+              isLoading={isLoading}
+              isError={!!error}
+              error={error as Error | null}
+              onRetry={refetch}
+          features={{
+            columnVisibility: true,
+            columnSizing: true,
+          }}
               getRowId={(row) => row.id}
-            />
-          </CardContent>
-        </Card>
+        />
+
+        <NewCategoryDialog
+          open={newCategoryOpen}
+          onOpenChange={setNewCategoryOpen}
+          onSuccess={() => {
+            // Invalidar todas las queries de categorías (con y sin paginación)
+            // React Query automáticamente refetch las queries activas
+            queryClient.invalidateQueries({ queryKey: ['categories'] });
+            queryClient.invalidateQueries({ queryKey: ['category-stats'] });
+          }}
+        />
       </div>
     </ErrorBoundary>
   );

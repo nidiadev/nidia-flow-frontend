@@ -11,6 +11,7 @@ import {
 } from '@tanstack/react-query';
 import { ApiClient, ApiResponse } from '@/lib/api';
 import { queryKeys, cacheUtils } from '@/lib/query-client';
+import { dealStagesApi } from '@/lib/api/crm';
 import { toast } from 'sonner';
 
 // Generic API query hook
@@ -200,6 +201,140 @@ export function useDeleteCustomer() {
         // Remove from cache and invalidate list and statistics
         queryClient.removeQueries({ queryKey: queryKeys.crm.customer(id) });
         queryClient.invalidateQueries({ queryKey: queryKeys.crm.customers() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.statistics() });
+      },
+    }
+  );
+}
+
+// Interactions hooks
+export function useCustomerInteractions(customerId: string) {
+  return useApiQuery(
+    queryKeys.crm.interactions(customerId),
+    () => ApiClient.get(`/crm/interactions/customer/${customerId}`),
+    {
+      enabled: !!customerId,
+      placeholderData: (previousData) => previousData,
+    }
+  );
+}
+
+// Customer Notes hooks
+export function useCreateCustomerNote() {
+  const queryClient = useQueryClient();
+  
+  return useApiMutation(
+    (noteData: { customerId: string; content: string; isInternal?: boolean }) => 
+      ApiClient.post('/crm/customer-notes', noteData),
+    {
+      onSuccess: (_, variables) => {
+        // Invalidate notes for the customer
+        if (variables.customerId) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.crm.customerNotes(variables.customerId) });
+        }
+        // Also invalidate customer data
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.customer(variables.customerId) });
+      },
+    }
+  );
+}
+
+export function useCustomerNotes(customerId: string) {
+  return useApiQuery(
+    queryKeys.crm.customerNotes(customerId),
+    () => ApiClient.get(`/crm/customer-notes/customer/${customerId}`),
+    {
+      enabled: !!customerId,
+      placeholderData: (previousData) => previousData,
+    }
+  );
+}
+
+// Customer Contacts hooks
+export function useCustomerContacts(filters?: {
+  search?: string;
+  customerId?: string;
+  includeInactive?: boolean;
+  page?: number;
+  limit?: number;
+}) {
+  const params = new URLSearchParams();
+  if (filters?.search) params.append('search', filters.search);
+  if (filters?.customerId) params.append('customerId', filters.customerId);
+  if (filters?.includeInactive) params.append('includeInactive', 'true');
+  if (filters?.page) params.append('page', filters.page.toString());
+  if (filters?.limit) params.append('limit', filters.limit.toString());
+  
+  const queryString = params.toString();
+  const url = `/crm/contacts${queryString ? `?${queryString}` : ''}`;
+  
+  return useQuery({
+    queryKey: queryKeys.crm.customerContacts(filters),
+    queryFn: async () => {
+      const response = await ApiClient.get<{
+        data: any[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      }>(url);
+      // La respuesta del API es: { success: true, data: { data: [...], pagination: {...} } }
+      // Retornamos directamente response.data que contiene { data: [...], pagination: {...} }
+      return response.data;
+    },
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+// Get contacts for a specific customer
+export function useCustomerContactsByCustomer(customerId: string, includeInactive?: boolean) {
+  return useApiQuery(
+    ['crm', 'customers', customerId, 'contacts', { includeInactive }],
+    async () => {
+      const params = new URLSearchParams();
+      if (includeInactive) params.append('includeInactive', 'true');
+      const queryString = params.toString();
+      const url = `/crm/customers/${customerId}/contacts${queryString ? `?${queryString}` : ''}`;
+      return ApiClient.get<any[]>(url);
+    }
+  );
+}
+
+// Create customer contact
+export function useCreateCustomerContact() {
+  const queryClient = useQueryClient();
+  
+  return useApiMutation(
+    (contactData: { customerId: string; firstName: string; lastName?: string; position?: string; department?: string; email?: string; phone?: string; mobile?: string; isPrimary?: boolean; isActive?: boolean; notes?: string }) => 
+      ApiClient.post(`/crm/customers/${contactData.customerId}/contacts`, contactData),
+    {
+      onSuccess: (_, variables) => {
+        // Invalidate contacts for the customer
+        queryClient.invalidateQueries({ queryKey: ['crm', 'customers', variables.customerId, 'contacts'] });
+        // Also invalidate all contacts list
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.customerContacts() });
+        // Invalidate customer data
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.customer(variables.customerId) });
+      },
+    }
+  );
+}
+
+export function useCreateInteraction() {
+  const queryClient = useQueryClient();
+  
+  return useApiMutation(
+    (interactionData: any) => ApiClient.post('/crm/interactions', interactionData),
+    {
+      onSuccess: (_, variables) => {
+        // Invalidate interactions for the customer
+        if (variables.customerId) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.crm.interactions(variables.customerId) });
+        }
+        // Also invalidate customer data to update lastContactAt
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.customer(variables.customerId) });
         queryClient.invalidateQueries({ queryKey: queryKeys.crm.statistics() });
       },
     }
@@ -427,4 +562,155 @@ export function useOptimisticUpdate<TData = any>(
   }, [queryClient, queryKey]);
   
   return { updateOptimistically, revert };
+}
+
+// Deals hooks
+export function useDeals(filters?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  stageId?: string;
+  assignedTo?: string;
+  customerId?: string;
+  search?: string;
+}) {
+  return useApiQuery(
+    queryKeys.crm.deals.all(filters),
+    () => ApiClient.get('/crm/deals', { params: filters }),
+    {
+      placeholderData: (previousData) => previousData,
+    }
+  );
+}
+
+export function useDeal(id: string) {
+  return useApiQuery(
+    queryKeys.crm.deals.detail(id),
+    () => ApiClient.get(`/crm/deals/${id}`),
+    {
+      enabled: !!id,
+    }
+  );
+}
+
+export function useCreateDeal() {
+  const queryClient = useQueryClient();
+  
+  return useApiMutation(
+    (dealData: any) => ApiClient.post('/crm/deals', dealData),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deals.all() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deals.statistics() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.pipeline() });
+      },
+    }
+  );
+}
+
+export function useUpdateDeal() {
+  const queryClient = useQueryClient();
+  
+  return useApiMutation(
+    ({ id, data }: { id: string; data: any }) => 
+      ApiClient.put(`/crm/deals/${id}`, data),
+    {
+      onSuccess: (_, { id }) => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deals.detail(id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deals.all() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deals.statistics() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.pipeline() });
+      },
+    }
+  );
+}
+
+export function useDeleteDeal() {
+  const queryClient = useQueryClient();
+  
+  return useApiMutation(
+    (id: string) => ApiClient.delete(`/crm/deals/${id}`),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deals.all() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deals.statistics() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.pipeline() });
+      },
+    }
+  );
+}
+
+export function useChangeDealStage() {
+  const queryClient = useQueryClient();
+  
+  return useApiMutation(
+    ({ dealId, stageId }: { dealId: string; stageId: string }) => 
+      ApiClient.patch(`/crm/deals/${dealId}/stage`, { stageId }),
+    {
+      onSuccess: (_, { dealId }) => {
+        // Invalidate all deal-related queries - use prefix matching to catch all filters
+        queryClient.invalidateQueries({ 
+          queryKey: ['crm', 'deals'],
+          exact: false, // This will match all queries starting with ['crm', 'deals']
+        });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deal(dealId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deals.statistics() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.pipeline() });
+      },
+    }
+  );
+}
+
+export function useWinDeal() {
+  const queryClient = useQueryClient();
+  
+  return useApiMutation(
+    ({ dealId, data }: { dealId: string; data?: { notes?: string; closedAt?: string } }) => 
+      ApiClient.patch(`/crm/deals/${dealId}/win`, data || {}),
+    {
+      onSuccess: (_, { dealId }) => {
+        queryClient.invalidateQueries({ queryKey: ['crm', 'deals'], exact: false });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deal(dealId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deals.all() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deals.statistics() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.pipeline() });
+      },
+    }
+  );
+}
+
+export function useLoseDeal() {
+  const queryClient = useQueryClient();
+  
+  return useApiMutation(
+    ({ dealId, reason, notes }: { dealId: string; reason: string; notes?: string }) => 
+      ApiClient.patch(`/crm/deals/${dealId}/lose`, { reason, notes }),
+    {
+      onSuccess: (_, { dealId }) => {
+        queryClient.invalidateQueries({ queryKey: ['crm', 'deals'], exact: false });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deal(dealId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deals.all() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.deals.statistics() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.crm.pipeline() });
+      },
+    }
+  );
+}
+
+// Deal Stages hooks
+export function useDealStages() {
+  return useApiQuery(
+    queryKeys.crm.dealStages.all(),
+    async () => {
+      // Use dealStagesApi.getAll which already uses ApiClient.get
+      const response = await dealStagesApi.getAll();
+      // Debug: Log response structure
+      console.log('[useDealStages] API Response:', response);
+      return response;
+    },
+    {
+      staleTime: 10 * 60 * 1000, // 10 minutes - stages don't change often
+      retry: 2,
+    }
+  );
 }

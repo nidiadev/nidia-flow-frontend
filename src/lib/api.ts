@@ -2,10 +2,29 @@ import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { toast } from 'sonner';
 
 // JWT token utilities (shared with auth.ts)
+// IMPORTANTE: Esta interfaz debe coincidir con JwtPayload del backend
 interface JWTPayload {
+  // Campos estándar JWT
   exp?: number;
   iat?: number;
-  sub?: string;
+  
+  // Identificadores de usuario
+  sub: string; // ID del usuario en la BD del tenant (para operaciones en tenant DB)
+  email: string;
+  superAdminUserId?: string; // ID del usuario en SuperAdmin DB (para referencias y auditoría)
+  tenantUserId?: string; // ID del usuario en Tenant DB (alias de sub, para claridad)
+  
+  // Información del tenant
+  tenantId?: string; // SIEMPRE presente para usuarios de tenant (nunca null)
+  tenantSlug?: string; // Slug del tenant para URLs amigables (ej: "mi-empresa")
+  dbName?: string; // SIEMPRE presente para usuarios de tenant: "tenant_{uuid}_{env}"
+  
+  // Roles y permisos
+  systemRole: string; // 'super_admin' | 'tenant_admin' | 'tenant_user' | 'support'
+  role?: string; // Rol dentro del tenant: 'admin' | 'manager' | 'sales' | etc (solo para tenant_user)
+  permissions?: string[]; // Permisos específicos del usuario
+  
+  // Campos adicionales (para compatibilidad)
   [key: string]: any;
 }
 
@@ -121,45 +140,64 @@ declare module 'axios' {
   }
 }
 
-// Request interceptor with enhanced logging and auth
-api.interceptors.request.use(
-  async (config) => {
-    // Add request ID for tracking
-    config.metadata = { requestId: generateRequestId(), startTime: Date.now() };
+// ============================================
+// SISTEMA CENTRALIZADO DE REFRESH TOKEN
+// ============================================
+// Evita múltiples refreshes simultáneos que causan bucles
+let isRefreshing = false;
+let refreshPromise: Promise<{ accessToken: string; refreshToken?: string } | null> | null = null;
+const pendingRequests: Array<{
+  resolve: (token: string) => void;
+  reject: (error: any) => void;
+}> = [];
     
-    // Add auth token and check expiration
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('accessToken');
-      
-      if (token) {
-        // Check if token is expired or about to expire (within 1 minute)
-        const isExpired = isTokenExpired(token);
-        
-        if (isExpired) {
-          // Try to refresh token before making the request
-          const refreshToken = localStorage.getItem('refreshToken');
-          if (refreshToken && !isTokenExpired(refreshToken, 0)) {
-            try {
+/**
+ * Función centralizada para refrescar token
+ * Garantiza que solo haya un refresh en curso, otros requests esperan
+ */
+async function refreshAccessToken(): Promise<{ accessToken: string; refreshToken?: string } | null> {
+  // Si ya hay un refresh en curso, retornar la misma promesa
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  // Iniciar nuevo refresh
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const refreshTokenValue = localStorage.getItem('refreshToken');
+      if (!refreshTokenValue) {
+        console.log('❌ No hay refresh token disponible');
+        return null;
+      }
+
+      // Verificar si el refresh token está expirado
+      if (isTokenExpired(refreshTokenValue, 0)) {
+        console.log('❌ Refresh token expirado');
+        return null;
+      }
+
               const refreshUrl = getApiBaseURL();
               const response = await axios.post(
                 `${refreshUrl}/auth/refresh`,
-                { refreshToken }
+        { refreshToken: refreshTokenValue }
               );
               
               const backendResponse = response.data;
-              const newAccessToken = backendResponse.accessToken || backendResponse.data?.accessToken;
+      const accessToken = backendResponse.accessToken || backendResponse.data?.accessToken;
               const newRefreshToken = backendResponse.refreshToken || backendResponse.data?.refreshToken;
               
-              if (newAccessToken) {
-                localStorage.setItem('accessToken', newAccessToken);
+      if (accessToken) {
+        // Guardar tokens
+        localStorage.setItem('accessToken', accessToken);
                 
-                // Actualizar cookies también
+        // Actualizar cookies
                 const isProduction = process.env.NODE_ENV === 'production';
                 const cookieOptions = isProduction 
                   ? 'secure; samesite=strict; path=/' 
                   : 'samesite=lax; path=/';
                 const accessTokenExpiry = 15 * 60; // 15 minutos
-                document.cookie = `accessToken=${newAccessToken}; ${cookieOptions}; max-age=${accessTokenExpiry}`;
+        document.cookie = `accessToken=${accessToken}; ${cookieOptions}; max-age=${accessTokenExpiry}`;
                 
                 if (newRefreshToken) {
                   localStorage.setItem('refreshToken', newRefreshToken);
@@ -167,40 +205,97 @@ api.interceptors.request.use(
                   document.cookie = `refreshToken=${newRefreshToken}; ${cookieOptions}; max-age=${refreshTokenExpiry}`;
                 }
                 
-                config.headers.Authorization = `Bearer ${newAccessToken}`;
-              } else {
-                // Refresh failed, clear tokens
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('refreshToken');
-                throw new Error('Token refresh failed');
-              }
-            } catch (refreshError) {
-              // Refresh failed, clear tokens and redirect
+        console.log('✅ Token refrescado exitosamente');
+        
+        // Resolver todos los requests pendientes
+        pendingRequests.forEach(({ resolve }) => resolve(accessToken));
+        pendingRequests.length = 0;
+
+        return { accessToken, refreshToken: newRefreshToken };
+      }
+
+      return null;
+    } catch (error: any) {
+      console.error('❌ Error al refrescar token:', error);
+      
+      // Limpiar tokens
               localStorage.removeItem('accessToken');
               localStorage.removeItem('refreshToken');
               localStorage.removeItem('tenantId');
               
-              if (typeof window !== 'undefined' && !config.url?.includes('/auth/')) {
-                window.location.href = '/login?expired=true';
-              }
-              
-              return Promise.reject(refreshError);
+      // Limpiar cookies
+      if (typeof window !== 'undefined') {
+        document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      }
+
+      // Rechazar todos los requests pendientes
+      pendingRequests.forEach(({ reject }) => reject(error));
+      pendingRequests.length = 0;
+
+      return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
             }
-          } else {
-            // Both tokens expired, clear and redirect
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('tenantId');
-            
-            if (typeof window !== 'undefined' && !config.url?.includes('/auth/')) {
-              window.location.href = '/login?expired=true';
-            }
-            
-            return Promise.reject(new Error('Token expired'));
-          }
-        } else {
+  })();
+
+  return refreshPromise;
+}
+
+/**
+ * Obtener token válido, refrescando si es necesario
+ * Si hay un refresh en curso, espera a que termine
+ */
+async function getValidToken(): Promise<string | null> {
+  const token = localStorage.getItem('accessToken');
+  
+  if (!token) {
+    return null;
+  }
+
+  // Si el token está expirado o próximo a expirar, intentar refrescar
+  if (isTokenExpired(token)) {
+    // Si ya hay un refresh en curso, esperar a que termine
+    if (isRefreshing && refreshPromise) {
+      return new Promise((resolve, reject) => {
+        pendingRequests.push({ resolve, reject });
+      });
+    }
+
+    // Iniciar nuevo refresh
+    const result = await refreshAccessToken();
+    return result?.accessToken || null;
+  }
+
+  return token;
+}
+
+// Request interceptor with enhanced logging and auth
+api.interceptors.request.use(
+  async (config) => {
+    // Add request ID for tracking
+    config.metadata = { requestId: generateRequestId(), startTime: Date.now() };
+    
+    // Add auth token - NO refrescar aquí, solo agregar el token válido
+    // El refresh se maneja en el response interceptor para evitar condiciones de carrera
+    if (typeof window !== 'undefined') {
+      const token = await getValidToken();
+      
+      if (token) {
           config.headers.Authorization = `Bearer ${token}`;
+      } else if (!config.url?.includes('/auth/')) {
+        // Si no hay token válido y no es un endpoint de auth, redirigir a login
+        // Esto evita hacer requests sin autenticación
+        if (typeof window !== 'undefined') {
+          const currentPath = window.location.pathname;
+          const redirectPath = currentPath !== '/login' ? currentPath : undefined;
+          const loginUrl = redirectPath 
+            ? `/login?expired=true&redirect=${encodeURIComponent(redirectPath)}`
+            : '/login?expired=true';
+          window.location.href = loginUrl;
         }
+        return Promise.reject(new Error('No valid token available'));
       }
     }
 
@@ -273,44 +368,19 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const refreshUrl = getApiBaseURL();
-          const response = await axios.post(
-            `${refreshUrl}/auth/refresh`,
-            { refreshToken }
-          );
-          
-          // Backend may return { accessToken } directly or wrapped
-          const backendResponse = response.data;
-          const accessToken = backendResponse.accessToken || backendResponse.data?.accessToken;
-          
-          const newRefreshToken = backendResponse.refreshToken || backendResponse.data?.refreshToken;
-          
-          if (accessToken) {
-            localStorage.setItem('accessToken', accessToken);
-            
-            // Actualizar cookies también
-            const isProduction = process.env.NODE_ENV === 'production';
-            const cookieOptions = isProduction 
-              ? 'secure; samesite=strict; path=/' 
-              : 'samesite=lax; path=/';
-            const accessTokenExpiry = 15 * 60; // 15 minutos
-            document.cookie = `accessToken=${accessToken}; ${cookieOptions}; max-age=${accessTokenExpiry}`;
-            
-            if (newRefreshToken) {
-              localStorage.setItem('refreshToken', newRefreshToken);
-              const refreshTokenExpiry = 7 * 24 * 60 * 60; // 7 días
-              document.cookie = `refreshToken=${newRefreshToken}; ${cookieOptions}; max-age=${refreshTokenExpiry}`;
-            }
-            
+        // Usar la función centralizada de refresh que evita múltiples refreshes simultáneos
+        const result = await refreshAccessToken();
+        
+        if (result?.accessToken) {
             // Update authorization header and retry
             if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            originalRequest.headers.Authorization = `Bearer ${result.accessToken}`;
             }
             
             return api(originalRequest);
-          }
+        } else {
+          // Refresh failed, redirect to login
+          throw new Error('Token refresh failed');
         }
       } catch (refreshError) {
         // Refresh failed, clear tokens and redirect
@@ -403,14 +473,21 @@ function handleApiError(error: AxiosError) {
       
     case 403:
       toast.error('No tienes permisos para realizar esta acción');
-      // Redirect to dashboard if unauthorized
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/dashboard')) {
-        window.location.href = '/dashboard';
+      // No redirigir automáticamente en 403 - dejar que el componente maneje el error
+      // Solo redirigir si estamos en una ruta de autenticación
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        if (currentPath.startsWith('/login') || currentPath.startsWith('/register')) {
+          // Ya estamos en login/register, no redirigir
+          break;
+        }
+        // No redirigir desde páginas de contenido - mostrar el error y dejar que el usuario decida
       }
       break;
       
     case 404:
       toast.error('Recurso no encontrado');
+      // No redirigir en 404 - dejar que el componente muestre el estado vacío
       break;
       
     case 409:

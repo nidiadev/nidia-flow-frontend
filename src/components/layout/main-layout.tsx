@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from './sidebar';
-import { Header } from './header';
 import { Breadcrumbs } from './breadcrumbs';
 import { cn } from '@/lib/utils';
 
@@ -16,7 +15,7 @@ export function MainLayout({ children, className }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-sidebar overflow-hidden">
       {/* Mobile sidebar overlay */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -42,27 +41,29 @@ export function MainLayout({ children, className }: MainLayoutProps) {
       </aside>
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Header */}
-        <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-
+      <div className="flex flex-1 flex-col overflow-hidden pt-3 pr-3 pb-3">
         {/* Content area */}
         <main className="flex-1 overflow-y-auto">
-          {/* Breadcrumbs */}
-          <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="w-full px-6 py-3">
-              <Breadcrumbs />
-            </div>
-          </div>
-
-          {/* Page content */}
+          {/* Page content with rounded corners - Breadcrumbs inside */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className={cn('w-full px-6 py-6', className)}
+            className={cn(
+              'w-full h-full bg-background rounded-lg border border-border',
+              'flex flex-col overflow-hidden',
+              className
+            )}
           >
-            {children}
+            {/* Breadcrumbs inside container */}
+            <div className="flex h-12 items-center px-4">
+              <Breadcrumbs className="text-sm ml-2" />
+            </div>
+
+            {/* Page content */}
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              {children}
+            </div>
           </motion.div>
         </main>
       </div>
