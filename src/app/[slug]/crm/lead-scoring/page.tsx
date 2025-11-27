@@ -23,11 +23,14 @@ import {
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { SectionHeader } from '@/components/ui/section-header';
+import { TenantLink } from '@/components/ui/tenant-link';
+import { useTenantRoutes } from '@/hooks/use-tenant-routes';
 import { toast } from 'sonner';
 import { leadScoringApi, LeadScoringRule } from '@/lib/api/crm';
 
 export default function LeadScoringPage() {
   const queryClient = useQueryClient();
+  const { route } = useTenantRoutes();
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['lead-scoring-rules'],
@@ -79,10 +82,10 @@ export default function LeadScoringPage() {
                 Recalcular Todos
               </Button>
               <Button asChild>
-                <a href="/crm/lead-scoring/rules/new">
+                <TenantLink href={route('/crm/lead-scoring/rules/new')}>
                   <Plus className="h-4 w-4 mr-2" />
                   Nueva Regla
-                </a>
+                </TenantLink>
               </Button>
             </>
           }
@@ -96,19 +99,38 @@ export default function LeadScoringPage() {
           isEmpty={rules.length === 0}
           onRetry={refetch}
           emptyFallback={
-            <div className="text-center py-12">
-              <TrendingUp className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No hay reglas de scoring</h3>
-              <p className="text-muted-foreground mb-4">
-                Crea reglas para puntuar automáticamente tus leads
+            <Card>
+              <CardContent className="py-16">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="mb-6">
+                    <svg
+                      width="200"
+                      height="160"
+                      viewBox="0 0 200 160"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="opacity-40"
+                    >
+                      <path d="M100 20 L110 50 L140 50 L115 70 L125 100 L100 85 L75 100 L85 70 L60 50 L90 50 Z" fill="currentColor" className="text-muted-foreground" opacity="0.1" />
+                      <path d="M100 20 L110 50 L140 50 L115 70 L125 100 L100 85 L75 100 L85 70 L60 50 L90 50 Z" stroke="currentColor" className="text-muted-foreground" strokeWidth="2" fill="none" />
+                      <line x1="100" y1="20" x2="100" y2="140" stroke="currentColor" className="text-muted-foreground" strokeWidth="2" />
+                      <line x1="50" y1="80" x2="150" y2="80" stroke="currentColor" className="text-muted-foreground" strokeWidth="2" />
+                      <circle cx="100" cy="80" r="15" fill="currentColor" className="text-muted-foreground" opacity="0.2" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">No hay reglas de scoring aún</h3>
+                  <p className="text-sm text-muted-foreground mb-6 max-w-md leading-relaxed">
+                    Crea reglas de puntuación para evaluar automáticamente tus leads y priorizar los más prometedores
               </p>
               <Button asChild>
-                <a href="/crm/lead-scoring/rules/new">
+                    <TenantLink href={route('/crm/lead-scoring/rules/new')}>
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Regla
-                </a>
+                    </TenantLink>
               </Button>
             </div>
+              </CardContent>
+            </Card>
           }
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -130,10 +152,10 @@ export default function LeadScoringPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <a href={`/crm/lead-scoring/rules/${rule.id}/edit`}>
+                          <TenantLink href={route(`/crm/lead-scoring/rules/${rule.id}/edit`)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
-                          </a>
+                          </TenantLink>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-red-600"

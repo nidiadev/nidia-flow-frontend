@@ -1,0 +1,875 @@
+'use client';
+
+import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { 
+  ArrowLeft,
+  Edit,
+  Mail,
+  Phone,
+  MessageCircle,
+  MapPin,
+  Building2,
+  Calendar,
+  Star,
+  Plus,
+  MoreHorizontal,
+  User,
+  CreditCard,
+  FileText,
+  Activity,
+  Clock,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useCustomer, useCreateInteraction } from '@/hooks/use-api';
+import { useQueryClient } from '@tanstack/react-query';
+import { QueryLoading } from '@/components/ui/loading';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { SectionHeader } from '@/components/ui/section-header';
+import { Customer, CUSTOMER_TYPE_CONFIG, getLeadScoreInfo, Interaction, InteractionType } from '@/types/customer';
+import { LeadScoreDetailed } from '@/components/crm/lead-score-indicator';
+import { toast } from 'sonner';
+
+// Mock data for interactions - in real app this would come from API
+const mockInteractions: Interaction[] = [
+  {
+    id: '1',
+    customerId: '1',
+    type: 'call',
+    direction: 'outbound',
+    subject: 'Llamada de seguimiento',
+    content: 'Conversación sobre los requerimientos del proyecto. Cliente interesado en la propuesta.',
+    status: 'completed',
+    durationMinutes: 15,
+    outcome: 'interested',
+    nextAction: 'Enviar propuesta comercial',
+    nextActionDate: '2024-01-20T10:00:00Z',
+    createdBy: 'user1',
+    createdByName: 'Juan Pérez',
+    createdAt: '2024-01-15T14:30:00Z',
+    updatedAt: '2024-01-15T14:30:00Z',
+  },
+  {
+    id: '2',
+    customerId: '1',
+    type: 'email',
+    direction: 'outbound',
+    subject: 'Propuesta comercial - Proyecto XYZ',
+    content: 'Envío de propuesta comercial detallada con cronograma y presupuesto.',
+    status: 'completed',
+    createdBy: 'user1',
+    createdByName: 'Juan Pérez',
+    createdAt: '2024-01-16T09:15:00Z',
+    updatedAt: '2024-01-16T09:15:00Z',
+  },
+  {
+    id: '3',
+    customerId: '1',
+    type: 'meeting',
+    direction: 'inbound',
+    subject: 'Reunión de presentación',
+    content: 'Reunión presencial para presentar la propuesta y resolver dudas.',
+    status: 'scheduled',
+    scheduledAt: '2024-01-22T15:00:00Z',
+    durationMinutes: 60,
+    createdBy: 'user1',
+    createdByName: 'Juan Pérez',
+    createdAt: '2024-01-17T11:00:00Z',
+    updatedAt: '2024-01-17T11:00:00Z',
+  },
+];
+
+// Interaction type icons and colors
+const INTERACTION_CONFIG = {
+  call: { icon: Phone, color: 'text-nidia-blue', bg: 'bg-blue-50 dark:bg-blue-950/40', iconBg: 'bg-background' },
+  email: { icon: Mail, color: 'text-nidia-green', bg: 'bg-green-50 dark:bg-green-950/40', iconBg: 'bg-background' },
+  whatsapp: { icon: MessageCircle, color: 'text-nidia-green', bg: 'bg-green-50 dark:bg-green-950/40', iconBg: 'bg-background' },
+  meeting: { icon: Calendar, color: 'text-nidia-purple', bg: 'bg-purple-50 dark:bg-purple-950/40', iconBg: 'bg-background' },
+  note: { icon: FileText, color: 'text-muted-foreground', bg: 'bg-muted', iconBg: 'bg-background' },
+  task: { icon: CheckCircle, color: 'text-nidia-turquoise', bg: 'bg-cyan-50 dark:bg-cyan-950/40', iconBg: 'bg-background' },
+};
+
+// Customer info section - Compact design with better space usage
+function CustomerInfo({ customer }: { customer: Customer }) {
+  const typeConfig = CUSTOMER_TYPE_CONFIG[customer.type];
+  const leadScoreInfo = getLeadScoreInfo(customer.leadScore);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      {/* Contact & Personal Info */}
+      <Card className="border">
+        <CardContent className="p-3">
+          <div className="flex items-start gap-2.5">
+            <div className="w-10 h-10 bg-gradient-to-r from-nidia-green to-nidia-purple rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0">
+              {customer.firstName?.[0]}{customer.lastName?.[0]}
+            </div>
+            <div className="flex-1 min-w-0 space-y-1.5">
+            <div>
+                <p className="font-semibold text-sm truncate">{customer.firstName} {customer.lastName}</p>
+                <p className="text-xs text-muted-foreground truncate">{customer.email}</p>
+            </div>
+              <div className="space-y-1">
+          {customer.phone && (
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <Phone className="h-3 w-3 mr-1.5 flex-shrink-0" />
+                    <span className="truncate">{customer.phone}</span>
+            </div>
+          )}
+          {customer.whatsapp && (
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <MessageCircle className="h-3 w-3 mr-1.5 flex-shrink-0" />
+                    <span className="truncate">{customer.whatsapp}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Company & Location */}
+      <Card className="border">
+        <CardContent className="p-3 space-y-2">
+          {customer.companyName && (
+            <div className="flex items-start gap-2">
+              <Building2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{customer.companyName}</p>
+                <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
+          {customer.industry && (
+                    <span className="text-xs text-muted-foreground capitalize">{customer.industry}</span>
+          )}
+          {customer.segment && (
+                    <>
+                      {customer.industry && <span className="text-xs text-muted-foreground">•</span>}
+                      <span className="text-xs text-muted-foreground">{customer.segment}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          {customer.city && (
+            <div className="flex items-center text-xs text-muted-foreground pt-1.5 border-t">
+              <MapPin className="h-3 w-3 mr-1.5 flex-shrink-0" />
+              <span>{customer.city}</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Status, Score & Timeline */}
+      <Card className="border">
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <Badge variant="outline" className={typeConfig.color}>
+              {typeConfig.label}
+            </Badge>
+            <div className="flex items-center gap-1">
+              <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+              <span className={`text-sm font-semibold ${leadScoreInfo.color}`}>
+                {customer.leadScore}
+              </span>
+            </div>
+          </div>
+          {customer.leadSource && (
+            <div className="text-xs text-muted-foreground">
+              Fuente: <span className="font-medium capitalize">{customer.leadSource}</span>
+            </div>
+          )}
+          <div className="pt-1.5 border-t space-y-1">
+            <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Creado:</span>
+              <span className="font-medium">
+                {new Date(customer.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
+          </div>
+          {customer.lastContactAt && (
+              <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Último contacto:</span>
+                <span className="font-medium">
+                  {new Date(customer.lastContactAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+              </span>
+            </div>
+          )}
+          {customer.firstPurchaseAt && (
+              <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Primera compra:</span>
+                <span className="font-medium">
+                  {new Date(customer.firstPurchaseAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+              </span>
+            </div>
+          )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// New Interaction Dialog Component
+function NewInteractionDialog({ 
+  customerId, 
+  open, 
+  onOpenChange,
+  onSuccess 
+}: { 
+  customerId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
+}) {
+  const [type, setType] = useState<InteractionType>('call');
+  const [direction, setDirection] = useState<'inbound' | 'outbound'>('outbound');
+  const [subject, setSubject] = useState('');
+  const [content, setContent] = useState('');
+  const [status, setStatus] = useState<'completed' | 'scheduled'>('completed');
+  const [scheduledAt, setScheduledAt] = useState('');
+  
+  const createInteraction = useCreateInteraction();
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!subject.trim()) {
+      toast.error('El asunto es requerido');
+      return;
+    }
+    
+    try {
+      await createInteraction.mutateAsync({
+        customerId,
+        type,
+        direction,
+        subject: subject.trim(),
+        content: content.trim() || undefined,
+        status,
+        scheduledAt: status === 'scheduled' && scheduledAt ? scheduledAt : undefined,
+      });
+      
+      toast.success('Interacción creada exitosamente');
+      onOpenChange(false);
+      setSubject('');
+      setContent('');
+      setScheduledAt('');
+      onSuccess?.();
+    } catch (error) {
+      // Error is handled by the mutation
+    }
+  };
+  
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Nueva Interacción</DialogTitle>
+          <DialogDescription>
+            Registra una nueva interacción con el cliente
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="type">Tipo de Interacción</Label>
+              <Select value={type} onValueChange={(value) => setType(value as InteractionType)}>
+                <SelectTrigger id="type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="call">Llamada</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                  <SelectItem value="meeting">Reunión</SelectItem>
+                  <SelectItem value="note">Nota</SelectItem>
+                  <SelectItem value="task">Tarea</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="direction">Dirección</Label>
+              <Select value={direction} onValueChange={(value) => setDirection(value as 'inbound' | 'outbound')}>
+                <SelectTrigger id="direction">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="outbound">Saliente</SelectItem>
+                  <SelectItem value="inbound">Entrante</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="status">Estado</Label>
+              <Select value={status} onValueChange={(value) => setStatus(value as 'completed' | 'scheduled')}>
+                <SelectTrigger id="status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="completed">Completada</SelectItem>
+                  <SelectItem value="scheduled">Programada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {status === 'scheduled' && (
+              <div className="space-y-2">
+                <Label htmlFor="scheduledAt">Fecha y Hora Programada</Label>
+                <Input
+                  id="scheduledAt"
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={(e) => setScheduledAt(e.target.value)}
+                />
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="subject">Asunto *</Label>
+              <Input
+                id="subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Ej: Llamada de seguimiento"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="content">Descripción</Label>
+              <Textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Detalles de la interacción..."
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={createInteraction.isPending}>
+              {createInteraction.isPending ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Interactions timeline - Visual timeline design with better space usage
+function InteractionsTimeline({ 
+  interactions, 
+  customerId,
+  onInteractionCreated 
+}: { 
+  interactions: Interaction[];
+  customerId: string;
+  onInteractionCreated?: () => void;
+}) {
+  const [showNewDialog, setShowNewDialog] = useState(false);
+  
+  if (interactions.length === 0) {
+    return (
+      <>
+        <div className="text-center py-12">
+          <Activity className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+          <h3 className="text-base font-medium mb-1">Sin interacciones</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            No hay interacciones registradas para este cliente
+          </p>
+          <Button size="sm" onClick={() => setShowNewDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Agregar Interacción
+          </Button>
+        </div>
+        <NewInteractionDialog
+          customerId={customerId}
+          open={showNewDialog}
+          onOpenChange={setShowNewDialog}
+          onSuccess={onInteractionCreated}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="relative">
+        {/* Timeline line */}
+        <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />
+        
+    <div className="space-y-4">
+          {interactions.map((interaction, index) => {
+        const config = INTERACTION_CONFIG[interaction.type];
+        const Icon = config.icon;
+          const date = interaction.scheduledAt || interaction.createdAt;
+          const isScheduled = interaction.status === 'scheduled';
+        
+        return (
+            <div key={interaction.id} className="relative flex gap-4">
+              {/* Timeline dot */}
+              <div className="relative z-10 flex-shrink-0">
+                <div className={`w-12 h-12 rounded-full ${config.bg} flex items-center justify-center border-2 border-background shadow-sm`}>
+                  <div className={`w-10 h-10 rounded-full ${config.iconBg} flex items-center justify-center`}>
+                    <Icon className={`h-5 w-5 ${config.color}`} />
+                  </div>
+                </div>
+                </div>
+                
+              {/* Content card */}
+              <Card className="flex-1 border shadow-sm hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <h4 className="font-semibold text-sm">{interaction.subject}</h4>
+                        {isScheduled && (
+                        <Badge variant="secondary" className="text-xs">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Programado
+                        </Badge>
+                      )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        {interaction.direction && (
+                          <Badge variant="outline" className="text-xs">
+                            {interaction.direction === 'inbound' ? '↩ Entrante' : '↪ Saliente'}
+                          </Badge>
+                        )}
+                        {interaction.outcome && (
+                          <Badge variant="outline" className="text-xs">
+                            {interaction.outcome}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Ver detalles
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  
+                  {interaction.content && (
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                      {interaction.content}
+                    </p>
+                  )}
+                  
+                  {/* Metadata row */}
+                  <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <User className="h-3 w-3" />
+                      <span>{interaction.createdByName}</span>
+                      <span>•</span>
+                      <span>
+                        {new Date(date).toLocaleDateString('es-ES', { 
+                          day: 'numeric', 
+                          month: 'short', 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </span>
+                      {interaction.durationMinutes && (
+                        <>
+                          <span>•</span>
+                        <span>{interaction.durationMinutes} min</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Next action */}
+                  {interaction.nextAction && (
+                    <div className="mt-3 p-2.5 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-md">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-700 dark:text-orange-300 mb-1">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        <span>Próxima acción</span>
+                      </div>
+                      <p className="text-xs text-orange-600 dark:text-orange-400 mb-1">
+                        {interaction.nextAction}
+                      </p>
+                      {interaction.nextActionDate && (
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(interaction.nextActionDate).toLocaleDateString('es-ES', { 
+                            day: 'numeric', 
+                            month: 'short', 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  )}
+            </CardContent>
+          </Card>
+            </div>
+        );
+      })}
+        </div>
+    </div>
+      <NewInteractionDialog
+        customerId={customerId}
+        open={showNewDialog}
+        onOpenChange={setShowNewDialog}
+        onSuccess={onInteractionCreated}
+      />
+    </>
+  );
+}
+
+export default function CustomerDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const customerId = params.id as string;
+  const [showNewInteractionDialog, setShowNewInteractionDialog] = useState(false);
+  const queryClient = useQueryClient();
+  
+  const { data: customer, isLoading, isError, error } = useCustomer(customerId);
+  
+  // Determinar si el error es 404 (cliente no encontrado) vs otro error
+  const isNotFoundError = error && 'response' in error && (error as any).response?.status === 404;
+  const isPermissionError = error && 'response' in error && (error as any).response?.status === 403;
+  
+  const handleInteractionCreated = () => {
+    // Refetch customer data to update lastContactAt
+    queryClient.invalidateQueries({ queryKey: ['crm', 'customers', customerId] });
+    // Invalidate interactions list
+    queryClient.invalidateQueries({ queryKey: ['crm', 'interactions', customerId] });
+  };
+  
+  const handleEdit = () => {
+    router.push(`/crm/customers/${customerId}/edit`);
+  };
+  
+  const handleContact = (type: 'email' | 'phone' | 'whatsapp') => {
+    if (!customer) return;
+    
+    switch (type) {
+      case 'email':
+        window.open(`mailto:${customer.email}`);
+        break;
+      case 'phone':
+        if (customer.phone) {
+          window.open(`tel:${customer.phone}`);
+        }
+        break;
+      case 'whatsapp':
+        if (customer.whatsapp) {
+          const cleanNumber = customer.whatsapp.replace(/\D/g, '');
+          window.open(`https://wa.me/${cleanNumber}`);
+        }
+        break;
+    }
+  };
+
+  return (
+    <ErrorBoundary>
+      <div className="space-y-6">
+        {/* Header */}
+        <SectionHeader
+          title={customer ? `${customer.firstName} ${customer.lastName}` : 'Detalle del Cliente'}
+          description={customer ? customer.email : 'Información completa y historial de interacciones'}
+          showBack
+          actions={
+            customer ? (
+              <>
+                <Button variant="outline" size="sm" onClick={() => handleContact('email')}>
+                <Mail className="h-4 w-4 mr-2" />
+                Email
+              </Button>
+              {customer.phone && (
+                  <Button variant="outline" size="sm" onClick={() => handleContact('phone')}>
+                  <Phone className="h-4 w-4 mr-2" />
+                  Llamar
+                </Button>
+              )}
+              {customer.whatsapp && (
+                  <Button variant="outline" size="sm" onClick={() => handleContact('whatsapp')}>
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  WhatsApp
+                </Button>
+              )}
+                <Button size="sm" onClick={handleEdit}>
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
+              </Button>
+              </>
+            ) : undefined
+          }
+        />
+
+        <QueryLoading
+          isLoading={isLoading}
+          isError={isError && !isNotFoundError}
+          error={isNotFoundError ? null : (error as Error)}
+          isEmpty={!customer || !!isNotFoundError}
+          loadingFallback={
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <div className="h-4 bg-muted rounded animate-pulse" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="h-3 bg-muted rounded animate-pulse" />
+                        <div className="h-3 bg-muted rounded animate-pulse w-2/3" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          }
+          errorFallback={
+            isPermissionError ? (
+              <div className="text-center py-12">
+                <AlertCircle className="mx-auto h-12 w-12 text-orange-500 mb-4" />
+                <h3 className="text-lg font-medium mb-2">Sin permisos</h3>
+                <p className="text-muted-foreground mb-4">
+                  No tienes permisos para ver este cliente
+                </p>
+                <Button onClick={() => router.push('/crm/customers')}>
+                  Volver a la lista
+                </Button>
+              </div>
+            ) : undefined
+          }
+          emptyFallback={
+            <div className="text-center py-12">
+              <User className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">Cliente no encontrado</h3>
+              <p className="text-muted-foreground mb-4">
+                El cliente que buscas no existe o ha sido eliminado
+              </p>
+              <Button onClick={() => router.push('/crm/customers')}>
+                Volver a la lista
+              </Button>
+            </div>
+          }
+        >
+          {customer && (
+            <div className="space-y-6">
+              {/* Customer Info Cards - Compact */}
+              <CustomerInfo customer={customer} />
+
+              {/* Tabs for detailed information */}
+              <Tabs defaultValue="interactions" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="interactions">Interacciones</TabsTrigger>
+                  <TabsTrigger value="orders">Órdenes</TabsTrigger>
+                  <TabsTrigger value="financial">Financiero</TabsTrigger>
+                  <TabsTrigger value="notes">Notas</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="interactions" className="mt-4">
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-lg">Historial de Interacciones</CardTitle>
+                          <CardDescription className="text-xs mt-1">
+                            Registro completo de comunicaciones y actividades
+                          </CardDescription>
+                        </div>
+                        <Button size="sm" onClick={() => setShowNewInteractionDialog(true)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Nueva Interacción
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <InteractionsTimeline 
+                        interactions={mockInteractions} 
+                        customerId={customerId}
+                        onInteractionCreated={handleInteractionCreated}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="orders" className="mt-4">
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg">Órdenes y Ventas</CardTitle>
+                      <CardDescription className="text-xs mt-1">
+                        Historial de compras y órdenes del cliente
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center py-12">
+                        <FileText className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+                        <h3 className="text-base font-medium mb-1">Sin órdenes</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Este cliente aún no tiene órdenes registradas
+                        </p>
+                        <Button size="sm">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Crear Orden
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="financial" className="mt-4">
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg">Información Financiera</CardTitle>
+                      <CardDescription className="text-xs mt-1">
+                        Límites de crédito, términos de pago y estado financiero
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between py-2 border-b">
+                            <span className="text-sm text-muted-foreground">Límite de Crédito:</span>
+                            <span className="text-sm font-medium">
+                              {customer.creditLimit 
+                                ? `$${customer.creditLimit.toLocaleString('es-CO')}` 
+                                : 'No definido'
+                              }
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between py-2 border-b">
+                            <span className="text-sm text-muted-foreground">Términos de Pago:</span>
+                            <span className="text-sm font-medium">
+                              {customer.paymentTerms === 0 
+                                ? 'Contado' 
+                                : `${customer.paymentTerms} días`
+                              }
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between py-2">
+                            <span className="text-sm text-muted-foreground">Estado:</span>
+                            <Badge variant={customer.isActive ? 'default' : 'secondary'} className="text-xs">
+                              {customer.isActive ? 'Activo' : 'Inactivo'}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between py-2 border-b">
+                            <span className="text-sm text-muted-foreground">Total Facturado:</span>
+                            <span className="text-sm font-bold">$0</span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between py-2 border-b">
+                            <span className="text-sm text-muted-foreground">Saldo Pendiente:</span>
+                            <span className="text-sm">$0</span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between py-2">
+                            <span className="text-sm text-muted-foreground">Última Factura:</span>
+                            <span className="text-sm text-muted-foreground">N/A</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="notes" className="mt-4">
+                  <Card>
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg">Notas y Observaciones</CardTitle>
+                      <CardDescription className="text-xs mt-1">
+                        Información adicional y notas importantes
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {customer.notes ? (
+                        <div className="prose prose-sm max-w-none">
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed">{customer.notes}</p>
+                        </div>
+                      ) : (
+                        <div className="text-center py-12">
+                          <FileText className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+                          <h3 className="text-base font-medium mb-1">Sin notas</h3>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            No hay notas adicionales para este cliente
+                          </p>
+                          <Button variant="outline" size="sm">
+                            <Edit className="h-4 w-4 mr-2" />
+                            Agregar Nota
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {customer.tags && customer.tags.length > 0 && (
+                        <div className="mt-6 pt-6 border-t">
+                          <h4 className="text-sm font-medium mb-3">Etiquetas:</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {customer.tags.map((tag: string, index: number) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+        </QueryLoading>
+      </div>
+    </ErrorBoundary>
+  );
+}

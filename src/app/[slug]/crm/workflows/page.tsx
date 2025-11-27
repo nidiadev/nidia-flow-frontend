@@ -28,11 +28,13 @@ import { TenantLink } from '@/components/ui/tenant-link';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { SectionHeader } from '@/components/ui/section-header';
+import { useTenantRoutes } from '@/hooks/use-tenant-routes';
 import { toast } from 'sonner';
 import { workflowsApi, Workflow } from '@/lib/api/crm';
 
 export default function WorkflowsPage() {
   const queryClient = useQueryClient();
+  const { route } = useTenantRoutes();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<boolean | undefined>(undefined);
 
@@ -70,7 +72,7 @@ export default function WorkflowsPage() {
           description="Crea workflows para automatizar tareas repetitivas"
           actions={
             <Button asChild>
-              <TenantLink href="/crm/workflows/new">
+              <TenantLink href={route('/crm/workflows/new')}>
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Automatización
               </TenantLink>
@@ -79,6 +81,7 @@ export default function WorkflowsPage() {
         />
 
         {/* Search and Filters */}
+        {workflows.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="flex-1">
             <div className="relative">
@@ -92,6 +95,7 @@ export default function WorkflowsPage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Workflows Grid */}
         <QueryLoading
@@ -101,19 +105,37 @@ export default function WorkflowsPage() {
           isEmpty={workflows.length === 0}
           onRetry={refetch}
           emptyFallback={
-            <div className="text-center py-12">
-              <Zap className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No hay automatizaciones</h3>
-              <p className="text-muted-foreground mb-4">
-                Crea workflows para automatizar tareas y ahorrar tiempo
+            <Card>
+              <CardContent className="py-16">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="mb-6">
+                    <svg
+                      width="200"
+                      height="160"
+                      viewBox="0 0 200 160"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="opacity-40"
+                    >
+                      <path d="M100 20 L120 60 L160 60 L130 90 L140 130 L100 110 L60 130 L70 90 L40 60 L80 60 Z" fill="currentColor" className="text-muted-foreground" opacity="0.1" />
+                      <path d="M100 20 L120 60 L160 60 L130 90 L140 130 L100 110 L60 130 L70 90 L40 60 L80 60 Z" stroke="currentColor" className="text-muted-foreground" strokeWidth="2" fill="none" />
+                      <circle cx="100" cy="80" r="20" fill="currentColor" className="text-muted-foreground" opacity="0.15" />
+                      <path d="M50 40 L70 60 M150 40 L130 60 M50 120 L70 100 M150 120 L130 100" stroke="currentColor" className="text-muted-foreground" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">No hay automatizaciones aún</h3>
+                  <p className="text-sm text-muted-foreground mb-6 max-w-md leading-relaxed">
+                    Crea workflows para automatizar tareas repetitivas, enviar emails automáticos y ahorrar tiempo en tu operación diaria
               </p>
               <Button asChild>
-                <TenantLink href="/crm/workflows/new">
+                    <TenantLink href={route('/crm/workflows/new')}>
                   <Plus className="h-4 w-4 mr-2" />
                   Crear Automatización
                 </TenantLink>
               </Button>
             </div>
+              </CardContent>
+            </Card>
           }
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -135,13 +157,13 @@ export default function WorkflowsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <TenantLink href={`/crm/workflows/${workflow.id}`}>
+                          <TenantLink href={route(`/crm/workflows/${workflow.id}`)}>
                             <Eye className="mr-2 h-4 w-4" />
                             Ver Detalle
                           </TenantLink>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <TenantLink href={`/crm/workflows/${workflow.id}/edit`}>
+                          <TenantLink href={route(`/crm/workflows/${workflow.id}/edit`)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
                           </TenantLink>

@@ -7,7 +7,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { CustomerForm } from '@/components/crm/customer-form';
 import { Customer } from '@/types/customer';
 import { useTenantRoutes } from '@/hooks/use-tenant-routes';
-import { Save, X } from 'lucide-react';
+import { Save, X, Loader2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 export default function NewCustomerPage() {
@@ -28,19 +28,19 @@ export default function NewCustomerPage() {
     router.back();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsSubmitting(true);
-    // Trigger form submit via DOM
-    const submitButton = document.querySelector('form button[type="submit"]') as HTMLButtonElement;
-    if (submitButton) {
-      submitButton.click();
-    } else {
-      // Fallback: try form.requestSubmit()
-      const form = document.querySelector('form');
-      if (form) {
-        form.requestSubmit();
-      }
+    try {
+      formSubmitRef.current?.submit();
+    } catch (error) {
+      // Error is handled by the form, but reset state
+      setIsSubmitting(false);
     }
+  };
+
+  // Reset submitting state when form errors occur
+  const handleFormError = () => {
+    setIsSubmitting(false);
   };
 
   return (
@@ -60,8 +60,17 @@ export default function NewCustomerPage() {
                 onClick={handleSubmit}
                 disabled={isSubmitting}
               >
-                <Save className="h-4 w-4 mr-2" />
-                {isSubmitting ? 'Guardando...' : 'Guardar'}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Crear Cliente
+                  </>
+                )}
               </Button>
             </div>
           }
@@ -70,6 +79,7 @@ export default function NewCustomerPage() {
         <CustomerForm
           onSuccess={handleSuccess}
           onCancel={handleCancel}
+          onError={handleFormError}
           onSubmitTrigger={formSubmitRef}
           isLoading={isSubmitting}
         />

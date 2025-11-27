@@ -1,12 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ArrowLeft,
   Edit,
@@ -17,79 +14,67 @@ import {
   TrendingUp,
   CheckCircle,
   XCircle,
-  MoreHorizontal,
-  Plus,
   FileText,
   Activity,
   Clock,
   Tag,
   Package,
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { QueryLoading } from '@/components/ui/loading';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from '@/components/ui/section-header';
 import { TenantLink } from '@/components/ui/tenant-link';
+import { useTenantRoutes } from '@/hooks/use-tenant-routes';
 import { toast } from 'sonner';
-import { dealsApi, Deal } from '@/lib/api/crm';
+import { Deal } from '@/lib/api/crm';
+import { useDeal, useWinDeal, useLoseDeal } from '@/hooks/use-api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export default function DealDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const { route } = useTenantRoutes();
   const dealId = params.id as string;
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['deal', dealId],
-    queryFn: () => dealsApi.getById(dealId),
-  });
+  const { data: dealData, isLoading, isError, error, refetch } = useDeal(dealId);
+  const deal: Deal | undefined = dealData;
 
-  const deal: Deal | undefined = data?.data?.data;
-
-  const winMutation = useMutation({
-    mutationFn: (data?: { notes?: string; closedAt?: string }) => dealsApi.win(dealId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
-      queryClient.invalidateQueries({ queryKey: ['deals'] });
-      toast.success('Deal marcado como ganado');
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Error al marcar deal como ganado');
-    },
-  });
-
-  const loseMutation = useMutation({
-    mutationFn: ({ reason, notes }: { reason: string; notes?: string }) => 
-      dealsApi.lose(dealId, reason, notes),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
-      queryClient.invalidateQueries({ queryKey: ['deals'] });
-      toast.success('Deal marcado como perdido');
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Error al marcar deal como perdido');
-    },
-  });
+  const winMutation = useWinDeal();
+  const loseMutation = useLoseDeal();
 
   const handleWin = () => {
     if (confirm('¿Estás seguro de marcar este deal como ganado?')) {
-      winMutation.mutate();
+      winMutation.mutate(
+        { dealId, data: {} },
+        {
+          onSuccess: () => {
+            toast.success('Deal marcado como ganado');
+            refetch();
+          },
+          onError: (error: any) => {
+            toast.error(error?.response?.data?.message || 'Error al marcar deal como ganado');
+          },
+        }
+      );
     }
   };
 
   const handleLose = () => {
     const reason = prompt('Razón de pérdida:');
     if (reason) {
-      loseMutation.mutate({ reason });
+      loseMutation.mutate(
+        { dealId, reason, notes: reason },
+        {
+          onSuccess: () => {
+            toast.success('Deal marcado como perdido');
+            refetch();
+          },
+          onError: (error: any) => {
+            toast.error(error?.response?.data?.message || 'Error al marcar deal como perdido');
+          },
+        }
+      );
     }
   };
 
@@ -111,33 +96,38 @@ export default function DealDetailPage() {
 
   return (
     <ErrorBoundary>
-      <div>
-        <PageHeader
+      <div className="space-y-6">
+        <SectionHeader
           title={deal?.name || 'Detalle de Deal'}
           description="Información completa de la oportunidad"
-          variant="gradient"
+          showBack
+          onBack={() => router.push(route('/crm/pipeline'))}
           actions={
             <>
-              <Button variant="outline" asChild>
-                <TenantLink href="/crm/pipeline">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Volver
-                </TenantLink>
-              </Button>
               {deal?.status === 'open' && (
                 <>
-                  <Button variant="outline" onClick={handleWin} className="text-green-600">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleWin} 
+                    className="text-green-600 dark:text-green-400"
+                    disabled={winMutation.isPending}
+                  >
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Marcar como Ganado
                   </Button>
-                  <Button variant="outline" onClick={handleLose} className="text-red-600">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleLose} 
+                    className="text-red-600 dark:text-red-400"
+                    disabled={loseMutation.isPending}
+                  >
                     <XCircle className="h-4 w-4 mr-2" />
                     Marcar como Perdido
                   </Button>
                 </>
               )}
               <Button asChild>
-                <TenantLink href={`/crm/deals/${dealId}/edit`}>
+                <TenantLink href={route(`/crm/deals/${dealId}/edit`)}>
                   <Edit className="h-4 w-4 mr-2" />
                   Editar
                 </TenantLink>
@@ -239,7 +229,7 @@ export default function DealDetailPage() {
                             <div className="flex items-center gap-2">
                               <Building2 className="h-4 w-4 text-muted-foreground" />
                               <TenantLink 
-                                href={`/crm/customers/${deal.customerId}`}
+                                href={route(`/crm/customers/${deal.customerId}`)}
                                 className="font-medium hover:underline"
                               >
                                 {deal.customer.companyName || 
