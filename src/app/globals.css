@@ -12,87 +12,200 @@ html {
 }
 
 @theme {
-  /* NIDIA Brand Colors - Tailwind v4 format */
-  /* En Tailwind v4, --color-* genera automáticamente clases bg-*, text-*, etc. */
-  --color-nidia-green: #1EF3B3;
-  --color-nidia-purple: #8A2BE2;
-  --color-nidia-dark: #0F1013;
-  --color-nidia-gray: #1C1E22;
-  --color-nidia-light: #F6F7F9;
-  --color-nidia-white: #FFFFFF;
-  --color-nidia-blue: #2E35F2;
-  --color-nidia-turquoise: #00F5D4;
-  --color-nidia-black: #0B0B0F;
-  --color-nidia-gray-light: #E6E6E9;
+  /* ============================================
+     NIDIA BRAND COLORS - Matrix Refined Edition
+     ============================================
+     Colores optimizados para:
+     - Escalabilidad de marca a largo plazo
+     - Diferenciación (no Platzi, no WhatsApp)
+     - Legibilidad en ambos temas
+     - Look tech/cyber profesional
+  */
   
-  /* Theme colors - Light theme (default) - Tailwind v4 format */
+  /* PRIMARY: Verde Matrix - El corazón de la marca */
+  --color-nidia-green: #00D9A3;           /* Verde principal - Matrix refinado */
+  --color-nidia-green-bright: #00F5C8;    /* Verde brillante - CTAs y highlights */
+  --color-nidia-green-deep: #00A67E;      /* Verde profundo - textos y bordes */
+  --color-nidia-green-glow: #1EF3B3;      /* Verde neón - solo efectos especiales */
+  
+  /* SECONDARY: Morado Cyber - Complemento distintivo */
+  --color-nidia-purple: #9333EA;          /* Morado principal - más controlado */
+  --color-nidia-purple-light: #A855F7;    /* Morado claro - hover states */
+  --color-nidia-purple-deep: #7E22CE;     /* Morado profundo - contraste */
+  
+  /* ACCENT: Azul Eléctrico - Para diversidad visual */
+  --color-nidia-blue: #0EA5E9;            /* Azul principal - más balanceado */
+  --color-nidia-blue-light: #38BDF8;      /* Azul claro */
+  --color-nidia-blue-deep: #0284C7;       /* Azul profundo */
+  
+  /* ACCENT 2: Cian Tech - Complemento fresco */
+  --color-nidia-cyan: #06B6D4;            /* Cian tecnológico */
+  --color-nidia-cyan-light: #22D3EE;      /* Cian claro */
+  
+  /* NEUTRALS: Grises de sistema */
+  --color-nidia-dark: #0F1013;            /* Negro principal */
+  --color-nidia-dark-soft: #15171C;       /* Negro suave - cards elevados */
+  --color-nidia-gray: #1C1E22;            /* Gris oscuro - cards */
+  --color-nidia-gray-medium: #2A2D35;     /* Gris medio - bordes dark */
+  --color-nidia-gray-soft: #3A3D45;       /* Gris suave - hover dark */
+  
+  --color-nidia-light: #F6F7F9;           /* Fondo claro principal */
+  --color-nidia-light-elevated: #FAFBFC;  /* Fondo elevado light */
+  --color-nidia-white: #FFFFFF;           /* Blanco puro */
+  --color-nidia-gray-light: #E6E6E9;      /* Gris claro - bordes light */
+  --color-nidia-gray-light-soft: #D1D5DB; /* Gris suave - hover light */
+  
+  /* SEMANTIC: Colores funcionales */
+  --color-success: #10B981;               /* Verde éxito - diferenciado del brand */
+  --color-success-light: #34D399;
+  --color-success-dark: #059669;
+  
+  --color-warning: #F59E0B;               /* Naranja advertencia */
+  --color-warning-light: #FBBF24;
+  --color-warning-dark: #D97706;
+  
+  --color-error: #EF4444;                 /* Rojo error */
+  --color-error-light: #F87171;
+  --color-error-dark: #DC2626;
+  
+  --color-info: #3B82F6;                  /* Azul info */
+  --color-info-light: #60A5FA;
+  --color-info-dark: #2563EB;
+  
+  /* ============================================
+     THEME COLORS - LIGHT MODE
+     ============================================ */
+  
+  /* Base Colors */
   --color-background: #F6F7F9;
   --color-foreground: #0F1013;
   --color-card: #FFFFFF;
   --color-card-foreground: #0F1013;
+  --color-card-elevated: #FAFBFC;         /* Para cards con elevación */
   --color-popover: #FFFFFF;
   --color-popover-foreground: #0F1013;
-  --color-primary: #1EF3B3;
-  --color-primary-foreground: #0F1013;
-  --color-secondary: #8A2BE2;
+  
+  /* Brand Colors en contexto de tema */
+  --color-primary: #00D9A3;               /* Verde Matrix */
+  --color-primary-foreground: #0F1013;    /* Texto oscuro sobre verde */
+  --color-primary-hover: #00F5C8;         /* Hover más brillante */
+  --color-primary-active: #00A67E;        /* Active más profundo */
+  
+  --color-secondary: #9333EA;             /* Morado Cyber */
   --color-secondary-foreground: #FFFFFF;
+  --color-secondary-hover: #A855F7;
+  --color-secondary-active: #7E22CE;
+  
+  --color-accent: #06B6D4;                /* Cian Tech */
+  --color-accent-foreground: #0F1013;
+  --color-accent-hover: #22D3EE;
+  --color-accent-active: #0891B2;
+  
+  --color-tertiary: #0EA5E9;              /* Azul Eléctrico - nuevo */
+  --color-tertiary-foreground: #FFFFFF;
+  --color-tertiary-hover: #38BDF8;
+  --color-tertiary-active: #0284C7;
+  
+  /* Semantic Colors en tema */
   --color-muted: #E6E6E9;
   --color-muted-foreground: #6B7280;
-  --color-accent: #00F5D4;
-  --color-accent-foreground: #0F1013;
-  --color-destructive: #ef4444;
+  --color-muted-hover: #D1D5DB;
+  
+  --color-destructive: #EF4444;
   --color-destructive-foreground: #FFFFFF;
+  --color-destructive-hover: #F87171;
+  --color-destructive-active: #DC2626;
+  
+  /* UI Elements */
   --color-border: #E6E6E9;
+  --color-border-strong: #D1D5DB;         /* Bordes más marcados */
   --color-input: #FFFFFF;
-  --color-ring: #1EF3B3;
+  --color-input-border: #D1D5DB;
+  --color-ring: #00D9A3;                  /* Focus ring - verde Matrix */
   
-  /* Chart colors - Verde predominante, morado secundario */
-  --color-chart-1: #1EF3B3;
-  --color-chart-2: #8A2BE2;
-  --color-chart-3: #00F5D4;
-  --color-chart-4: #2E35F2;
-  --color-chart-5: #1C1E22;
+  /* ============================================
+     CHART COLORS
+     ============================================ */
+  --color-chart-1: #00D9A3;               /* Verde Matrix */
+  --color-chart-2: #9333EA;               /* Morado Cyber */
+  --color-chart-3: #06B6D4;               /* Cian Tech */
+  --color-chart-4: #0EA5E9;               /* Azul Eléctrico */
+  --color-chart-5: #F59E0B;               /* Naranja Warm */
+  --color-chart-6: #8B5CF6;               /* Violeta */
+  --color-chart-7: #14B8A6;               /* Teal */
+  --color-chart-8: #EC4899;               /* Pink */
   
-  /* Sidebar colors - Light theme */
+  /* ============================================
+     SIDEBAR COLORS - LIGHT MODE
+     ============================================ */
   --color-sidebar: #FFFFFF;
   --color-sidebar-foreground: #0F1013;
-  --color-sidebar-primary: #1EF3B3;
+  --color-sidebar-primary: #00D9A3;
   --color-sidebar-primary-foreground: #0F1013;
   --color-sidebar-accent: #E6E6E9;
   --color-sidebar-accent-foreground: #0F1013;
+  --color-sidebar-accent-hover: #D1D5DB;
   --color-sidebar-border: #E6E6E9;
-  --color-sidebar-ring: #1EF3B3;
+  --color-sidebar-ring: #00D9A3;
   
-  /* Border Radius */
+  /* ============================================
+     RADIUS & TYPOGRAPHY
+     ============================================ */
   --radius: 0.75rem;
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
   
-  /* Font Family */
   --font-outfit: var(--font-outfit), sans-serif;
 }
 
 :root {
-  /* Mantener variables CSS para compatibilidad con código existente */
+  /* ============================================
+     CSS VARIABLES - Compatibilidad con código existente
+     ============================================ */
+  
+  /* Theme Variables */
   --background: var(--color-background);
   --foreground: var(--color-foreground);
   --card: var(--color-card);
   --card-foreground: var(--color-card-foreground);
+  --card-elevated: var(--color-card-elevated);
   --popover: var(--color-popover);
   --popover-foreground: var(--color-popover-foreground);
+  
   --primary: var(--color-primary);
   --primary-foreground: var(--color-primary-foreground);
+  --primary-hover: var(--color-primary-hover);
+  --primary-active: var(--color-primary-active);
+  
   --secondary: var(--color-secondary);
   --secondary-foreground: var(--color-secondary-foreground);
-  --muted: var(--color-muted);
-  --muted-foreground: var(--color-muted-foreground);
+  --secondary-hover: var(--color-secondary-hover);
+  --secondary-active: var(--color-secondary-active);
+  
   --accent: var(--color-accent);
   --accent-foreground: var(--color-accent-foreground);
+  --accent-hover: var(--color-accent-hover);
+  --accent-active: var(--color-accent-active);
+  
+  --tertiary: var(--color-tertiary);
+  --tertiary-foreground: var(--color-tertiary-foreground);
+  --tertiary-hover: var(--color-tertiary-hover);
+  --tertiary-active: var(--color-tertiary-active);
+  
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --muted-hover: var(--color-muted-hover);
+  
   --destructive: var(--color-destructive);
   --destructive-foreground: var(--color-destructive-foreground);
+  --destructive-hover: var(--color-destructive-hover);
+  --destructive-active: var(--color-destructive-active);
+  
   --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
   --input: var(--color-input);
+  --input-border: var(--color-input-border);
   --ring: var(--color-ring);
   
   /* Chart colors */
@@ -101,6 +214,9 @@ html {
   --chart-3: var(--color-chart-3);
   --chart-4: var(--color-chart-4);
   --chart-5: var(--color-chart-5);
+  --chart-6: var(--color-chart-6);
+  --chart-7: var(--color-chart-7);
+  --chart-8: var(--color-chart-8);
   
   /* Sidebar colors */
   --sidebar: var(--color-sidebar);
@@ -109,61 +225,134 @@ html {
   --sidebar-primary-foreground: var(--color-sidebar-primary-foreground);
   --sidebar-accent: var(--color-sidebar-accent);
   --sidebar-accent-foreground: var(--color-sidebar-accent-foreground);
+  --sidebar-accent-hover: var(--color-sidebar-accent-hover);
   --sidebar-border: var(--color-sidebar-border);
   --sidebar-ring: var(--color-sidebar-ring);
   
-  /* NIDIA Brand Colors - Para uso en CSS personalizado */
+  /* NIDIA Brand Colors - Para uso directo en CSS */
   --nidia-green: var(--color-nidia-green);
+  --nidia-green-bright: var(--color-nidia-green-bright);
+  --nidia-green-deep: var(--color-nidia-green-deep);
+  --nidia-green-glow: var(--color-nidia-green-glow);
+  
   --nidia-purple: var(--color-nidia-purple);
+  --nidia-purple-light: var(--color-nidia-purple-light);
+  --nidia-purple-deep: var(--color-nidia-purple-deep);
+  
   --nidia-blue: var(--color-nidia-blue);
-  --nidia-turquoise: var(--color-nidia-turquoise);
+  --nidia-blue-light: var(--color-nidia-blue-light);
+  --nidia-blue-deep: var(--color-nidia-blue-deep);
+  
+  --nidia-cyan: var(--color-nidia-cyan);
+  --nidia-cyan-light: var(--color-nidia-cyan-light);
+  
   --nidia-dark: var(--color-nidia-dark);
+  --nidia-dark-soft: var(--color-nidia-dark-soft);
   --nidia-gray: var(--color-nidia-gray);
+  --nidia-gray-medium: var(--color-nidia-gray-medium);
+  --nidia-gray-soft: var(--color-nidia-gray-soft);
+  
   --nidia-light: var(--color-nidia-light);
+  --nidia-light-elevated: var(--color-nidia-light-elevated);
   --nidia-white: var(--color-nidia-white);
-  --nidia-black: var(--color-nidia-black);
   --nidia-gray-light: var(--color-nidia-gray-light);
+  --nidia-gray-light-soft: var(--color-nidia-gray-light-soft);
+  
+  /* Semantic colors */
+  --success: var(--color-success);
+  --success-light: var(--color-success-light);
+  --success-dark: var(--color-success-dark);
+  
+  --warning: var(--color-warning);
+  --warning-light: var(--color-warning-light);
+  --warning-dark: var(--color-warning-dark);
+  
+  --error: var(--color-error);
+  --error-light: var(--color-error-light);
+  --error-dark: var(--color-error-dark);
+  
+  --info: var(--color-info);
+  --info-light: var(--color-info-light);
+  --info-dark: var(--color-info-dark);
 }
 
+/* ============================================
+   DARK THEME
+   ============================================ */
+
 .dark {
-  /* Dark Theme using NIDIA colors */
+  /* Base Colors */
   --color-background: #0F1013;
   --color-foreground: #F6F7F9;
   --color-card: #1C1E22;
   --color-card-foreground: #F6F7F9;
+  --color-card-elevated: #15171C;
   --color-popover: #1C1E22;
   --color-popover-foreground: #F6F7F9;
-  --color-primary: #1EF3B3;
+  
+  /* Brand Colors - Los verdes se mantienen vibrantes */
+  --color-primary: #00D9A3;
   --color-primary-foreground: #0F1013;
-  --color-secondary: #8A2BE2;
+  --color-primary-hover: #00F5C8;
+  --color-primary-active: #00A67E;
+  
+  --color-secondary: #9333EA;
   --color-secondary-foreground: #FFFFFF;
+  --color-secondary-hover: #A855F7;
+  --color-secondary-active: #7E22CE;
+  
+  --color-accent: #06B6D4;
+  --color-accent-foreground: #0F1013;
+  --color-accent-hover: #22D3EE;
+  --color-accent-active: #0891B2;
+  
+  --color-tertiary: #0EA5E9;
+  --color-tertiary-foreground: #FFFFFF;
+  --color-tertiary-hover: #38BDF8;
+  --color-tertiary-active: #0284C7;
+  
+  /* Semantic Colors */
   --color-muted: #1C1E22;
   --color-muted-foreground: #9CA3AF;
-  --color-accent: #00F5D4;
-  --color-accent-foreground: #0F1013;
-  --color-destructive: #ef4444;
+  --color-muted-hover: #2A2D35;
+  
+  --color-destructive: #EF4444;
   --color-destructive-foreground: #FFFFFF;
+  --color-destructive-hover: #F87171;
+  --color-destructive-active: #DC2626;
+  
+  /* UI Elements */
   --color-border: #2A2D35;
+  --color-border-strong: #3A3D45;
   --color-input: #25282F;
-  --color-ring: #1EF3B3;
+  --color-input-border: #3A3D45;
+  --color-ring: #00D9A3;
   
-  /* Chart colors for dark theme - Verde predominante, morado secundario */
-  --color-chart-1: #1EF3B3;
-  --color-chart-2: #8A2BE2;
-  --color-chart-3: #00F5D4;
-  --color-chart-4: #2E35F2;
-  --color-chart-5: #E6E6E9;
+  /* Chart colors - Ajustados para dark mode */
+  --color-chart-1: #00F5C8;               /* Verde más brillante */
+  --color-chart-2: #A855F7;               /* Morado más claro */
+  --color-chart-3: #22D3EE;               /* Cian más brillante */
+  --color-chart-4: #38BDF8;               /* Azul más claro */
+  --color-chart-5: #FBBF24;               /* Naranja más brillante */
+  --color-chart-6: #A78BFA;               /* Violeta más claro */
+  --color-chart-7: #5EEAD4;               /* Teal más brillante */
+  --color-chart-8: #F472B6;               /* Pink más claro */
   
-  /* Sidebar colors for dark theme */
+  /* Sidebar - Dark theme */
   --color-sidebar: #0B0B0F;
   --color-sidebar-foreground: #F6F7F9;
-  --color-sidebar-primary: #1EF3B3;
+  --color-sidebar-primary: #00D9A3;
   --color-sidebar-primary-foreground: #0F1013;
   --color-sidebar-accent: #1C1E22;
-  --color-sidebar-accent-foreground: #1EF3B3;
+  --color-sidebar-accent-foreground: #00F5C8;
+  --color-sidebar-accent-hover: #2A2D35;
   --color-sidebar-border: #1C1E22;
-  --color-sidebar-ring: #1EF3B3;
+  --color-sidebar-ring: #00D9A3;
 }
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
 
 * {
   border-color: var(--border);
@@ -189,16 +378,22 @@ body {
   background-color: var(--color-background);
 }
 
-/* Smooth transitions for theme changes */
+/* ============================================
+   SMOOTH TRANSITIONS
+   ============================================ */
+
 *,
 *::before,
 *::after {
-  transition-property: background-color, border-color, color, fill, stroke;
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
 
-/* Scrollbar styling */
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -211,25 +406,47 @@ body {
 ::-webkit-scrollbar-thumb {
   background-color: var(--border);
   border-radius: 9999px;
+  transition: background-color 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: color-mix(in srgb, var(--muted-foreground) 50%, transparent);
+  background-color: color-mix(in srgb, var(--primary) 60%, var(--muted-foreground));
 }
 
-/* Selection styling */
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--primary);
+}
+
+/* ============================================
+   SELECTION STYLING
+   ============================================ */
+
 ::selection {
-  background-color: color-mix(in srgb, var(--primary) 20%, transparent);
+  background-color: color-mix(in srgb, var(--primary) 25%, transparent);
   color: var(--primary-foreground);
 }
 
-/* Focus visible styling */
-:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--ring), 0 0 0 4px color-mix(in srgb, var(--ring) 30%, transparent);
+.dark ::selection {
+  background-color: color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
-/* Typography improvements */
+/* ============================================
+   FOCUS VISIBLE
+   ============================================ */
+
+:focus-visible {
+  outline: none;
+  box-shadow: 
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--ring),
+    0 0 0 6px color-mix(in srgb, var(--ring) 20%, transparent);
+  transition: box-shadow 0.2s;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   letter-spacing: -0.025em;
@@ -283,9 +500,21 @@ h4 {
   }
 }
 
-/* Gradient text utility */
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Gradient text - Matrix Edition */
 .gradient-text {
-  background: linear-gradient(to right, var(--nidia-purple), var(--nidia-blue), var(--nidia-green));
+  background: linear-gradient(135deg, var(--nidia-green) 0%, var(--nidia-cyan) 50%, var(--nidia-purple) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.gradient-text-alt {
+  background: linear-gradient(135deg, var(--nidia-purple) 0%, var(--nidia-blue) 50%, var(--nidia-green) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -300,7 +529,18 @@ h4 {
   border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
 }
 
-/* Smooth animations */
+.glass-strong {
+  background-color: color-mix(in srgb, var(--card) 90%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid color-mix(in srgb, var(--border-strong) 60%, transparent);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+/* Fade In */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -316,22 +556,156 @@ h4 {
   animation: fadeIn 0.3s ease-out;
 }
 
-/* Button animations */
-@keyframes buttonPulse {
+/* Float Animation */
+@keyframes float {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(138, 43, 226, 0.7);
+    transform: translateY(0px);
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(138, 43, 226, 0);
+    transform: translateY(-20px);
   }
 }
 
-@keyframes buttonShine {
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Pulse Glow - Matrix Edition */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(0, 217, 163, 0.4);
+  }
+  50% {
+    opacity: 0.9;
+    box-shadow: 0 0 40px rgba(0, 217, 163, 0.6), 0 0 60px rgba(0, 217, 163, 0.3);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Gradient Shift */
+@keyframes gradient-shift {
   0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
   }
   100% {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+/* Tech Grid Animation */
+@keyframes tech-grid {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 40px 40px;
+  }
+}
+
+.animate-tech-grid {
+  animation: tech-grid 20s linear infinite;
+}
+
+/* Particle Float */
+@keyframes particle-float {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--nidia-green-bright);
+  border-radius: 50%;
+  animation: particle-float 15s linear infinite;
+  box-shadow: 0 0 10px var(--nidia-green-bright);
+}
+
+/* Scan Line - Matrix Effect */
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+.scan-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--nidia-green-bright),
+    transparent
+  );
+  animation: scan-line 4s linear infinite;
+  pointer-events: none;
+  box-shadow: 0 0 10px var(--nidia-green-bright);
+}
+
+/* Carousel automático */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-50% - 12px));
+  }
+}
+
+.animate-scroll {
+  animation: scroll 60s linear infinite;
+  display: flex;
+  width: fit-content;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* ============================================
+   BUTTON ANIMATIONS
+   ============================================ */
+
+@keyframes buttonPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 217, 163, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(0, 217, 163, 0);
   }
 }
 
@@ -364,165 +738,97 @@ h4 {
   left: 100%;
 }
 
-/* Tech animations */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-}
+/* ============================================
+   TECH GRID BACKGROUNDS
+   ============================================ */
 
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 20px rgba(30, 243, 179, 0.3);
-  }
-  50% {
-    opacity: 0.8;
-    box-shadow: 0 0 40px rgba(30, 243, 179, 0.6);
-  }
-}
-
-@keyframes gradient-shift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-@keyframes tech-grid {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 40px 40px;
-  }
-}
-
-@keyframes particle-float {
-  0% {
-    transform: translateY(0) translateX(0) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-100vh) translateX(100px) rotate(360deg);
-    opacity: 0;
-  }
-}
-
-@keyframes scan-line {
-  0% {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh);
-    opacity: 0;
-  }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient-shift 8s ease infinite;
-}
-
-.animate-tech-grid {
-  animation: tech-grid 20s linear infinite;
-}
-
-.particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: var(--nidia-green);
-  border-radius: 50%;
-  animation: particle-float 15s linear infinite;
-}
-
-.scan-line {
-  position: absolute;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    var(--nidia-green),
-    transparent
-  );
-  animation: scan-line 3s linear infinite;
-  pointer-events: none;
-}
-
-/* Tech grid pattern */
 .tech-grid-bg {
   background-image: 
-    linear-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.08) 1px, transparent 1px),
-    linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
   background-size: 40px 40px, 40px 40px, 20px 20px, 20px 20px;
   background-position: 0 0, 0 0, 20px 20px, 20px 20px;
 }
 
 .dark .tech-grid-bg {
   background-image: 
-    linear-gradient(rgba(138, 43, 226, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(138, 43, 226, 0.1) 1px, transparent 1px),
-    linear-gradient(rgba(30, 243, 179, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(30, 243, 179, 0.1) 1px, transparent 1px);
+    linear-gradient(rgba(0, 217, 163, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 217, 163, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
 }
 
-/* Glow effects - usando variables de Tailwind v4 */
-.glow-purple {
-  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-purple) 40%, transparent);
+/* Matrix Dot Grid - Para efectos especiales */
+.matrix-dots {
+  background-image: radial-gradient(circle, rgba(0, 217, 163, 0.15) 1px, transparent 1px);
+  background-size: 30px 30px;
 }
+
+.dark .matrix-dots {
+  background-image: radial-gradient(circle, rgba(0, 245, 200, 0.2) 1px, transparent 1px);
+}
+
+/* ============================================
+   GLOW EFFECTS - Matrix Edition
+   ============================================ */
 
 .glow-green {
-  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-green) 40%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-green) 40%, transparent),
+              0 0 40px color-mix(in srgb, var(--color-nidia-green) 20%, transparent);
+}
+
+.glow-green-bright {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-green-bright) 50%, transparent),
+              0 0 40px color-mix(in srgb, var(--color-nidia-green-bright) 30%, transparent),
+              0 0 60px color-mix(in srgb, var(--color-nidia-green-bright) 15%, transparent);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-purple) 40%, transparent),
+              0 0 40px color-mix(in srgb, var(--color-nidia-purple) 20%, transparent);
 }
 
 .glow-blue {
-  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-blue) 40%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-blue) 40%, transparent),
+              0 0 40px color-mix(in srgb, var(--color-nidia-blue) 20%, transparent);
 }
 
-.glow-turquoise {
-  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-turquoise) 40%, transparent);
+.glow-cyan {
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-nidia-cyan) 40%, transparent),
+              0 0 40px color-mix(in srgb, var(--color-nidia-cyan) 20%, transparent);
 }
 
-/* Ensure buttons with data-slot maintain their background colors when used as links */
+/* Glow hover states */
+.glow-green-hover:hover {
+  box-shadow: 0 0 25px color-mix(in srgb, var(--color-nidia-green) 50%, transparent),
+              0 0 50px color-mix(in srgb, var(--color-nidia-green) 30%, transparent);
+}
+
+.glow-purple-hover:hover {
+  box-shadow: 0 0 25px color-mix(in srgb, var(--color-nidia-purple) 50%, transparent),
+              0 0 50px color-mix(in srgb, var(--color-nidia-purple) 30%, transparent);
+}
+
+/* ============================================
+   BUTTON ENHANCEMENTS
+   ============================================ */
+
+/* Mantener colores de botones cuando son links */
 [data-slot="button"] {
   display: inline-flex !important;
   text-decoration: none !important;
 }
 
-/* Force background colors for buttons - usando las variables de Tailwind v4 */
+/* Forzar colores de fondo en botones */
 [data-slot="button"].bg-primary {
   background-color: var(--color-primary) !important;
   color: var(--color-primary-foreground) !important;
+}
+
+[data-slot="button"].bg-primary:hover {
+  background-color: var(--color-primary-hover) !important;
 }
 
 [data-slot="button"].bg-secondary {
@@ -530,25 +836,402 @@ h4 {
   color: var(--color-secondary-foreground) !important;
 }
 
-/* Carousel automático para funcionalidades próximas */
-@keyframes scroll {
+[data-slot="button"].bg-secondary:hover {
+  background-color: var(--color-secondary-hover) !important;
+}
+
+[data-slot="button"].bg-accent {
+  background-color: var(--color-accent) !important;
+  color: var(--color-accent-foreground) !important;
+}
+
+[data-slot="button"].bg-accent:hover {
+  background-color: var(--color-accent-hover) !important;
+}
+
+/* ============================================
+   GRADIENT UTILITIES - Matrix Edition
+   ============================================ */
+
+.gradient-green-cyan {
+  background: linear-gradient(135deg, var(--nidia-green) 0%, var(--nidia-cyan) 100%);
+}
+
+.gradient-green-purple {
+  background: linear-gradient(135deg, var(--nidia-green) 0%, var(--nidia-purple) 100%);
+}
+
+.gradient-purple-blue {
+  background: linear-gradient(135deg, var(--nidia-purple) 0%, var(--nidia-blue) 100%);
+}
+
+.gradient-cyan-blue {
+  background: linear-gradient(135deg, var(--nidia-cyan) 0%, var(--nidia-blue) 100%);
+}
+
+/* Gradiente principal de marca - Matrix */
+.gradient-brand {
+  background: linear-gradient(135deg, 
+    var(--nidia-green) 0%, 
+    var(--nidia-cyan) 50%, 
+    var(--nidia-purple) 100%);
+}
+
+/* Gradiente alternativo */
+.gradient-brand-alt {
+  background: linear-gradient(135deg, 
+    var(--nidia-purple) 0%, 
+    var(--nidia-blue) 50%, 
+    var(--nidia-green-bright) 100%);
+}
+
+/* Gradiente sutil para fondos */
+.gradient-subtle {
+  background: linear-gradient(180deg, 
+    var(--background) 0%, 
+    color-mix(in srgb, var(--nidia-green) 3%, var(--background)) 100%);
+}
+
+.dark .gradient-subtle {
+  background: linear-gradient(180deg, 
+    var(--background) 0%, 
+    color-mix(in srgb, var(--nidia-green) 5%, var(--background)) 100%);
+}
+
+/* ============================================
+   BORDERS - Enhanced
+   ============================================ */
+
+.border-gradient {
+  border: 2px solid transparent;
+  background-image: 
+    linear-gradient(var(--background), var(--background)),
+    linear-gradient(135deg, var(--nidia-green), var(--nidia-cyan));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+.border-gradient-purple {
+  border: 2px solid transparent;
+  background-image: 
+    linear-gradient(var(--background), var(--background)),
+    linear-gradient(135deg, var(--nidia-purple), var(--nidia-blue));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+/* ============================================
+   CARDS - Enhanced Styles
+   ============================================ */
+
+.card-elevated {
+  background-color: var(--card-elevated);
+  box-shadow: 
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.card-elevated:hover {
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.dark .card-elevated {
+  box-shadow: 
+    0 1px 3px 0 rgba(0, 0, 0, 0.3),
+    0 1px 2px -1px rgba(0, 0, 0, 0.3);
+}
+
+.dark .card-elevated:hover {
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.5),
+    0 4px 6px -4px rgba(0, 0, 0, 0.5),
+    0 0 20px color-mix(in srgb, var(--nidia-green) 10%, transparent);
+}
+
+/* Card con glow suave */
+.card-glow {
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1),
+    0 0 0 1px color-mix(in srgb, var(--nidia-green) 10%, transparent);
+}
+
+.dark .card-glow {
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.3),
+    0 2px 4px -2px rgba(0, 0, 0, 0.3),
+    0 0 15px color-mix(in srgb, var(--nidia-green) 15%, transparent);
+}
+
+/* ============================================
+   STATUS INDICATORS
+   ============================================ */
+
+.status-success {
+  background-color: var(--success);
+  color: white;
+}
+
+.status-success-soft {
+  background-color: color-mix(in srgb, var(--success) 10%, var(--background));
+  color: var(--success-dark);
+  border: 1px solid color-mix(in srgb, var(--success) 20%, transparent);
+}
+
+.status-warning {
+  background-color: var(--warning);
+  color: white;
+}
+
+.status-warning-soft {
+  background-color: color-mix(in srgb, var(--warning) 10%, var(--background));
+  color: var(--warning-dark);
+  border: 1px solid color-mix(in srgb, var(--warning) 20%, transparent);
+}
+
+.status-error {
+  background-color: var(--error);
+  color: white;
+}
+
+.status-error-soft {
+  background-color: color-mix(in srgb, var(--error) 10%, var(--background));
+  color: var(--error-dark);
+  border: 1px solid color-mix(in srgb, var(--error) 20%, transparent);
+}
+
+.status-info {
+  background-color: var(--info);
+  color: white;
+}
+
+.status-info-soft {
+  background-color: color-mix(in srgb, var(--info) 10%, var(--background));
+  color: var(--info-dark);
+  border: 1px solid color-mix(in srgb, var(--info) 20%, transparent);
+}
+
+/* Dark mode adjustments */
+.dark .status-success-soft {
+  background-color: color-mix(in srgb, var(--success) 15%, var(--background));
+  color: var(--success-light);
+}
+
+.dark .status-warning-soft {
+  background-color: color-mix(in srgb, var(--warning) 15%, var(--background));
+  color: var(--warning-light);
+}
+
+.dark .status-error-soft {
+  background-color: color-mix(in srgb, var(--error) 15%, var(--background));
+  color: var(--error-light);
+}
+
+.dark .status-info-soft {
+  background-color: color-mix(in srgb, var(--info) 15%, var(--background));
+  color: var(--info-light);
+}
+
+/* ============================================
+   BADGES & PILLS
+   ============================================ */
+
+.badge-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badge-secondary {
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badge-outline {
+  background-color: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* ============================================
+   TEXT UTILITIES
+   ============================================ */
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* Link styles */
+.link-primary {
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s;
+}
+
+.link-primary:hover {
+  text-decoration-color: var(--primary);
+}
+
+.link-secondary {
+  color: var(--secondary);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s;
+}
+
+.link-secondary:hover {
+  text-decoration-color: var(--secondary);
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+@keyframes shimmer {
   0% {
-    transform: translateX(0);
+    background-position: -1000px 0;
   }
   100% {
-    transform: translateX(calc(-50% - 12px)); /* -50% porque duplicamos los items, -12px por el gap */
+    background-position: 1000px 0;
   }
 }
 
-.animate-scroll {
-  animation: scroll 60s linear infinite;
-  display: flex;
-  width: fit-content;
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    color-mix(in srgb, var(--muted) 90%, white) 50%,
+    var(--muted) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: var(--radius-sm);
 }
 
-.animate-scroll:hover {
-  animation-play-state: paused;
+.loading-spinner {
+  border: 3px solid var(--muted);
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
 }
 
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
 
+@media (max-width: 640px) {
+  h1 {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+  
+  h3 {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY IMPROVEMENTS
+   ============================================ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus visible para accesibilidad con teclado */
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  box-shadow: 
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--ring);
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  .glow-green,
+  .glow-purple,
+  .glow-blue,
+  .glow-cyan {
+    box-shadow: none;
+  }
+}
+
+/* ============================================
+   CUSTOM PROPERTIES HELPER CLASSES
+   ============================================ */
+
+/* Para uso directo de colores NIDIA en utility classes */
+.bg-nidia-green { background-color: var(--nidia-green); }
+.bg-nidia-green-bright { background-color: var(--nidia-green-bright); }
+.bg-nidia-green-deep { background-color: var(--nidia-green-deep); }
+.bg-nidia-purple { background-color: var(--nidia-purple); }
+.bg-nidia-purple-light { background-color: var(--nidia-purple-light); }
+.bg-nidia-blue { background-color: var(--nidia-blue); }
+.bg-nidia-cyan { background-color: var(--nidia-cyan); }
+
+.text-nidia-green { color: var(--nidia-green); }
+.text-nidia-green-bright { color: var(--nidia-green-bright); }
+.text-nidia-green-deep { color: var(--nidia-green-deep); }
+.text-nidia-purple { color: var(--nidia-purple); }
+.text-nidia-purple-light { color: var(--nidia-purple-light); }
+.text-nidia-blue { color: var(--nidia-blue); }
+.text-nidia-cyan { color: var(--nidia-cyan); }
+
+.border-nidia-green { border-color: var(--nidia-green); }
+.border-nidia-purple { border-color: var(--nidia-purple); }
+.border-nidia-blue { border-color: var(--nidia-blue); }
+.border-nidia-cyan { border-color: var(--nidia-cyan); }

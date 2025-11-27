@@ -52,9 +52,10 @@ class WebSocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('WebSocket connected:', this.socket?.id);
+      const socketId = this.socket?.id || 'unknown';
+      console.log('WebSocket connected:', socketId);
       this.reconnectAttempts = 0;
-      this.emit('connection:success', { socketId: this.socket?.id });
+      this.emit('connection:success', { socketId });
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -82,6 +83,18 @@ class WebSocketService {
     this.socket.on('order:created', (data) => this.emit('order:created', data));
     this.socket.on('order:updated', (data) => this.emit('order:updated', data));
     this.socket.on('order:assigned', (data) => this.emit('order:assigned', data));
+
+    this.socket.on('customer:created', (data) => this.emit('customer:created', data));
+    this.socket.on('customer:updated', (data) => this.emit('customer:updated', data));
+    this.socket.on('customer:status-changed', (data) => this.emit('customer:status-changed', data));
+
+    this.socket.on('interaction:created', (data) => this.emit('interaction:created', data));
+    this.socket.on('interaction:updated', (data) => this.emit('interaction:updated', data));
+    this.socket.on('interaction:status-changed', (data) => this.emit('interaction:status-changed', data));
+
+    this.socket.on('customer:note:created', (data) => this.emit('customer:note:created', data));
+    this.socket.on('customer:note:updated', (data) => this.emit('customer:note:updated', data));
+    this.socket.on('customer:note:deleted', (data) => this.emit('customer:note:deleted', data));
 
     this.socket.on('task:created', (data) => this.emit('task:created', data));
     this.socket.on('task:updated', (data) => this.emit('task:updated', data));

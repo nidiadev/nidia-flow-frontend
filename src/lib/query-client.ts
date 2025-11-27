@@ -116,7 +116,28 @@ export const queryKeys = {
     customer: (id: string) => ['crm', 'customers', id] as const,
     statistics: () => ['crm', 'customers', 'statistics'] as const,
     interactions: (customerId?: string) => ['crm', 'interactions', customerId] as const,
+    customerNotes: (customerId?: string) => ['crm', 'customer-notes', customerId] as const,
+    customerContacts: (filters?: any) => ['crm', 'customer-contacts', filters] as const,
+    deals: {
+      all: (filters?: any) => ['crm', 'deals', filters] as const,
+      detail: (id: string) => ['crm', 'deals', id] as const,
+      statistics: () => ['crm', 'deals', 'statistics'] as const,
+    },
+    dealStages: {
+      all: () => ['crm', 'deal-stages'] as const,
+      detail: (id: string) => ['crm', 'deal-stages', id] as const,
+    },
     pipeline: () => ['crm', 'pipeline'] as const,
+    inbox: {
+      conversations: (filters?: any) => ['crm', 'inbox', 'conversations', filters] as const,
+      conversation: (id: string) => ['crm', 'inbox', 'conversations', id] as const,
+      messages: (conversationId: string) => ['crm', 'inbox', 'conversations', conversationId, 'messages'] as const,
+      stats: () => ['crm', 'inbox', 'stats'] as const,
+    },
+    calendar: {
+      view: (view: string, date: string, filters?: any) => ['crm', 'calendar', 'view', view, date, filters] as const,
+      today: () => ['crm', 'calendar', 'today'] as const,
+    },
   },
   
   // Products

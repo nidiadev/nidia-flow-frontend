@@ -218,9 +218,12 @@ function PlanCard({ plan, isPopular = false, billingPeriod = 'monthly', onWaitli
       <Button 
         className="w-full" 
         variant={isPopular ? 'default' : 'outline'}
-        onClick={onWaitlistClick}
+        onClick={() => {
+          // Redirigir al registro con el planId en query params
+          window.location.href = `/register?planId=${plan.id}`;
+        }}
       >
-        Únete a la Lista de Espera
+        Seleccionar Plan
       </Button>
     </motion.div>
   );
@@ -729,11 +732,14 @@ export default function PlansPage() {
                       {sortedPlans.map((plan, idx) => (
                         <td key={plan.id} className="px-6 py-4 text-center">
                           <Button
-                            onClick={() => setWaitlistOpen(true)}
+                            onClick={() => {
+                              // Redirigir al registro con el planId en query params
+                              window.location.href = `/register?planId=${plan.id}`;
+                            }}
                             variant={idx === popularPlanIndex ? 'default' : 'outline'}
                             className="w-full"
                           >
-                            Únete a la Lista de Espera
+                            Seleccionar Plan
                           </Button>
                         </td>
                       ))}
@@ -860,10 +866,18 @@ export default function PlansPage() {
             </p>
             <Button 
               size="lg" 
-              onClick={() => setWaitlistOpen(true)}
+              onClick={() => {
+                // Si hay un plan popular, redirigir con ese plan, sino solo al registro
+                const popularPlan = sortedPlans[popularPlanIndex];
+                if (popularPlan) {
+                  window.location.href = `/register?planId=${popularPlan.id}`;
+                } else {
+                  window.location.href = '/register';
+                }
+              }}
               className="bg-nidia-green hover:bg-nidia-green/90 text-white"
             >
-              Únete a la Lista de Espera
+              Comenzar Ahora
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </motion.div>
