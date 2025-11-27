@@ -1,4 +1,5 @@
 import api from '../api';
+import { ApiClient } from '../api';
 
 // ============================================
 // DEALS / PIPELINE
@@ -206,8 +207,8 @@ export const dealsApi = {
 export const dealStagesApi = {
   // Get all stages
   getAll: async () => {
-    const response = await api.get('/crm/deal-stages');
-    return response.data;
+    const response = await ApiClient.get<DealStage[]>('/crm/deal-stages');
+    return response;
   },
 
   // Get stage by ID
@@ -238,6 +239,12 @@ export const dealStagesApi = {
   reorder: async (stageIds: string[]) => {
     const response = await api.patch('/crm/deal-stages/reorder', { stageIds });
     return response.data;
+  },
+
+  // Initialize default stages
+  initialize: async () => {
+    const response = await ApiClient.get<DealStage[]>('/crm/deal-stages/initialize');
+    return response;
   },
 };
 
@@ -312,38 +319,44 @@ export const inboxApi = {
     assignedTo?: string;
     search?: string;
   }) => {
-    const response = await api.get('/crm/inbox/conversations', { params });
-    return response.data;
+    const response = await ApiClient.get('/crm/inbox/conversations', { params });
+    return response;
   },
 
   // Get conversation by ID
   getConversation: async (id: string) => {
-    const response = await api.get(`/crm/inbox/conversations/${id}`);
-    return response.data;
+    const response = await ApiClient.get(`/crm/inbox/conversations/${id}`);
+    return response;
   },
 
   // Get messages
   getMessages: async (conversationId: string, params?: { page?: number; limit?: number }) => {
-    const response = await api.get(`/crm/inbox/conversations/${conversationId}/messages`, { params });
-    return response.data;
+    const response = await ApiClient.get(`/crm/inbox/conversations/${conversationId}/messages`, { params });
+    return response;
   },
 
   // Send message
   sendMessage: async (conversationId: string, data: SendMessageDto) => {
-    const response = await api.post(`/crm/inbox/conversations/${conversationId}/messages`, data);
-    return response.data;
+    const response = await ApiClient.post(`/crm/inbox/conversations/${conversationId}/messages`, data);
+    return response;
   },
 
   // Update conversation status
   updateStatus: async (id: string, status: string) => {
-    const response = await api.patch(`/crm/inbox/conversations/${id}/status`, { status });
-    return response.data;
+    const response = await ApiClient.patch(`/crm/inbox/conversations/${id}/status`, { status });
+    return response;
   },
 
   // Assign conversation
   assign: async (id: string, userId: string) => {
-    const response = await api.patch(`/crm/inbox/conversations/${id}/assign`, { assignedTo: userId });
-    return response.data;
+    const response = await ApiClient.patch(`/crm/inbox/conversations/${id}/assign`, { assignedTo: userId });
+    return response;
+  },
+
+  // Get inbox statistics
+  getStats: async () => {
+    const response = await ApiClient.get('/crm/inbox/conversations/stats');
+    return response;
   },
 };
 
@@ -376,17 +389,64 @@ export interface Activity {
 
 export const calendarApi = {
   // Get calendar view
-  getView: async (view: 'month' | 'week' | 'day', date: string) => {
-    const response = await api.get('/crm/calendar/view', {
-      params: { view, date },
-    });
-    return response.data;
+  getView: async (view: 'month' | 'week' | 'day', date: string, params?: {
+    year?: number;
+    month?: number;
+    week?: number;
+    day?: number;
+    assignedTo?: string;
+    type?: string;
+    priority?: string;
+  }) => {
+    const dateObj = new Date(date);
+    
+    // Ensure we have valid date
+    if (isNaN(dateObj.getTime())) {
+      throw new Error('Invalid date provided');
+    }
+    
+    // Calculate year and month, ensuring they are valid numbers
+    const year = params?.year || dateObj.getFullYear();
+    const month = params?.month !== undefined ? params.month : dateObj.getMonth() + 1;
+    
+    // Validate month is in range
+    if (month < 1 || month > 12) {
+      throw new Error(`Invalid month: ${month}. Month must be between 1 and 12.`);
+    }
+    
+    // Build query params, ensuring all values are valid numbers
+    // Axios will serialize numbers as strings in query params, but NestJS will transform them back
+    const queryParams: Record<string, any> = {
+      view,
+      year: Number(year),
+      month: Number(month),
+    };
+    
+    // Only add optional params if they are defined and valid
+    if (params?.week !== undefined && !isNaN(Number(params.week))) {
+      queryParams.week = Number(params.week);
+    }
+    if (params?.day !== undefined && !isNaN(Number(params.day))) {
+      queryParams.day = Number(params.day);
+    }
+    if (params?.assignedTo) {
+      queryParams.assignedTo = params.assignedTo;
+    }
+    if (params?.type) {
+      queryParams.type = params.type;
+    }
+    if (params?.priority) {
+      queryParams.priority = params.priority;
+    }
+    
+    const response = await ApiClient.get('/crm/calendar/view', { params: queryParams });
+    return response;
   },
 
   // Get today's activities
   getToday: async () => {
-    const response = await api.get('/crm/calendar/today');
-    return response.data;
+    const response = await ApiClient.get('/crm/calendar/today');
+    return response;
   },
 
   // Create recurring activity
@@ -396,23 +456,23 @@ export const calendarApi = {
     subject: string;
     scheduledAt: string;
     recurrenceRule: string;
+    recurrenceEndDate?: string;
+    status?: string;
   }) => {
-    const response = await api.post('/crm/calendar/recurring', data);
-    return response.data;
+    const response = await ApiClient.post('/crm/calendar/recurring', data);
+    return response;
   },
 
   // Add reminder
-  addReminder: async (activityId: string, reminderAt: string) => {
-    const response = await api.post(`/crm/calendar/activities/${activityId}/reminders`, {
-      reminderAt,
-    });
-    return response.data;
+  addReminder: async (activityId: string, data: { reminderMinutes?: number; reminderAt?: string }) => {
+    const response = await ApiClient.post(`/crm/calendar/activities/${activityId}/reminders`, data);
+    return response;
   },
 
   // Complete activity
-  complete: async (activityId: string, notes?: string) => {
-    const response = await api.post(`/crm/calendar/activities/${activityId}/complete`, { notes });
-    return response.data;
+  complete: async (activityId: string, data: { content?: string; outcome?: string; durationMinutes?: number }) => {
+    const response = await ApiClient.post(`/crm/calendar/activities/${activityId}/complete`, data);
+    return response;
   },
 };
 
@@ -452,6 +512,9 @@ export const smartListsApi = {
     description?: string;
     filterConfig: any;
     filterLogic?: 'AND' | 'OR';
+    autoUpdate?: boolean;
+    isActive?: boolean;
+    tags?: string[];
   }) => {
     const response = await api.post('/crm/smart-lists', data);
     return response.data;
@@ -469,9 +532,9 @@ export const smartListsApi = {
     return response.data;
   },
 
-  // Evaluate smart list (get members)
-  evaluate: async (id: string) => {
-    const response = await api.get(`/crm/smart-lists/${id}/evaluate`);
+  // Get smart list members
+  getMembers: async (id: string, params?: { page?: number; limit?: number }) => {
+    const response = await api.get(`/crm/smart-lists/${id}/members`, { params });
     return response.data;
   },
 };
@@ -540,7 +603,7 @@ export const leadScoringApi = {
 
   // Recalculate all scores
   recalculateAll: async () => {
-    const response = await api.post('/crm/lead-scoring/recalculate-all');
+    const response = await api.post('/crm/lead-scoring/recalculate', {});
     return response.data;
   },
 
@@ -693,6 +756,269 @@ export const workflowsApi = {
   // Get execution logs
   getExecutionLogs: async (executionId: string) => {
     const response = await api.get(`/crm/workflows/executions/${executionId}/logs`);
+    return response.data;
+  },
+};
+
+// ============================================
+// INTERACTIONS
+// ============================================
+
+export interface Interaction {
+  id: string;
+  customerId: string;
+  customer?: {
+    id: string;
+    companyName?: string;
+    firstName?: string;
+    lastName?: string;
+    type?: string;
+  };
+  type: 'call' | 'email' | 'whatsapp' | 'meeting' | 'note' | 'task';
+  direction?: 'inbound' | 'outbound';
+  subject?: string;
+  content?: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  scheduledAt?: string | null;
+  scheduledEndAt?: string | null;
+  durationMinutes?: number | null;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  assignedTo?: string;
+  assignedToUser?: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+  location?: string;
+  locationUrl?: string;
+  isRecurring?: boolean;
+  recurrenceRule?: string;
+  recurrenceEndDate?: string | null;
+  parentInteractionId?: string;
+  completedAt?: string | null;
+  outcome?: 'interested' | 'not_interested' | 'callback' | 'closed' | 'follow_up' | 'meeting_scheduled' | 'proposal_sent' | 'no_answer';
+  nextAction?: string;
+  nextActionDate?: string | null;
+  relatedOrderId?: string;
+  relatedTaskId?: string;
+  metadata?: Record<string, any>;
+  createdBy?: string;
+  createdByUser?: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateInteractionDto {
+  customerId: string;
+  type: 'call' | 'email' | 'whatsapp' | 'meeting' | 'note' | 'task';
+  direction?: 'inbound' | 'outbound';
+  subject?: string;
+  content?: string;
+  status?: 'scheduled' | 'completed' | 'cancelled';
+  scheduledAt?: string;
+  scheduledEndAt?: string;
+  durationMinutes?: number;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  assignedTo?: string;
+  location?: string;
+  locationUrl?: string;
+  isRecurring?: boolean;
+  recurrenceRule?: string;
+  recurrenceEndDate?: string;
+  outcome?: 'interested' | 'not_interested' | 'callback' | 'closed' | 'follow_up' | 'meeting_scheduled' | 'proposal_sent' | 'no_answer';
+  nextAction?: string;
+  nextActionDate?: string;
+  relatedOrderId?: string;
+  relatedTaskId?: string;
+  customFields?: Record<string, any>;
+  metadata?: Record<string, any>;
+}
+
+export interface UpdateInteractionDto {
+  type?: 'call' | 'email' | 'whatsapp' | 'meeting' | 'note' | 'task';
+  direction?: 'inbound' | 'outbound';
+  subject?: string;
+  content?: string;
+  status?: 'scheduled' | 'completed' | 'cancelled';
+  scheduledAt?: string;
+  scheduledEndAt?: string;
+  durationMinutes?: number;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  assignedTo?: string;
+  location?: string;
+  locationUrl?: string;
+  outcome?: 'interested' | 'not_interested' | 'callback' | 'closed' | 'follow_up' | 'meeting_scheduled' | 'proposal_sent' | 'no_answer';
+  nextAction?: string;
+  nextActionDate?: string;
+  customFields?: Record<string, any>;
+  metadata?: Record<string, any>;
+}
+
+export const interactionsApi = {
+  // Get all interactions
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    customerId?: string;
+    type?: string;
+    status?: string;
+    direction?: string;
+    outcome?: string;
+    createdBy?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => {
+    const response = await ApiClient.get('/crm/interactions', { params });
+    return response;
+  },
+
+  // Get interaction by ID
+  getById: async (id: string) => {
+    const response = await ApiClient.get(`/crm/interactions/${id}`);
+    return response;
+  },
+
+  // Create interaction
+  create: async (data: CreateInteractionDto) => {
+    const response = await ApiClient.post('/crm/interactions', data);
+    return response;
+  },
+
+  // Update interaction
+  update: async (id: string, data: UpdateInteractionDto) => {
+    const response = await ApiClient.put(`/crm/interactions/${id}`, data);
+    return response;
+  },
+
+  // Complete interaction
+  complete: async (id: string, data: {
+    content?: string;
+    durationMinutes?: number;
+    outcome?: string;
+    nextAction?: string;
+    nextActionDate?: string;
+  }) => {
+    const response = await ApiClient.put(`/crm/interactions/${id}/complete`, data);
+    return response;
+  },
+
+  // Get customer interactions
+  getCustomerInteractions: async (customerId: string, params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+  }) => {
+    const response = await ApiClient.get(`/crm/interactions/customer/${customerId}`, { params });
+    return response;
+  },
+
+  // Get upcoming interactions
+  getUpcoming: async (params?: {
+    days?: number;
+    assignedTo?: string;
+  }) => {
+    const response = await ApiClient.get('/crm/interactions/upcoming', { params });
+    return response;
+  },
+
+  // Schedule interaction
+  schedule: async (data: CreateInteractionDto & { scheduledAt: string }) => {
+    const response = await ApiClient.post('/crm/interactions/schedule', data);
+    return response;
+  },
+};
+
+// ============================================
+// WEB FORMS
+// ============================================
+
+export interface WebForm {
+  id: string;
+  name: string;
+  description?: string;
+  embedId: string;
+  formConfig: any;
+  isActive: boolean;
+  submissionCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateWebFormDto {
+  name: string;
+  description?: string;
+  formConfig: any;
+  isActive?: boolean;
+}
+
+export interface UpdateWebFormDto {
+  name?: string;
+  description?: string;
+  formConfig?: any;
+  isActive?: boolean;
+}
+
+export const webFormsApi = {
+  // Get all web forms
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    isActive?: boolean;
+  }) => {
+    const response = await api.get('/crm/web-forms', { params });
+    return response.data;
+  },
+
+  // Get web form by ID
+  getById: async (id: string) => {
+    const response = await api.get(`/crm/web-forms/${id}`);
+    return response.data;
+  },
+
+  // Get web form by embed ID (public)
+  getByEmbedId: async (embedId: string) => {
+    const response = await api.get(`/public/forms/${embedId}`);
+    return response.data;
+  },
+
+  // Create web form
+  create: async (data: CreateWebFormDto) => {
+    const response = await api.post('/crm/web-forms', data);
+    return response.data;
+  },
+
+  // Update web form
+  update: async (id: string, data: UpdateWebFormDto) => {
+    const response = await api.put(`/crm/web-forms/${id}`, data);
+    return response.data;
+  },
+
+  // Delete web form
+  delete: async (id: string) => {
+    const response = await api.delete(`/crm/web-forms/${id}`);
+    return response.data;
+  },
+
+  // Get form submissions
+  getSubmissions: async (id: string, params?: {
+    page?: number;
+    limit?: number;
+  }) => {
+    const response = await api.get(`/crm/web-forms/${id}/submissions`, { params });
+    return response.data;
+  },
+
+  // Submit form (public)
+  submit: async (id: string, data: Record<string, any>) => {
+    const response = await api.post(`/public/forms/${id}/submit`, data);
     return response.data;
   },
 };

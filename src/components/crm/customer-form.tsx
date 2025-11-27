@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useImperativeHandle, RefObject } from 'react';
+import { useState, useRef, useImperativeHandle, RefObject, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -44,7 +44,8 @@ import {
   X,
   Plus,
   Trash2,
-  Info
+  Info,
+  Loader2
 } from 'lucide-react';
 import { Customer, CustomerType, CUSTOMER_TYPE_CONFIG, getLeadScoreInfo } from '@/types/customer';
 import { LeadScoreRanges } from './lead-score-indicator';
@@ -52,28 +53,21 @@ import { useCreateCustomer, useUpdateCustomer } from '@/hooks/use-api';
 import { toast } from 'sonner';
 
 // Validation schema
-// Campos obligatorios según backend: type, firstName
+// Campos obligatorios importantes para tener data completa desde el inicio
 const customerSchema = z.object({
   firstName: z.string().min(1, 'El nombre es requerido').max(100, 'Máximo 100 caracteres'),
-  lastName: z.string().max(100, 'Máximo 100 caracteres').optional(),
-  email: z.string().optional().refine((val) => {
-    if (!val || val === '') return true;
-    return z.string().email().safeParse(val).success;
-  }, {
-    message: 'Email inválido'
-  }).refine((val) => !val || val.length <= 255, {
-    message: 'Máximo 255 caracteres'
-  }),
+  lastName: z.string().min(1, 'El apellido es requerido').max(100, 'Máximo 100 caracteres'),
+  email: z.string().min(1, 'El email es requerido').email('Email inválido').max(255, 'Máximo 255 caracteres'),
   phone: z.string().optional().refine((val) => !val || /^\+[1-9]\d{1,14}$/.test(val.replace(/\s/g, '')), {
     message: 'El teléfono debe incluir el código de país (ej: +57 300 123 4567)'
   }),
   mobile: z.string().optional().refine((val) => !val || /^\+[1-9]\d{1,14}$/.test(val.replace(/\s/g, '')), {
     message: 'El móvil debe incluir el código de país (ej: +57 300 123 4567)'
   }),
-  whatsapp: z.string().optional().refine((val) => !val || /^\+[1-9]\d{1,14}$/.test(val.replace(/\s/g, '')), {
+  whatsapp: z.string().min(1, 'WhatsApp es requerido').refine((val) => /^\+[1-9]\d{1,14}$/.test(val.replace(/\s/g, '')), {
     message: 'WhatsApp debe incluir el código de país (ej: +57 300 123 4567)'
   }),
-  companyName: z.string().default(''),
+  companyName: z.string().min(1, 'El nombre de la empresa es requerido').max(255, 'Máximo 255 caracteres'),
   type: z.enum(['lead', 'prospect', 'active', 'inactive', 'churned']),
   leadScore: z.number().min(0).max(100),
   leadSource: z.string().min(1, 'El origen del lead es requerido'),
@@ -123,15 +117,38 @@ const LEAD_SOURCES = [
   { value: 'other', label: 'Otro' },
 ];
 
+// Predefined tags for quick selection
+const PREDEFINED_TAGS = [
+  'VIP',
+  'Cliente Recurrente',
+  'Potencial Alto',
+  'Urgente',
+  'Seguimiento Requerido',
+  'Negociación',
+  'Prospecto Caliente',
+  'Cliente Corporativo',
+  'Pago Pendiente',
+  'Nuevo Cliente',
+  'Referido',
+  'Oportunidad',
+];
+
 // Industries and Segments are now loaded from JSON files via components
 
-export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmitTrigger, isLoading: externalIsLoading }: CustomerFormProps) {
+export function CustomerForm({ customer, onSuccess, onCancel, onError, className, onSubmitTrigger, isLoading: externalIsLoading }: CustomerFormProps) {
   const [tags, setTags] = useState<string[]>(customer?.tags || []);
   const [newTag, setNewTag] = useState('');
   
   const isEditing = !!customer;
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
+  
+  // Reset loading state on error
+  useEffect(() => {
+    if (createCustomer.isError || updateCustomer.isError) {
+      onError?.();
+    }
+  }, [createCustomer.isError, updateCustomer.isError, onError]);
   
   const form = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema) as any,
@@ -160,36 +177,52 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
       tags: customer?.tags || [],
       notes: customer?.notes || '',
     },
+    mode: 'onChange', // Validar mientras el usuario escribe
   });
 
   const leadScore = form.watch('leadScore');
   const leadScoreInfo = getLeadScoreInfo(leadScore);
   const customerType = form.watch('type') as CustomerType;
   const typeConfig = CUSTOMER_TYPE_CONFIG[customerType];
+  
+  // Track auto-fill state (only auto-fill once when first field is filled)
+  const hasAutoFilledRef = useRef(false);
+  
+  // Reset auto-fill flag when customer changes (for edit mode)
+  useEffect(() => {
+    if (customer) {
+      hasAutoFilledRef.current = false;
+    } else {
+      // Reset for new customer form
+      hasAutoFilledRef.current = false;
+    }
+  }, [customer?.id]);
 
   const onSubmit = async (data: CustomerFormData) => {
     try {
-      // Remove empty optional fields before sending to backend
+      // Prepare customer data - keep required fields, convert empty optional fields to undefined
       const customerData = {
         ...data,
         tags,
-        // Convert empty strings to undefined for optional fields
-        lastName: data.lastName?.trim() || undefined,
-        email: data.email?.trim() || undefined,
+        // Required fields - keep as is (already validated)
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
+        email: data.email.trim(),
+        whatsapp: data.whatsapp.trim(),
+        companyName: data.companyName.trim(),
+        leadSource: data.leadSource.trim(),
+        addressLine1: data.addressLine1.trim(),
+        city: data.city.trim(),
+        country: data.country.trim() || 'CO',
+        industry: data.industry.trim(),
+        segment: data.segment.trim(),
+        taxId: data.taxId.trim(),
+        // Optional fields - convert empty strings to undefined
         phone: data.phone?.trim() || undefined,
         mobile: data.mobile?.trim() || undefined,
-        whatsapp: data.whatsapp?.trim() || undefined,
-        companyName: data.companyName?.trim() || undefined,
-        leadSource: data.leadSource?.trim() || undefined,
-        addressLine1: data.addressLine1?.trim() || undefined,
         addressLine2: data.addressLine2?.trim() || undefined,
-        city: data.city?.trim() || undefined,
         state: data.state?.trim() || undefined,
         postalCode: data.postalCode?.trim() || undefined,
-        country: data.country?.trim() || 'CO',
-        industry: data.industry?.trim() || undefined,
-        segment: data.segment?.trim() || undefined,
-        taxId: data.taxId?.trim() || undefined,
         notes: data.notes?.trim() || undefined,
       };
 
@@ -209,20 +242,23 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
           : 'Cliente creado correctamente'
       );
       
+      // Call onSuccess which will handle navigation and state reset
       onSuccess?.(result.data);
-    } catch (error) {
-      // Error is handled by the mutation hook
-      // Reset external loading state if provided
-      if (externalIsLoading !== undefined && typeof onSuccess === 'function') {
-        // Loading state will be reset by parent component
-      }
+    } catch (error: any) {
+      // Error is handled by the mutation hook and API interceptor
+      // Notify parent to reset loading state
+      onError?.();
+      // Don't re-throw, the error is already handled and shown to user
     }
   };
 
-  const addTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags([...tags, newTag.trim()]);
-      setNewTag('');
+  const addTag = (tagToAdd?: string) => {
+    const tag = tagToAdd || newTag.trim();
+    if (tag && !tags.includes(tag)) {
+      setTags([...tags, tag]);
+      if (!tagToAdd) {
+        setNewTag('');
+      }
     }
   };
 
@@ -276,7 +312,7 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                       name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Apellido</FormLabel>
+                          <FormLabel>Apellido *</FormLabel>
                           <FormControl>
                             <Input placeholder="Apellido" {...field} />
                           </FormControl>
@@ -291,7 +327,7 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>Email *</FormLabel>
                         <FormControl>
                           <Input type="email" placeholder="email@ejemplo.com" {...field} />
                         </FormControl>
@@ -310,7 +346,22 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                           <FormControl>
                             <PhoneInput
                               value={field.value || ''}
-                              onChange={(value) => field.onChange(value || '')}
+                              onChange={(value) => {
+                                const newValue = value || '';
+                                field.onChange(newValue);
+                                
+                                // Auto-fill other fields only once if they're empty
+                                if (!hasAutoFilledRef.current && newValue.trim() !== '') {
+                                  const mobileVal = form.getValues('mobile') || '';
+                                  const whatsappVal = form.getValues('whatsapp') || '';
+                                  
+                                  if (mobileVal.trim() === '' && whatsappVal.trim() === '') {
+                                    form.setValue('mobile', newValue, { shouldValidate: false, shouldDirty: false });
+                                    form.setValue('whatsapp', newValue, { shouldValidate: false, shouldDirty: false });
+                                    hasAutoFilledRef.current = true;
+                                  }
+                                }
+                              }}
                               onBlur={field.onBlur}
                               placeholder="+57 1 234 5678"
                               defaultCountry="CO"
@@ -333,7 +384,22 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                           <FormControl>
                             <PhoneInput
                               value={field.value || ''}
-                              onChange={(value) => field.onChange(value || '')}
+                              onChange={(value) => {
+                                const newValue = value || '';
+                                field.onChange(newValue);
+                                
+                                // Auto-fill other fields only once if they're empty
+                                if (!hasAutoFilledRef.current && newValue.trim() !== '') {
+                                  const phoneVal = form.getValues('phone') || '';
+                                  const whatsappVal = form.getValues('whatsapp') || '';
+                                  
+                                  if (phoneVal.trim() === '' && whatsappVal.trim() === '') {
+                                    form.setValue('phone', newValue, { shouldValidate: false, shouldDirty: false });
+                                    form.setValue('whatsapp', newValue, { shouldValidate: false, shouldDirty: false });
+                                    hasAutoFilledRef.current = true;
+                                  }
+                                }
+                              }}
                               onBlur={field.onBlur}
                               placeholder="+57 300 123 4567"
                               defaultCountry="CO"
@@ -352,11 +418,26 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                       name="whatsapp"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>WhatsApp</FormLabel>
+                          <FormLabel>WhatsApp *</FormLabel>
                           <FormControl>
                             <PhoneInput
                               value={field.value || ''}
-                              onChange={(value) => field.onChange(value || '')}
+                              onChange={(value) => {
+                                const newValue = value || '';
+                                field.onChange(newValue);
+                                
+                                // Auto-fill other fields only once if they're empty
+                                if (!hasAutoFilledRef.current && newValue.trim() !== '') {
+                                  const phoneVal = form.getValues('phone') || '';
+                                  const mobileVal = form.getValues('mobile') || '';
+                                  
+                                  if (phoneVal.trim() === '' && mobileVal.trim() === '') {
+                                    form.setValue('phone', newValue, { shouldValidate: false, shouldDirty: false });
+                                    form.setValue('mobile', newValue, { shouldValidate: false, shouldDirty: false });
+                                    hasAutoFilledRef.current = true;
+                                  }
+                                }
+                              }}
                               onBlur={field.onBlur}
                               placeholder="+57 300 123 4567"
                               defaultCountry="CO"
@@ -387,7 +468,7 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                     name="companyName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nombre de la Empresa</FormLabel>
+                        <FormLabel>Nombre de la Empresa *</FormLabel>
                         <FormControl>
                           <Input placeholder="Empresa S.A.S." {...field} />
                         </FormControl>
@@ -561,7 +642,34 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
               {/* Notes */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Notas Adicionales</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Notas Adicionales
+                    <TooltipProviderImmediate>
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex items-center justify-center cursor-help group">
+                            <Info className="h-4 w-4 text-muted-foreground group-hover:text-nidia-green transition-colors" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="top" 
+                          align="start"
+                          sideOffset={10}
+                          className="max-w-sm"
+                        >
+                          <p className="font-semibold mb-2 text-nidia-green">¿Qué incluir en las notas?</p>
+                          <ul className="text-sm space-y-1.5 leading-relaxed">
+                            <li>• Información relevante sobre el cliente</li>
+                            <li>• Preferencias y necesidades específicas</li>
+                            <li>• Historial de interacciones importantes</li>
+                            <li>• Recordatorios y próximos pasos</li>
+                            <li>• Observaciones del equipo de ventas</li>
+                            <li>• Detalles de negociación o acuerdos</li>
+                          </ul>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProviderImmediate>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <FormField
@@ -571,11 +679,14 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                       <FormItem>
                         <FormControl>
                           <Textarea 
-                            placeholder="Información adicional sobre el cliente..."
-                            className="min-h-[100px]"
+                            placeholder="Ejemplo: Cliente interesado en productos premium. Prefiere comunicación por WhatsApp. Requiere seguimiento semanal. Última conversación: 15/01/2025 - Mencionó interés en expandir operaciones..."
+                            className="min-h-[120px] resize-y"
                             {...field} 
                           />
                         </FormControl>
+                        <FormDescription className="text-xs text-muted-foreground mt-1.5">
+                          Agrega información relevante que ayude al equipo a entender mejor al cliente y su contexto
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -618,43 +729,50 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                   <FormField
                     control={form.control}
                     name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tipo de Cliente</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Object.entries(CUSTOMER_TYPE_CONFIG).map(([key, config]) => (
-                              <SelectItem key={key} value={key}>
-                                <div className="flex items-center">
-                                  <Badge variant={config.variant} className="mr-2">
-                                    {config.label}
-                                  </Badge>
-                                  <span className="text-sm text-muted-foreground">
-                                    {config.description}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const selectedConfig = CUSTOMER_TYPE_CONFIG[field.value as CustomerType] || CUSTOMER_TYPE_CONFIG.lead;
+                      
+                      return (
+                        <FormItem>
+                          <FormLabel>Tipo de Cliente</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="h-auto py-2">
+                                <SelectValue>
+                                  <div className="flex items-center gap-2 w-full">
+                                    <Badge variant={selectedConfig.variant} className="text-xs shrink-0">
+                                      {selectedConfig.label}
+                                    </Badge>
+                                    <span className="text-sm text-muted-foreground truncate">
+                                      {selectedConfig.description}
+                                    </span>
+                                  </div>
+                                </SelectValue>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="min-w-[var(--radix-select-trigger-width)]">
+                              {Object.entries(CUSTOMER_TYPE_CONFIG).map(([key, config]) => (
+                                <SelectItem key={key} value={key} className="group">
+                                  <div className="flex items-center gap-2.5 w-full">
+                                    <Badge 
+                                      variant={config.variant} 
+                                      className="text-xs shrink-0 group-hover:opacity-90 group-focus:opacity-90 transition-opacity"
+                                    >
+                                      {config.label}
+                                    </Badge>
+                                    <span className="text-sm text-foreground/80 group-hover:text-foreground group-focus:text-foreground transition-colors flex-1">
+                                      {config.description}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
-
-                  <div className="p-3 bg-muted/50 rounded-lg border border-border">
-                    <Badge variant="outline" className={cn('border', typeConfig.color)}>
-                      {typeConfig.label}
-                    </Badge>
-                    <p className="text-sm text-muted-foreground mt-1.5">
-                      {typeConfig.description}
-                    </p>
-                  </div>
 
                   <FormField
                     control={form.control}
@@ -669,40 +787,50 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
                       
                       return (
                         <FormItem>
-                          <FormLabel className="flex items-center justify-between">
-                            <span>Lead Score</span>
-                            <div className="flex items-center gap-1.5">
-                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                              <span className={`font-bold text-base ${leadScoreInfo.color}`}>
-                                {field.value}
-                              </span>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <FormLabel className="text-base font-semibold">Lead Score</FormLabel>
+                              <div className="flex items-center gap-2">
+                                <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                                <span className={`font-bold text-lg ${leadScoreInfo.color}`}>
+                                  {field.value}
+                                </span>
+                                <span className={`text-sm font-medium ${leadScoreInfo.color} ml-1`}>
+                                  ({leadScoreInfo.label})
+                                </span>
+                              </div>
                             </div>
-                          </FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Slider
-                                min={0}
-                                max={100}
-                                step={1}
-                                value={[field.value]}
-                                onValueChange={(value: number[]) => field.onChange(value[0])}
-                                className="w-full"
-                              />
-                              <div 
-                                className="absolute top-0 left-0 h-2 rounded-full pointer-events-none transition-colors"
-                                style={{ 
-                                  width: `${field.value}%`,
-                                  backgroundColor: getSliderColor(field.value)
-                                }}
-                              />
+                            <FormControl>
+                              <div className="relative py-2.5">
+                                <Slider
+                                  min={0}
+                                  max={100}
+                                  step={1}
+                                  value={[field.value]}
+                                  onValueChange={(value: number[]) => field.onChange(value[0])}
+                                  className="w-full [&>[data-radix-slider-track]]:h-2.5 [&>[data-radix-slider-track]]:bg-secondary/30 [&>[data-radix-slider-range]]:bg-transparent relative"
+                                />
+                                <div 
+                                  className="absolute left-0 h-2.5 rounded-full pointer-events-none transition-all duration-200"
+                                  style={{ 
+                                    width: `${field.value}%`,
+                                    backgroundColor: getSliderColor(field.value),
+                                    top: 'calc(50% + 0.5rem)',
+                                    transform: 'translateY(-50%)'
+                                  }}
+                                />
+                              </div>
+                            </FormControl>
+                            <div className="flex justify-between items-center text-xs text-muted-foreground pt-1">
+                              <span className="font-medium">0</span>
+                              <div className="flex items-center gap-3 text-[10px]">
+                                <span>Bajo</span>
+                                <span>Regular</span>
+                                <span>Bueno</span>
+                                <span>Excelente</span>
+                              </div>
+                              <span className="font-medium">100</span>
                             </div>
-                          </FormControl>
-                          <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
-                            <span>0</span>
-                            <span className={`font-medium ${leadScoreInfo.color}`}>
-                              {leadScoreInfo.label}
-                            </span>
-                            <span>100</span>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -745,51 +873,169 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
               {/* Financial Information */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Información Financiera</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Información Financiera
+                    <TooltipProviderImmediate>
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex items-center justify-center cursor-help group">
+                            <Info className="h-4 w-4 text-muted-foreground group-hover:text-nidia-green transition-colors" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="top" 
+                          align="start"
+                          sideOffset={10}
+                          className="max-w-xs"
+                        >
+                          <p className="font-semibold mb-1.5 text-nidia-green">Información Financiera</p>
+                          <p className="text-sm leading-relaxed">
+                            Configura los términos comerciales y límites de crédito para este cliente. 
+                            Esta información se utiliza para gestionar pedidos y facturación.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProviderImmediate>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
                     name="creditLimit"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Límite de Crédito</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="0"
-                            {...field}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Límite de crédito en COP
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const formatCurrency = (value: number | undefined): string => {
+                        if (!value) return '';
+                        return new Intl.NumberFormat('es-CO', {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        }).format(value);
+                      };
+
+                      return (
+                        <FormItem>
+                          <FormLabel>Límite de Crédito</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10">
+                                COP
+                              </span>
+                              <Input 
+                                type="text"
+                                placeholder="0"
+                                className="pl-12"
+                                value={formatCurrency(field.value)}
+                                onChange={(e) => {
+                                  const rawValue = e.target.value.replace(/[^\d]/g, '');
+                                  if (rawValue === '') {
+                                    field.onChange(undefined);
+                                  } else {
+                                    const numValue = Number(rawValue);
+                                    field.onChange(numValue);
+                                  }
+                                }}
+                                onBlur={field.onBlur}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            Monto máximo de crédito autorizado para este cliente en pesos colombianos (COP)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
 
                   <FormField
                     control={form.control}
                     name="paymentTerms"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Términos de Pago</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="0"
-                            {...field}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Días de crédito (0 = contado)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const [inputValue, setInputValue] = useState<string>(
+                        field.value !== undefined && field.value !== null ? String(field.value) : '0'
+                      );
+                      const [isFocused, setIsFocused] = useState(false);
+                      const [isArrowKey, setIsArrowKey] = useState(false);
+
+                      // Sync with form value when it changes externally (e.g., from arrows)
+                      useEffect(() => {
+                        if (!isFocused || isArrowKey) {
+                          const newValue = field.value !== undefined && field.value !== null ? String(field.value) : '0';
+                          setInputValue(newValue);
+                          setIsArrowKey(false);
+                        }
+                      }, [field.value, isFocused, isArrowKey]);
+
+                      return (
+                        <FormItem>
+                          <FormLabel>Términos de Pago</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input 
+                                type="number" 
+                                placeholder="0"
+                                min="0"
+                                step="1"
+                                value={isFocused && inputValue === '0' && !isArrowKey ? '' : inputValue}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                  const newValue = e.target.value;
+                                  setInputValue(newValue);
+                                  setIsArrowKey(false);
+                                  
+                                  if (newValue === '') {
+                                    field.onChange(0);
+                                  } else {
+                                    const numValue = Number(newValue);
+                                    if (!isNaN(numValue) && numValue >= 0) {
+                                      field.onChange(numValue);
+                                    }
+                                  }
+                                }}
+                                onFocus={() => {
+                                  setIsFocused(true);
+                                  if (inputValue === '0') {
+                                    setInputValue('');
+                                  }
+                                }}
+                                onBlur={(e) => {
+                                  setIsFocused(false);
+                                  setIsArrowKey(false);
+                                  const value = e.target.value === '' ? '0' : e.target.value;
+                                  setInputValue(value);
+                                  field.onBlur();
+                                  
+                                  // Ensure we always have a valid number
+                                  const numValue = value === '' ? 0 : Number(value);
+                                  field.onChange(numValue >= 0 ? numValue : 0);
+                                }}
+                                onKeyDown={(e) => {
+                                  // Detect arrow keys or mouse wheel on spinner
+                                  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                                    setIsArrowKey(true);
+                                    // Let the default behavior handle the increment/decrement
+                                    setTimeout(() => {
+                                      const input = e.target as HTMLInputElement;
+                                      const currentValue = Number(input.value) || 0;
+                                      field.onChange(currentValue);
+                                    }, 0);
+                                  }
+                                }}
+                                className="pr-12"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">
+                                días
+                              </span>
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            <span className="block mb-1">Número de días que el cliente tiene para pagar después de la facturación.</span>
+                            <span className="text-xs text-muted-foreground">
+                              <strong>0 días</strong> = Pago de contado (inmediato) | <strong>30 días</strong> = Pago a 30 días | <strong>60 días</strong> = Pago a 60 días
+                            </span>
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
                 </CardContent>
               </Card>
@@ -797,41 +1043,115 @@ export function CustomerForm({ customer, onSuccess, onCancel, className, onSubmi
               {/* Tags */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Etiquetas</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Etiquetas
+                    <TooltipProviderImmediate>
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex items-center justify-center cursor-help group">
+                            <Info className="h-4 w-4 text-muted-foreground group-hover:text-nidia-green transition-colors" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          side="top" 
+                          align="start"
+                          sideOffset={10}
+                          className="max-w-xs"
+                        >
+                          <p className="font-semibold mb-1.5 text-nidia-green">Etiquetas</p>
+                          <p className="text-sm leading-relaxed">
+                            Organiza y categoriza tus clientes con etiquetas. Selecciona etiquetas predefinidas o crea las tuyas propias para facilitar la búsqueda y filtrado.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProviderImmediate>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => removeTag(tag)}
-                          className="ml-1 hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
+                  {/* Predefined Tags */}
+                  <div>
+                    <FormDescription className="mb-2 text-xs font-medium text-muted-foreground">
+                      Etiquetas Predefinidas
+                    </FormDescription>
+                    <div className="flex flex-wrap gap-2">
+                      {PREDEFINED_TAGS.map((predefinedTag) => {
+                        const isSelected = tags.includes(predefinedTag);
+                        return (
+                          <Badge
+                            key={predefinedTag}
+                            variant={isSelected ? "default" : "outline"}
+                            className={cn(
+                              "cursor-pointer transition-all hover:scale-105",
+                              isSelected && "bg-nidia-green hover:bg-nidia-green/90"
+                            )}
+                            onClick={() => {
+                              if (isSelected) {
+                                removeTag(predefinedTag);
+                              } else {
+                                addTag(predefinedTag);
+                              }
+                            }}
+                          >
+                            {predefinedTag}
+                            {isSelected && <X className="h-3 w-3 ml-1" />}
+                          </Badge>
+                        );
+                      })}
+                    </div>
                   </div>
+
+                  {/* Selected Tags */}
+                  {tags.length > 0 && (
+                    <div>
+                      <FormDescription className="mb-2 text-xs font-medium text-muted-foreground">
+                        Etiquetas Seleccionadas
+                      </FormDescription>
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map((tag, index) => (
+                          <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => removeTag(tag)}
+                              className="ml-1 hover:text-destructive transition-colors"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Nueva etiqueta"
-                      value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                    />
-                    <Button type="button" size="sm" onClick={addTag}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                  {/* Custom Tag Input */}
+                  <div>
+                    <FormDescription className="mb-2 text-xs font-medium text-muted-foreground">
+                      Agregar Etiqueta Personalizada
+                    </FormDescription>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Escribe una etiqueta personalizada..."
+                        value={newTag}
+                        onChange={(e) => setNewTag(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                      />
+                      <Button 
+                        type="button" 
+                        size="sm" 
+                        onClick={addTag}
+                        disabled={!newTag.trim()}
+                        className="shrink-0"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
           </div>
           
-          {/* Hidden submit button for external triggers */}
+          {/* Hidden submit button for external triggers (header buttons) */}
           <button type="submit" className="hidden" aria-hidden="true" />
         </form>
       </Form>
