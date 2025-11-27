@@ -1,17 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { 
   AlertTriangle, 
   CheckCircle,
@@ -20,62 +13,15 @@ import {
   XCircle,
   Eye
 } from 'lucide-react';
-import Link from 'next/link';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { PageHeader } from '@/components/ui/page-header';
+import { SectionHeader } from '@/components/ui/section-header';
 import { useNetworkStatus } from '@/hooks/use-network-status';
+import { useTenantRoutes } from '@/hooks/use-tenant-routes';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { StockAlert } from '@/types/product';
-import { DataTable, DataTableAction } from '@/components/ui/data-table';
-
-// Mock data
-const mockAlerts: StockAlert[] = [
-  {
-    id: '1',
-    productId: '1',
-    productName: 'Laptop Dell XPS 15',
-    productSku: 'LAP-001',
-    currentStock: 2,
-    minStock: 5,
-    alertType: 'low_stock',
-    isResolved: false,
-    createdAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: '2',
-    productId: '2',
-    productName: 'Mouse Logitech MX Master',
-    productSku: 'MOU-001',
-    currentStock: 0,
-    minStock: 10,
-    alertType: 'out_of_stock',
-    isResolved: false,
-    createdAt: '2024-01-14T10:00:00Z',
-  },
-  {
-    id: '3',
-    productId: '3',
-    productName: 'Teclado Mecánico RGB',
-    productSku: 'KEY-001',
-    currentStock: 3,
-    minStock: 8,
-    alertType: 'low_stock',
-    isResolved: false,
-    createdAt: '2024-01-13T10:00:00Z',
-  },
-  {
-    id: '4',
-    productId: '4',
-    productName: 'Monitor LG 27"',
-    productSku: 'MON-001',
-    currentStock: 0,
-    minStock: 5,
-    alertType: 'out_of_stock',
-    isResolved: true,
-    resolvedAt: '2024-01-12T10:00:00Z',
-    createdAt: '2024-01-10T10:00:00Z',
-  },
-];
+import { stockAlertsApi, StockAlert } from '@/lib/api/products';
+import { Table } from '@/components/table';
+import { TableRowAction } from '@/components/table/types';
 
 // Define columns for DataTable
 function getColumns(): ColumnDef<StockAlert>[] {
@@ -94,8 +40,10 @@ function getColumns(): ColumnDef<StockAlert>[] {
               <AlertTriangle className="h-5 w-5 text-orange-600" />
             )}
             <div>
-              <div className="font-medium">{alert.productName}</div>
-              <div className="text-sm text-muted-foreground">SKU: {alert.productSku}</div>
+              <div className="font-medium">{alert.product?.name || 'Producto sin nombre'}</div>
+              {alert.product?.sku && (
+                <div className="text-sm text-muted-foreground">SKU: {alert.product.sku}</div>
+              )}
             </div>
           </div>
         );
@@ -129,24 +77,24 @@ function getColumns(): ColumnDef<StockAlert>[] {
     {
       accessorKey: 'minStock',
       header: 'Stock Mínimo',
-      cell: ({ row }) => {
-        return (
-          <div className="text-sm text-muted-foreground">
-            {row.original.minStock} unidades
-          </div>
-        );
-      },
+      cell: ({ row }) => (
+        <div className="text-sm text-muted-foreground">
+          {row.original.minStock} unidades
+        </div>
+      ),
     },
     {
       accessorKey: 'createdAt',
       header: 'Fecha',
-      cell: ({ row }) => {
-        return (
-          <div className="text-sm text-muted-foreground">
-            {new Date(row.original.createdAt).toLocaleDateString('es-ES')}
-          </div>
-        );
-      },
+      cell: ({ row }) => (
+        <div className="text-sm text-muted-foreground">
+          {new Date(row.original.createdAt).toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          })}
+        </div>
+      ),
     },
     {
       accessorKey: 'isResolved',
@@ -154,7 +102,7 @@ function getColumns(): ColumnDef<StockAlert>[] {
       cell: ({ row }) => {
         const isResolved = row.original.isResolved;
         return isResolved ? (
-          <Badge variant="success">
+          <Badge variant="default" className="bg-green-600">
             <CheckCircle className="h-3 w-3 mr-1" />
             Resuelta
           </Badge>
@@ -168,27 +116,67 @@ function getColumns(): ColumnDef<StockAlert>[] {
 
 export default function StockAlertsPage() {
   const { isOffline } = useNetworkStatus();
-  const [statusFilter, setStatusFilter] = useState('pending');
-  
-  const alerts = mockAlerts;
-  const columns = useMemo(() => getColumns(), []);
-  
-  // Filter alerts
-  const filteredAlerts = useMemo(() => {
-    return alerts.filter(alert => {
-      if (statusFilter === 'pending') return !alert.isResolved;
-      if (statusFilter === 'resolved') return alert.isResolved;
-      return true;
-    });
-  }, [alerts, statusFilter]);
+  const { route } = useTenantRoutes();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState<string>('pending');
+  const [alertTypeFilter, setAlertTypeFilter] = useState<string>('all');
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
-  // Actions for DataTable
-  const actions: DataTableAction<StockAlert>[] = [
+  // Build filters
+  const filters = useMemo(() => ({
+    page,
+    limit,
+    isResolved: statusFilter === 'pending' ? false : statusFilter === 'resolved' ? true : undefined,
+    alertType: alertTypeFilter !== 'all' ? alertTypeFilter : undefined,
+  }), [statusFilter, alertTypeFilter, page, limit]);
+
+  // Fetch alerts
+  const { data: alertsData, isLoading, error, refetch } = useQuery({
+    queryKey: ['stock-alerts', filters],
+    queryFn: async () => {
+      const response = await stockAlertsApi.getAll(filters);
+      return response;
+    },
+  });
+
+  // Resolve/Unresolve mutations
+  const resolveMutation = useMutation({
+    mutationFn: async (id: string) => stockAlertsApi.resolve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stock-alerts'] });
+      toast.success('Alerta marcada como resuelta');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Error al resolver la alerta');
+    },
+  });
+
+  const unresolveMutation = useMutation({
+    mutationFn: async (id: string) => stockAlertsApi.unresolve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stock-alerts'] });
+      toast.success('Alerta marcada como pendiente');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Error al actualizar la alerta');
+    },
+  });
+
+  const alerts = alertsData?.data?.data || [];
+  const pagination = alertsData?.data?.pagination;
+  const columns = useMemo(() => getColumns(), []);
+
+  // Row actions
+  const rowActions: TableRowAction<StockAlert>[] = useMemo(() => [
     {
       label: 'Ver Producto',
       icon: <Eye className="h-4 w-4" />,
       onClick: (alert) => {
-        window.location.href = `/products/catalog/${alert.productId}`;
+        if (alert.productId) {
+          router.push(route(`/products/catalog/${alert.productId}`));
+        }
       },
     },
     {
@@ -196,118 +184,122 @@ export default function StockAlertsPage() {
       icon: (alert) => alert.isResolved ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />,
       onClick: (alert) => {
         if (alert.isResolved) {
-          toast.info('Alerta marcada como pendiente');
+          unresolveMutation.mutate(alert.id);
         } else {
-          toast.success('Alerta marcada como resuelta');
+          resolveMutation.mutate(alert.id);
         }
       },
       separator: true,
     },
-  ];
+  ], [resolveMutation, unresolveMutation, route, router]);
 
-  const pendingAlerts = alerts.filter(a => !a.isResolved);
-  const outOfStockAlerts = pendingAlerts.filter(a => a.alertType === 'out_of_stock');
-  const lowStockAlerts = pendingAlerts.filter(a => a.alertType === 'low_stock');
+  // Stats
+  const statsData = useMemo(() => {
+    const pending = alerts.filter((a: StockAlert) => !a.isResolved);
+    const outOfStock = pending.filter((a: StockAlert) => a.alertType === 'out_of_stock');
+    const lowStock = pending.filter((a: StockAlert) => a.alertType === 'low_stock');
+    
+    return [
+      {
+        label: 'Alertas Pendientes',
+        value: pending.length,
+        description: 'Requieren atención',
+        icon: <AlertTriangle className="h-4 w-4 text-orange-500" />,
+      },
+      {
+        label: 'Sin Stock',
+        value: outOfStock.length,
+        description: 'Productos agotados',
+        icon: <XCircle className="h-4 w-4 text-red-500" />,
+      },
+      {
+        label: 'Stock Bajo',
+        value: lowStock.length,
+        description: 'Cerca del mínimo',
+        icon: <TrendingDown className="h-4 w-4 text-orange-500" />,
+      },
+    ];
+  }, [alerts]);
 
   return (
     <ErrorBoundary>
-      <div>
-        <PageHeader
+      <div className="space-y-4">
+        <SectionHeader
           title="Alertas de Stock"
           description="Productos que requieren reabastecimiento"
-          variant="gradient"
           actions={
-            isOffline && (
+            isOffline ? (
               <div className="flex items-center space-x-2 text-orange-600 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400 px-3 py-2 rounded-lg">
                 <div className="w-2 h-2 bg-orange-600 dark:bg-orange-400 rounded-full animate-pulse"></div>
                 <span className="text-sm font-medium">Modo Offline</span>
               </div>
-            )
+            ) : null
           }
         />
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Alertas Pendientes</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pendingAlerts.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Requieren atención
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Sin Stock</CardTitle>
-              <XCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{outOfStockAlerts.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Productos agotados
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Stock Bajo</CardTitle>
-              <TrendingDown className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{lowStockAlerts.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Cerca del mínimo
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <div className="flex items-center gap-4 mb-6">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas las alertas</SelectItem>
-              <SelectItem value="pending">Pendientes</SelectItem>
-              <SelectItem value="resolved">Resueltas</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Alertas</CardTitle>
-            <CardDescription>
-              Productos que requieren atención por stock
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DataTable
-              data={filteredAlerts}
-              columns={columns}
-              searchPlaceholder="Buscar alertas..."
-              emptyMessage="No hay alertas"
-              emptyDescription={
-                statusFilter === 'pending' 
-                  ? 'Todos los productos tienen stock suficiente'
-                  : 'No hay alertas resueltas'
-              }
-              actions={actions}
-              enableColumnVisibility={true}
-              enableColumnSizing={true}
-              getRowId={(row) => row.id}
-            />
-          </CardContent>
-        </Card>
+        <Table
+          id="stock-alerts"
+          data={alerts}
+          columns={columns}
+          search={{
+            enabled: true,
+            placeholder: 'Buscar alertas...',
+          }}
+          filters={[
+            {
+              key: 'status',
+              label: 'Estado',
+              type: 'select',
+              options: [
+                { value: 'all', label: 'Todas las alertas' },
+                { value: 'pending', label: 'Pendientes' },
+                { value: 'resolved', label: 'Resueltas' },
+              ],
+            },
+            {
+              key: 'alertType',
+              label: 'Tipo',
+              type: 'select',
+              options: [
+                { value: 'all', label: 'Todos los tipos' },
+                { value: 'low_stock', label: 'Stock Bajo' },
+                { value: 'out_of_stock', label: 'Sin Stock' },
+              ],
+            },
+          ]}
+          onFiltersChange={(filters) => {
+            if (filters.status !== undefined) setStatusFilter(filters.status);
+            if (filters.alertType !== undefined) setAlertTypeFilter(filters.alertType);
+          }}
+          pagination={{
+            enabled: true,
+            pageSize: limit,
+            serverSide: true,
+            total: pagination?.total,
+            onPageChange: (newPage) => setPage(newPage),
+          }}
+          rowActions={rowActions}
+          stats={{
+            enabled: true,
+            stats: statsData,
+          }}
+          emptyState={{
+            icon: <CheckCircle className="h-16 w-16 text-green-500/50" />,
+            title: 'No hay alertas de stock',
+            description: statusFilter === 'pending' 
+              ? '¡Excelente! Todos tus productos tienen stock suficiente'
+              : 'No hay alertas resueltas en este momento',
+          }}
+          isLoading={isLoading}
+          isError={!!error}
+          error={error as Error | null}
+          onRetry={refetch}
+          features={{
+            columnVisibility: true,
+            columnSizing: true,
+          }}
+          getRowId={(row) => row.id}
+        />
       </div>
     </ErrorBoundary>
   );

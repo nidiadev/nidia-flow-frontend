@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,23 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Save, Package, Plus, Trash2, X, Tag } from 'lucide-react';
+import { ArrowLeft, Save, Package, Plus, Trash2, X } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { SectionHeader } from '@/components/ui/section-header';
 import { TenantLink } from '@/components/ui/tenant-link';
 import { useTenantRoutes } from '@/hooks/use-tenant-routes';
 import { toast } from 'sonner';
-import { productsApi, categoriesApi, ProductType, CreateProductDto, CreateComboItemDto } from '@/lib/api/products';
+import { productsApi, categoriesApi, ProductType, UpdateProductDto, CreateComboItemDto } from '@/lib/api/products';
 import { Combobox } from '@/components/ui/combobox';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { QueryLoading } from '@/components/ui/loading';
 
 interface ComboItemForm {
   productId: string;
@@ -42,12 +34,47 @@ interface ComboItemForm {
   productPrice?: number;
 }
 
-export default function NewProductPage() {
+export default function EditProductPage() {
+  const params = useParams();
   const router = useRouter();
   const { route } = useTenantRoutes();
   const queryClient = useQueryClient();
-  
-  // Form state
+  const productId = params.id as string;
+
+  // Fetch product
+  const { data: productData, isLoading: productLoading } = useQuery({
+    queryKey: ['products', productId],
+    queryFn: async () => {
+      const response = await productsApi.getById(productId);
+      return response;
+    },
+    enabled: !!productId,
+  });
+
+  // Fetch categories
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories', 'all'],
+    queryFn: async () => {
+      const response = await categoriesApi.getAll({ limit: 100 });
+      return response;
+    },
+  });
+
+  // Fetch products for combo selection
+  const { data: productsData } = useQuery({
+    queryKey: ['products', 'for-combo'],
+    queryFn: async () => {
+      const response = await productsApi.getAll({ limit: 100, type: ProductType.PRODUCT });
+      return response;
+    },
+    enabled: false, // Only fetch when needed
+  });
+
+  const product = productData?.data;
+  const categories = categoriesData?.data?.data || [];
+  const availableProducts = productsData?.data?.data || [];
+
+  // Initialize form state from product
   const [formData, setFormData] = useState({
     sku: '',
     name: '',
@@ -75,107 +102,61 @@ export default function NewProductPage() {
   const [comboItems, setComboItems] = useState<ComboItemForm[]>([]);
   const [newComboItem, setNewComboItem] = useState({ productId: '', quantity: '1' });
   const [tagInput, setTagInput] = useState('');
-  const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryDescription, setNewCategoryDescription] = useState('');
 
-  // Etiquetas predefinidas comunes
-  const predefinedTags = [
-    'Nuevo',
-    'Destacado',
-    'Oferta',
-    'Popular',
-    'Recomendado',
-    'Premium',
-    'Económico',
-    'Ecológico',
-    'Orgánico',
-    'Vegano',
-    'Sin gluten',
-    'Importado',
-    'Nacional',
-    'Limitado',
-    'Edición especial',
-  ];
+  // Populate form when product loads
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        sku: product.sku || '',
+        name: product.name || '',
+        description: product.description || '',
+        type: product.type,
+        categoryId: product.categoryId || '',
+        brand: product.brand || '',
+        tags: product.tags || [],
+        price: product.price?.toString() || '',
+        cost: product.cost?.toString() || '',
+        taxRate: product.taxRate?.toString() || '19',
+        discountPercentage: product.discountPercentage?.toString() || '0',
+        trackInventory: product.trackInventory || false,
+        stockQuantity: product.stockQuantity?.toString() || '',
+        stockMin: product.stockMin?.toString() || '',
+        stockUnit: product.stockUnit || 'unidad',
+        durationMinutes: product.durationMinutes?.toString() || '',
+        requiresScheduling: product.requiresScheduling || false,
+        isActive: product.isActive ?? true,
+        isFeatured: product.isFeatured || false,
+        imageUrl: product.imageUrl || '',
+        barcode: product.barcode || '',
+      });
 
-  // Fetch categories
-  const { data: categoriesData, isLoading: isLoadingCategories, refetch: refetchCategories } = useQuery({
-    queryKey: ['categories', 'all'],
-    queryFn: async () => {
-      const response = await categoriesApi.getAll({ limit: 100 });
+      // Populate combo items
+      if (product.type === 'combo' && product.comboItems) {
+        setComboItems(product.comboItems.map((item: any) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          productName: item.product?.name,
+          productPrice: item.product?.price,
+        })));
+      }
+    }
+  }, [product]);
+
+  // Update mutation
+  const updateProduct = useMutation({
+    mutationFn: async (data: UpdateProductDto) => {
+      const response = await productsApi.update(productId, data);
       return response;
     },
-  });
-
-  // Create category mutation
-  const createCategory = useMutation({
-    mutationFn: async (data: { name: string; description?: string }) => {
-      const response = await categoriesApi.create(data);
-      return response;
-    },
-    onSuccess: async (response) => {
-      const newCategory = response.data;
-      
-      // Invalidar todas las queries de categorías para forzar refetch en tiempo real
-      await queryClient.invalidateQueries({ queryKey: ['categories'] });
-      await queryClient.invalidateQueries({ queryKey: ['category-stats'] });
-      
-      // Refetch en background para asegurar que todo esté actualizado
-      refetchCategories();
-      
-      // Pequeño delay para asegurar que React haya procesado la actualización de la caché
-      setTimeout(() => {
-        handleChange('categoryId', newCategory.id);
-        setShowNewCategoryDialog(false);
-        setNewCategoryName('');
-        setNewCategoryDescription('');
-        toast.success('Categoría creada exitosamente');
-      }, 50);
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['products', productId] });
+      queryClient.invalidateQueries({ queryKey: ['product-stats'] });
+      toast.success('Producto actualizado exitosamente');
+      router.push(route(`/products/catalog/${productId}`));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Error al crear la categoría');
-    },
-  });
-
-  // Fetch products for combo selection
-  const { data: productsData } = useQuery({
-    queryKey: ['products', 'for-combo'],
-    queryFn: async () => {
-      const response = await productsApi.getAll({ limit: 100, type: ProductType.PRODUCT });
-      return response;
-    },
-    enabled: formData.type === 'combo',
-  });
-
-  // Memoizar las categorías para asegurar que se actualicen cuando cambien
-  // El backend devuelve { success: true, data: Category[], pagination: {...} }
-  const categories = useMemo(() => {
-    return categoriesData?.data || [];
-  }, [categoriesData]);
-  
-  // El backend devuelve { success: true, data: Product[], pagination: {...} }
-  const availableProducts = useMemo(() => {
-    return productsData?.data || [];
-  }, [productsData]);
-
-  // Create product mutation
-  const createProduct = useMutation({
-    mutationFn: async (data: CreateProductDto) => {
-      const response = await productsApi.create(data);
-      return response;
-    },
-    onSuccess: async (response) => {
-      const newProduct = response.data;
-      
-      // Invalidar todas las queries de productos para forzar refetch en tiempo real
-      await queryClient.invalidateQueries({ queryKey: ['products'] });
-      await queryClient.invalidateQueries({ queryKey: ['product-stats'] });
-      
-      toast.success('Producto creado exitosamente');
-      router.push(route('/products/catalog'));
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Error al crear el producto');
+      toast.error(error?.response?.data?.message || 'Error al actualizar el producto');
     },
   });
 
@@ -248,7 +229,7 @@ export default function NewProductPage() {
     ));
   };
 
-  // Calculate combo total price and suggested discount
+  // Calculate combo total price
   const comboCalculations = useMemo(() => {
     const totalPrice = comboItems.reduce((sum, item) => {
       return sum + ((item.productPrice || 0) * item.quantity);
@@ -295,7 +276,6 @@ export default function NewProductPage() {
         toast.error('Un combo debe tener al menos 2 productos');
         return;
       }
-      // Validar que el precio del combo sea menor al total individual
       if (comboCalculations.currentPrice >= comboCalculations.totalPrice) {
         toast.error('El precio del combo debe ser menor al precio total individual para ofrecer un descuento');
         return;
@@ -314,8 +294,7 @@ export default function NewProductPage() {
     }
 
     try {
-      const payload: CreateProductDto = {
-        type: formData.type,
+      const payload: UpdateProductDto = {
         name: formData.name.trim(),
         sku: formData.sku.trim(),
         description: formData.description.trim() || undefined,
@@ -358,43 +337,73 @@ export default function NewProductPage() {
         }));
       }
 
-      await createProduct.mutateAsync(payload);
+      await updateProduct.mutateAsync(payload);
     } catch (error) {
       // Error is handled by mutation
     }
   };
 
+  if (productLoading) {
+    return (
+      <ErrorBoundary>
+        <div className="space-y-6">
+          <SectionHeader title="Cargando..." />
+          <QueryLoading isLoading={true} />
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
+  if (!product) {
+    return (
+      <ErrorBoundary>
+        <div className="space-y-6">
+          <SectionHeader title="Producto no encontrado" />
+          <Card>
+            <CardContent className="py-8 text-center">
+              <p className="text-muted-foreground">El producto solicitado no existe</p>
+              <Button asChild className="mt-4">
+                <TenantLink href={route('/products/catalog')}>
+                  Volver al Catálogo
+                </TenantLink>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
-      <div className="w-full">
+      <div>
         <SectionHeader
-          title="Nuevo Producto"
-          description="Agrega un nuevo producto, servicio o combo al catálogo"
+          title={`Editar: ${product.name}`}
+          description="Actualiza la información del producto"
           actions={
             <div className="flex items-center gap-2">
-              <Button variant="outline" asChild>
-                <TenantLink href={route('/products/catalog')}>
+              <Button variant="outline" size="sm" asChild>
+                <TenantLink href={route(`/products/catalog/${productId}`)}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Volver
                 </TenantLink>
               </Button>
               <Button 
+                size="sm"
                 onClick={handleSubmit}
-                disabled={createProduct.isPending}
+                disabled={updateProduct.isPending}
               >
                 <Save className="h-4 w-4 mr-2" />
-                {createProduct.isPending ? 'Guardando...' : 'Guardar Producto'}
+                {updateProduct.isPending ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
             </div>
           }
         />
 
-        <form
-          onSubmit={handleSubmit}
-          className="mt-6 grid w-full grid-cols-1 gap-6 lg:grid-cols-3"
-        >
-          {/* Main Information */}
-          <div className="lg:col-span-2 space-y-6">
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            {/* Main Information - Same as new page */}
+            <div className="lg:col-span-2 space-y-6">
               {/* Basic Information */}
               <Card>
                 <CardHeader>
@@ -403,8 +412,7 @@ export default function NewProductPage() {
                     Datos principales del producto
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6 pt-6">
-                  {/* SKU y Tipo en la misma fila */}
+                <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="sku">SKU *</Label>
@@ -422,6 +430,7 @@ export default function NewProductPage() {
                       <Select 
                         value={formData.type} 
                         onValueChange={(value) => handleChange('type', value as ProductType)}
+                        disabled
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -432,15 +441,10 @@ export default function NewProductPage() {
                           <SelectItem value="combo">Combo</SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formData.type === 'product' && 'Artículo físico con inventario'}
-                        {formData.type === 'service' && 'Servicio intangible sin inventario'}
-                        {formData.type === 'combo' && 'Paquete de múltiples productos'}
-                      </p>
+                      <p className="text-xs text-muted-foreground">El tipo no se puede cambiar después de crear</p>
                     </div>
                   </div>
 
-                  {/* Nombre completo en su propia fila */}
                   <div className="space-y-2">
                     <Label htmlFor="name">Nombre *</Label>
                     <Input
@@ -452,7 +456,6 @@ export default function NewProductPage() {
                     />
                   </div>
 
-                  {/* Descripción completa en su propia fila */}
                   <div className="space-y-2">
                     <Label htmlFor="description">Descripción</Label>
                     <Textarea
@@ -465,99 +468,20 @@ export default function NewProductPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Categoría</Label>
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <Combobox
-                            options={categories.map((cat) => ({
-                              value: cat.id,
-                              label: cat.name,
-                            }))}
-                      value={formData.categoryId} 
-                      onValueChange={(value) => handleChange('categoryId', value)}
-                            placeholder={isLoadingCategories ? "Cargando categorías..." : "Seleccionar categoría..."}
-                            searchPlaceholder="Buscar categoría..."
-                            emptyText="No se encontraron categorías"
-                            allowCustom={false}
-                            disabled={isLoadingCategories}
-                          />
-                        </div>
-                        <Dialog open={showNewCategoryDialog} onOpenChange={setShowNewCategoryDialog}>
-                          <DialogTrigger asChild>
-                            <Button type="button" variant="default" size="icon" className="shrink-0">
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Crear Nueva Categoría</DialogTitle>
-                              <DialogDescription>
-                                Crea una nueva categoría sin salir del formulario
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="newCategoryName">Nombre *</Label>
-                                <Input
-                                  id="newCategoryName"
-                                  placeholder="Nombre de la categoría"
-                                  value={newCategoryName}
-                                  onChange={(e) => setNewCategoryName(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && newCategoryName.trim()) {
-                                      e.preventDefault();
-                                      createCategory.mutate({
-                                        name: newCategoryName.trim(),
-                                        description: newCategoryDescription.trim() || undefined,
-                                      });
-                                    }
-                                  }}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="newCategoryDescription">Descripción</Label>
-                                <Textarea
-                                  id="newCategoryDescription"
-                                  placeholder="Descripción de la categoría (opcional)"
-                                  value={newCategoryDescription}
-                                  onChange={(e) => setNewCategoryDescription(e.target.value)}
-                                  rows={3}
-                                />
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                  setShowNewCategoryDialog(false);
-                                  setNewCategoryName('');
-                                  setNewCategoryDescription('');
-                                }}
-                              >
-                                Cancelar
-                              </Button>
-                              <Button
-                                type="button"
-                                onClick={() => {
-                                  if (!newCategoryName.trim()) {
-                                    toast.error('El nombre de la categoría es requerido');
-                                    return;
-                                  }
-                                  createCategory.mutate({
-                                    name: newCategoryName.trim(),
-                                    description: newCategoryDescription.trim() || undefined,
-                                  });
-                                }}
-                                disabled={createCategory.isPending || !newCategoryName.trim()}
-                              >
-                                {createCategory.isPending ? 'Creando...' : 'Crear Categoría'}
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Categoría</Label>
+                      <Combobox
+                        options={categories.map((cat: any) => ({
+                          value: cat.id,
+                          label: cat.name,
+                        }))}
+                        value={formData.categoryId}
+                        onValueChange={(value) => handleChange('categoryId', value)}
+                        placeholder="Seleccionar categoría..."
+                        searchPlaceholder="Buscar categoría..."
+                        emptyText="No se encontraron categorías"
+                        allowCustom={false}
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -584,46 +508,19 @@ export default function NewProductPage() {
                   <div className="space-y-2">
                     <Label htmlFor="tags">Etiquetas</Label>
                     <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          id="tags"
-                          placeholder="Agregar etiqueta o seleccionar sugerencia..."
-                          value={tagInput}
-                          onChange={(e) => setTagInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleAddTag();
-                            }
-                          }}
-                        />
-                        {tagInput && (
-                          <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                            {predefinedTags
-                              .filter(tag => 
-                                tag.toLowerCase().includes(tagInput.toLowerCase()) &&
-                                !formData.tags.includes(tag)
-                              )
-                              .slice(0, 5)
-                              .map((tag) => (
-                                <button
-                                  key={tag}
-                                  type="button"
-                                  onClick={() => {
-                                    setTagInput(tag);
-                                    handleAddTag();
-                                    setTagInput('');
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
-                                >
-                                  <Tag className="h-3 w-3" />
-                                  {tag}
-                                </button>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-                      <Button type="button" variant="secondary" onClick={handleAddTag} className="shrink-0">
+                      <Input
+                        id="tags"
+                        placeholder="Agregar etiqueta..."
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddTag();
+                          }
+                        }}
+                      />
+                      <Button type="button" variant="outline" onClick={handleAddTag}>
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
@@ -643,36 +540,11 @@ export default function NewProductPage() {
                         ))}
                       </div>
                     )}
-                    {formData.tags.length === 0 && (
-                      <div className="mt-2">
-                        <p className="text-xs text-muted-foreground mb-2">Sugerencias:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {predefinedTags.slice(0, 6).map((tag) => (
-                            <button
-                              key={tag}
-                              type="button"
-                              onClick={() => {
-                                if (!formData.tags.includes(tag)) {
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    tags: [...prev.tags, tag],
-                                  }));
-                                }
-                              }}
-                              className="text-xs px-2 py-1 border border-border rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
-                            >
-                              <Tag className="h-3 w-3 inline mr-1" />
-                              {tag}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Pricing */}
+              {/* Pricing - Same as new page */}
               <Card>
                 <CardHeader>
                   <CardTitle>Precios y Costos</CardTitle>
@@ -680,8 +552,7 @@ export default function NewProductPage() {
                     Información financiera del producto
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6 pt-6">
-                  {/* Precio, Costo e IVA en la misma fila */}
+                <CardContent className="space-y-4">
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="price">Precio de Venta *</Label>
@@ -725,7 +596,6 @@ export default function NewProductPage() {
                     </div>
                   </div>
 
-                  {/* Descuento en su propia fila */}
                   <div className="space-y-2">
                     <Label htmlFor="discountPercentage">Descuento (%)</Label>
                     <Input
@@ -751,7 +621,7 @@ export default function NewProductPage() {
                 </CardContent>
               </Card>
 
-              {/* Combo Items */}
+              {/* Combo Items - Same as new page */}
               {formData.type === 'combo' && (
                 <Card>
                   <CardHeader>
@@ -760,7 +630,7 @@ export default function NewProductPage() {
                       Agrega los productos que forman parte de este combo. El precio se calculará automáticamente.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6 pt-6">
+                  <CardContent className="space-y-4">
                     <div className="flex gap-2">
                       <div className="flex-1">
                         <Combobox
@@ -892,7 +762,6 @@ export default function NewProductPage() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => {
-                                      // Sugerir un precio con 10% de descuento
                                       const suggestedPrice = comboCalculations.totalPrice * 0.9;
                                       handleChange('price', suggestedPrice.toFixed(2));
                                     }}
@@ -919,7 +788,7 @@ export default function NewProductPage() {
                 </Card>
               )}
 
-              {/* Inventory (only for products) */}
+              {/* Inventory - Same as new page */}
               {formData.type === 'product' && (
                 <Card>
                   <CardHeader>
@@ -928,7 +797,7 @@ export default function NewProductPage() {
                       Control de stock y alertas
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6 pt-6">
+                  <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label>Controlar Inventario</Label>
@@ -943,34 +812,34 @@ export default function NewProductPage() {
                     </div>
 
                     {formData.trackInventory && (
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="space-y-2">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
                           <Label htmlFor="stockQuantity">Stock Inicial *</Label>
-                            <Input
+                          <Input
                             id="stockQuantity"
-                              type="number"
+                            type="number"
                             min="0"
-                              placeholder="0"
+                            placeholder="0"
                             value={formData.stockQuantity}
                             onChange={(e) => handleChange('stockQuantity', e.target.value)}
-                              required={formData.trackInventory}
-                            />
-                          </div>
-                          
-                          <div className="space-y-2">
+                            required={formData.trackInventory}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
                           <Label htmlFor="stockMin">Stock Mínimo *</Label>
-                            <Input
+                          <Input
                             id="stockMin"
-                              type="number"
+                            type="number"
                             min="0"
-                              placeholder="0"
+                            placeholder="0"
                             value={formData.stockMin}
                             onChange={(e) => handleChange('stockMin', e.target.value)}
-                              required={formData.trackInventory}
-                            />
-                          </div>
+                            required={formData.trackInventory}
+                          />
+                        </div>
 
-                          <div className="space-y-2">
+                        <div className="space-y-2">
                           <Label htmlFor="stockUnit">Unidad</Label>
                           <Select 
                             value={formData.stockUnit} 
@@ -995,16 +864,16 @@ export default function NewProductPage() {
                 </Card>
               )}
 
-            {/* Service Settings */}
-            {formData.type === 'service' && (
-              <Card>
+              {/* Service Settings - Same as new page */}
+              {formData.type === 'service' && (
+                <Card>
                   <CardHeader>
                     <CardTitle>Configuración del Servicio</CardTitle>
                     <CardDescription>
                       Opciones específicas para servicios
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6 pt-6">
+                  <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="durationMinutes">Duración (minutos)</Label>
@@ -1031,17 +900,17 @@ export default function NewProductPage() {
                       />
                     </div>
                   </CardContent>
-              </Card>
-            )}
-          </div>
+                </Card>
+              )}
+            </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card>
+            {/* Sidebar - Same as new page */}
+            <div className="space-y-6">
+              <Card>
                 <CardHeader>
                   <CardTitle>Estado</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6 pt-6">
+                <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Producto Activo</Label>
@@ -1098,10 +967,12 @@ export default function NewProductPage() {
                     )}
                   </div>
                 </CardContent>
-            </Card>
+              </Card>
+            </div>
           </div>
         </form>
       </div>
     </ErrorBoundary>
   );
 }
+
