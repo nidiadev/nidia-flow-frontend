@@ -189,7 +189,6 @@
   { "code": "LS", "name": "Lesotho", "dialCode": "+266", "flag": "🇱🇸" },
   { "code": "SZ", "name": "Eswatini", "dialCode": "+268", "flag": "🇸🇿" },
   { "code": "BI", "name": "Burundi", "dialCode": "+257", "flag": "🇧🇮" },
-  { "code": "DJ", "name": "Djibouti", "dialCode": "+253", "flag": "🇩🇯" },
   { "code": "SS", "name": "South Sudan", "dialCode": "+211", "flag": "🇸🇸" },
   { "code": "KP", "name": "North Korea", "dialCode": "+850", "flag": "🇰🇵" },
   { "code": "MN", "name": "Mongolia", "dialCode": "+976", "flag": "🇲🇳" },
