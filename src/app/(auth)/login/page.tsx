@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff, Loader2, Shield, Zap, TrendingUp } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Shield, Zap, TrendingUp, Clock, AlertCircle, X } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -49,10 +49,11 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [dismissedExpired, setDismissedExpired] = useState(false);
   const { login, isLoading } = useAuth();
   const { resolvedTheme } = useTheme();
   const searchParams = useSearchParams();
-  const expired = searchParams.get('expired') === 'true';
+  const expired = searchParams.get('expired') === 'true' && !dismissedExpired;
 
   useEffect(() => {
     setMounted(true);
@@ -179,9 +180,7 @@ function LoginForm() {
                     Iniciar Sesión
                   </CardTitle>
                   <CardDescription className="text-sm sm:text-base font-outfit text-muted-foreground">
-                    {expired 
-                      ? 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
-                      : 'Ingresa tus credenciales para acceder a tu cuenta'}
+                    Ingresa tus credenciales para acceder a tu cuenta
                   </CardDescription>
                 </motion.div>
               </CardHeader>
@@ -192,15 +191,76 @@ function LoginForm() {
                   onSubmit={handleSubmit(onSubmit)}
                   className="space-y-5 sm:space-y-6"
                 >
+                  {/* Session Expired Alert - Professional Design */}
                   <AnimatePresence>
-                    {(error || expired) && (
+                    {expired && (
                       <motion.div
                         initial={{ opacity: 0, y: -10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                        className="p-4 text-sm font-outfit text-destructive bg-destructive/10 border-2 border-destructive/20 rounded-lg"
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        className="relative p-3 sm:p-4 bg-slate-100 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-700 rounded-lg shadow-sm"
                       >
-                        {error || (expired && 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.')}
+                        <div className="flex items-start gap-2.5 sm:gap-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center border border-slate-300 dark:border-slate-700">
+                              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-slate-700 dark:text-slate-300" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <h3 className="text-xs sm:text-sm font-semibold font-outfit text-slate-900 dark:text-slate-100 mb-0.5">
+                              Sesión Expirada
+                            </h3>
+                            <p className="text-xs sm:text-sm font-outfit text-slate-700 dark:text-slate-300 leading-snug">
+                              Por seguridad, tu sesión ha finalizado. Inicia sesión nuevamente para continuar.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setDismissedExpired(true)}
+                            className="flex-shrink-0 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 mt-0.5"
+                            aria-label="Cerrar alerta"
+                          >
+                            <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Error Alert - Different style for login errors */}
+                  <AnimatePresence>
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        className="relative p-3 sm:p-4 bg-gradient-to-br from-red-50/80 to-rose-50/80 dark:from-red-950/40 dark:to-rose-950/40 border border-red-200/60 dark:border-red-800/60 rounded-lg shadow-sm backdrop-blur-sm"
+                      >
+                        <div className="flex items-start gap-2.5 sm:gap-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-red-100/80 dark:bg-red-900/40 flex items-center justify-center border border-red-200/60 dark:border-red-800/60">
+                              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 dark:text-red-400" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <h3 className="text-xs sm:text-sm font-semibold font-outfit text-red-900 dark:text-red-100 mb-0.5">
+                              Error al Iniciar Sesión
+                            </h3>
+                            <p className="text-xs sm:text-sm font-outfit text-red-800/90 dark:text-red-200/80 leading-snug">
+                              {error}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setError(null)}
+                            className="flex-shrink-0 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors p-1 rounded-md hover:bg-red-100/50 dark:hover:bg-red-900/30 mt-0.5"
+                            aria-label="Cerrar alerta"
+                          >
+                            <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          </button>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -291,7 +351,7 @@ function LoginForm() {
                   <div className="flex items-center justify-end pt-1">
                     <Link
                       href="/forgot-password"
-                      className="text-sm sm:text-base font-outfit text-primary hover:text-primary/80 hover:underline transition-colors"
+                      className="text-sm sm:text-base font-outfit text-slate-600 dark:text-primary hover:text-slate-800 dark:hover:text-primary/80 hover:underline transition-colors"
                     >
                       ¿Olvidaste tu contraseña?
                     </Link>
@@ -330,7 +390,7 @@ function LoginForm() {
                     ¿No tienes una cuenta?{' '}
                     <Link
                       href="/register"
-                      className="text-primary hover:text-primary/80 hover:underline font-semibold transition-colors"
+                      className="text-slate-600 dark:text-primary hover:text-slate-800 dark:hover:text-primary/80 hover:underline font-semibold transition-colors"
                     >
                       Regístrate aquí
                     </Link>
