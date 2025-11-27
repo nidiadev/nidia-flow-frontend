@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -48,7 +48,7 @@ const slideInVariants = {
   },
 };
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -693,5 +693,21 @@ export default function RegisterPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+function RegisterFallback() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterFallback />}>
+      <RegisterPageContent />
+    </Suspense>
   );
 }
