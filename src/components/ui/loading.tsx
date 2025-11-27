@@ -96,7 +96,7 @@ export function ErrorFallback({
   description = 'Ha ocurrido un error inesperado. Puedes intentar recargar la página.'
 }: ErrorFallbackProps) {
   return (
-    <div className="flex min-h-[400px] flex-col items-center justify-center space-y-6 p-6 bg-gradient-to-br from-background via-background to-muted/10">
+    <div className="fixed inset-0 flex items-center justify-center p-6 bg-background/80 backdrop-blur-sm z-50">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -117,13 +117,21 @@ export function ErrorFallback({
         
         {process.env.NODE_ENV === 'development' && (
           <details className="mt-4 bg-muted/50 rounded-lg border border-border overflow-hidden">
-            <summary className="cursor-pointer px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
-              Detalles del error (desarrollo)
+            <summary className="cursor-pointer px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2">
+              <span>Detalles del error (desarrollo)</span>
             </summary>
-            <pre className="mt-2 px-4 pb-4 text-xs bg-background/80 p-3 rounded-md overflow-auto max-h-40 border-t border-border">
-              {error.message}
-              {error.stack && `\n\n${error.stack}`}
-            </pre>
+            <div className="border-t border-border">
+              <pre className="px-4 py-3 text-xs bg-background/80 overflow-auto max-h-[400px] font-mono leading-relaxed whitespace-pre-wrap break-words">
+                <div className="font-semibold text-destructive mb-2">Error:</div>
+                <div className="mb-3">{error.message}</div>
+                {error.stack && (
+                  <>
+                    <div className="font-semibold text-destructive mb-2">Stack Trace:</div>
+                    <div>{error.stack}</div>
+                  </>
+                )}
+              </pre>
+            </div>
           </details>
         )}
         

@@ -150,28 +150,30 @@ export function PhoneInput({
         className={cn(
           'file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground',
           'h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base transition-[color,box-shadow] outline-none',
-          'bg-background border-border relative',
-          borderClasses,
+          'bg-background border-border',
           'dark:bg-input dark:border-[#2A2D35] dark:text-foreground dark:shadow-sm dark:hover:border-[#353842]',
+          'file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium',
           'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-          'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-1 focus-within:ring-offset-0',
+          'focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-1',
           'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
-          className?.includes('border-destructive') && 'focus-within:ring-destructive/50',
+          borderClasses,
+          className?.includes('border-destructive') && 'border-destructive focus-within:ring-destructive/50',
           className
         )}
       >
-        <div className="flex items-center gap-2 h-full relative z-10">
+        <div className="flex items-center h-full w-full">
           <button
             type="button"
             onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
             disabled={disabled}
-            className="flex items-center gap-1.5 flex-shrink-0 text-foreground hover:opacity-80 transition-opacity focus:outline-none relative z-10"
-            style={{ backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
+            className="flex items-center gap-1.5 flex-shrink-0 text-foreground hover:opacity-80 transition-opacity focus:outline-none pr-2"
           >
             <span className="text-lg leading-none">{selectedCountry.flag}</span>
             <span className="text-sm font-medium">{selectedCountry.dialCode}</span>
             <ChevronDown className={cn('h-3 w-3 transition-transform', isDropdownOpen && 'rotate-180')} />
           </button>
+          <div className="w-px h-5 bg-border/30 flex-shrink-0" />
+          <div className="flex-1 min-w-0 h-full flex items-center pl-2">
           <input
             ref={inputRef}
             id={id}
@@ -181,16 +183,16 @@ export function PhoneInput({
             onChange={handlePhoneChange}
             onBlur={(e) => {
               setIsFocused(false);
-              // Pasar el evento a onBlur si está definido (react-hook-form espera el evento)
               onBlur?.(e);
             }}
             onFocus={() => setIsFocused(true)}
             disabled={disabled}
             placeholder={placeholder.replace(/^\+\d+\s/, '')}
-            className="flex-1 min-w-0 bg-transparent border-0 outline-none ring-0 focus:ring-0 focus:border-0 focus:outline-none text-foreground placeholder:text-muted-foreground text-sm sm:text-base font-outfit h-full relative z-10"
-            style={{ backdropFilter: 'none', WebkitBackdropFilter: 'none' }}
+              className="w-full h-full bg-transparent border-0 outline-none ring-0 focus:ring-0 focus-visible:ring-0 focus:border-0 focus:outline-none focus-visible:outline-none text-foreground placeholder:text-muted-foreground text-sm md:text-sm"
+              style={{ boxShadow: 'none', WebkitAppearance: 'none', appearance: 'none' }}
             autoComplete="tel"
           />
+          </div>
         </div>
       </div>
 

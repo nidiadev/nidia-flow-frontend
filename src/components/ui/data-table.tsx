@@ -89,6 +89,8 @@ export interface DataTableProps<T> {
   pageSize?: number;
   showSearch?: boolean;
   showPagination?: boolean;
+  // Toolbar customization
+  toolbarLeftContent?: ReactNode;
   // Advanced features
   enableColumnVisibility?: boolean;
   enableColumnPinning?: boolean;
@@ -117,6 +119,7 @@ export function DataTable<T>({
   pageSize = 10,
   showSearch = true,
   showPagination = true,
+  toolbarLeftContent,
   enableColumnVisibility = true,
   enableColumnPinning = false,
   enableColumnSizing = false,
@@ -284,7 +287,8 @@ export function DataTable<T>({
     onExpandedChange: setExpanded,
     onRowSelectionChange: enableRowSelection ? handleRowSelectionChange : undefined,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    // Solo usar paginación del lado del cliente si showPagination está habilitado
+    getPaginationRowModel: showPagination ? getPaginationRowModel() : undefined,
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getGroupedRowModel: enableGrouping ? getGroupedRowModel() : undefined,
@@ -311,62 +315,72 @@ export function DataTable<T>({
       rowSelection,
     },
     initialState: {
-      pagination: {
+      pagination: showPagination ? {
         pageSize,
-      },
+      } : undefined,
     },
+    // Cuando showPagination es false, mostrar todos los datos sin paginación
+    manualPagination: !showPagination,
   });
 
   return (
     <div className="space-y-4">
       {/* Toolbar: Search and Column Controls */}
-      <div className="flex items-center justify-between gap-4">
-      {/* Search */}
-      {showSearch && (
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={searchPlaceholder}
-              value={globalFilter ?? ''}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-10"
-            />
+      {(showSearch || toolbarLeftContent || enableColumnVisibility) && (
+        <div className="flex items-center justify-between gap-4">
+          {/* Search */}
+          {showSearch && (
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={searchPlaceholder}
+                value={globalFilter ?? ''}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          )}
+
+          {/* Left Content (e.g., View Toggle) + Column Visibility */}
+          <div className="flex items-center gap-2">
+            {/* Custom left content */}
+            {toolbarLeftContent}
+
+            {/* Column Visibility Dropdown */}
+            {enableColumnVisibility && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Columns className="h-4 w-4 mr-2" />
+                    Columnas
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[200px]">
+                <DropdownMenuLabel>Mostrar columnas</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
       )}
-
-        {/* Column Visibility Dropdown */}
-        {enableColumnVisibility && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Columns className="h-4 w-4 mr-2" />
-                Columnas
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
-              <DropdownMenuLabel>Mostrar columnas</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
 
       {/* Table */}
       <div className="rounded-md border overflow-x-auto">
@@ -594,16 +608,35 @@ export function DataTable<T>({
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={tableColumns.length} className="h-64">
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <div className="mb-3">
-                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                        <Search className="h-6 w-6 text-muted-foreground" />
-                      </div>
+                <TableCell colSpan={tableColumns.length} className="h-96 p-0">
+                  <div className="flex flex-col items-center justify-center py-12 px-4">
+                    <div className="mb-6">
+                      <svg
+                        width="200"
+                        height="160"
+                        viewBox="0 0 200 160"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="opacity-40"
+                      >
+                        <circle cx="100" cy="80" r="40" fill="currentColor" className="text-muted-foreground" opacity="0.1" />
+                        <circle cx="100" cy="80" r="40" stroke="currentColor" className="text-muted-foreground" strokeWidth="2" fill="none" />
+                        <circle cx="100" cy="80" r="25" fill="currentColor" className="text-muted-foreground" opacity="0.15" />
+                        <circle cx="50" cy="40" r="15" fill="currentColor" className="text-muted-foreground" opacity="0.1" />
+                        <circle cx="50" cy="40" r="15" stroke="currentColor" className="text-muted-foreground" strokeWidth="1.5" fill="none" />
+                        <circle cx="150" cy="40" r="15" fill="currentColor" className="text-muted-foreground" opacity="0.1" />
+                        <circle cx="150" cy="40" r="15" stroke="currentColor" className="text-muted-foreground" strokeWidth="1.5" fill="none" />
+                        <circle cx="50" cy="120" r="15" fill="currentColor" className="text-muted-foreground" opacity="0.1" />
+                        <circle cx="50" cy="120" r="15" stroke="currentColor" className="text-muted-foreground" strokeWidth="1.5" fill="none" />
+                        <circle cx="150" cy="120" r="15" fill="currentColor" className="text-muted-foreground" opacity="0.1" />
+                        <circle cx="150" cy="120" r="15" stroke="currentColor" className="text-muted-foreground" strokeWidth="1.5" fill="none" />
+                      </svg>
                     </div>
-                    <p className="text-base font-medium text-foreground mb-1">{emptyMessage}</p>
+                    <p className="text-lg font-semibold text-foreground mb-2">{emptyMessage}</p>
                     {emptyDescription && (
-                      <p className="text-sm text-muted-foreground max-w-md">{emptyDescription}</p>
+                      <p className="text-sm text-muted-foreground max-w-md text-center leading-relaxed">
+                        {emptyDescription}
+                      </p>
                     )}
                   </div>
                 </TableCell>
