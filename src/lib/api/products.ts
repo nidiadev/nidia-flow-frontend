@@ -41,6 +41,7 @@ export interface Product {
   customFields?: Record<string, any>;
   variants?: ProductVariant[];
   comboItems?: ComboItem[];
+  productAttributes?: { attribute: Attribute }[];
   createdAt: string;
   updatedAt: string;
 }
@@ -81,6 +82,7 @@ export interface ProductVariant {
     type: string;
     stockMin?: number;
   };
+  attributeValues?: { attributeValue: AttributeValue }[];
   createdAt: string;
   updatedAt: string;
 }
@@ -375,6 +377,111 @@ export const categoriesApi = {
 };
 
 // ============================================
+// ATTRIBUTES
+// ============================================
+
+export interface Attribute {
+  id: string;
+  name: string;
+  type: 'text' | 'color' | 'number' | 'select';
+  isRequired: boolean;
+  values?: AttributeValue[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AttributeValue {
+  id: string;
+  attributeId: string;
+  name: string;
+  value?: string;
+  position: number;
+}
+
+export interface CreateAttributeDto {
+  name: string;
+  type: 'text' | 'color' | 'number' | 'select';
+  isRequired?: boolean;
+  values?: { name: string; value?: string; position?: number }[];
+}
+
+export interface UpdateAttributeDto {
+  name?: string;
+  type?: 'text' | 'color' | 'number' | 'select';
+  isRequired?: boolean;
+  values?: { id?: string; name: string; value?: string; position?: number }[];
+}
+
+export const attributesApi = {
+  getAll: async () => {
+    const response = await ApiClient.get('/attributes');
+    return response;
+  },
+  getById: async (id: string) => {
+    const response = await ApiClient.get(`/attributes/${id}`);
+    return response;
+  },
+  create: async (data: CreateAttributeDto) => {
+    const response = await ApiClient.post('/attributes', data);
+    return response;
+  },
+  update: async (id: string, data: UpdateAttributeDto) => {
+    const response = await ApiClient.patch(`/attributes/${id}`, data);
+    return response;
+  },
+  delete: async (id: string) => {
+    const response = await ApiClient.delete(`/attributes/${id}`);
+    return response;
+  }
+};
+
+// ============================================
+// WAREHOUSES
+// ============================================
+
+export interface Warehouse {
+  id: string;
+  name: string;
+  location?: string;
+  isDefault: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateWarehouseDto {
+  name: string;
+  location?: string;
+  isDefault?: boolean;
+  isActive?: boolean;
+}
+
+export interface UpdateWarehouseDto extends Partial<CreateWarehouseDto> {}
+
+export const warehousesApi = {
+  getAll: async () => {
+    const response = await ApiClient.get('/warehouses');
+    return response;
+  },
+  getById: async (id: string) => {
+    const response = await ApiClient.get(`/warehouses/${id}`);
+    return response;
+  },
+  create: async (data: CreateWarehouseDto) => {
+    const response = await ApiClient.post('/warehouses', data);
+    return response;
+  },
+  update: async (id: string, data: UpdateWarehouseDto) => {
+    const response = await ApiClient.patch(`/warehouses/${id}`, data);
+    return response;
+  },
+  delete: async (id: string) => {
+    const response = await ApiClient.delete(`/warehouses/${id}`);
+    return response;
+  }
+};
+
+// ============================================
 // PRODUCT VARIANTS
 // ============================================
 
@@ -459,6 +566,11 @@ export interface InventoryMovement {
     name: string;
     sku?: string;
   };
+  warehouseId?: string;
+  warehouse?: {
+    id: string;
+    name: string;
+  };
   type: 'in' | 'out' | 'adjustment' | 'transfer' | 'sale' | 'return' | 'damaged' | 'expired';
   quantity: number;
   previousQuantity: number;
@@ -478,7 +590,8 @@ export interface InventoryMovement {
 
 export interface CreateInventoryMovementDto {
   productId: string;
-  variantId?: string;
+  productVariantId?: string;
+  warehouseId?: string;
   type: 'in' | 'out' | 'adjustment' | 'transfer' | 'sale' | 'return' | 'damaged' | 'expired';
   quantity: number;
   reason?: string;

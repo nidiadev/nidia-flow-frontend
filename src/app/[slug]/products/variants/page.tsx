@@ -1,20 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { VariantFormDrawer } from '@/components/products/variant-form-drawer';
 import {
   Select,
   SelectContent,
@@ -170,7 +163,7 @@ function getColumns(): ColumnDef<VariantWithProduct>[] {
         
         return (
           <div>
-            <div className="font-semibold">
+          <div className="font-semibold">
               {formatCurrency(finalPrice)}
             </div>
             {adjustment !== 0 && (
@@ -195,363 +188,6 @@ function getColumns(): ColumnDef<VariantWithProduct>[] {
 }
 
 // Edit Variant Dialog
-function EditVariantDialog({
-  variant,
-  open,
-  onOpenChange,
-  onSuccess,
-}: {
-  variant: VariantWithProduct | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
-}) {
-  const queryClient = useQueryClient();
-  const [formData, setFormData] = useState({
-    name: '',
-    sku: '',
-    priceAdjustment: 0,
-    stockQuantity: 0,
-    isActive: true,
-  });
-
-  // Update form when variant changes
-  useMemo(() => {
-    if (variant) {
-      setFormData({
-        name: variant.name || '',
-        sku: variant.sku || '',
-        priceAdjustment: variant.priceAdjustment || 0,
-        stockQuantity: variant.stockQuantity || 0,
-        isActive: variant.isActive ?? true,
-      });
-    }
-  }, [variant]);
-
-  const updateMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      if (!variant) throw new Error('No variant selected');
-      return variantsApi.update(variant.productId, variant.id, {
-        name: data.name,
-        sku: data.sku,
-        priceAdjustment: data.priceAdjustment,
-        stockQuantity: data.stockQuantity,
-        isActive: data.isActive,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['variants'] });
-      toast.success('Variante actualizada correctamente');
-      onOpenChange(false);
-      onSuccess?.();
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Error al actualizar la variante');
-    },
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name.trim()) {
-      toast.error('El nombre es requerido');
-      return;
-    }
-    await updateMutation.mutateAsync(formData);
-  };
-
-  if (!variant) return null;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Editar Variante</DialogTitle>
-            <DialogDescription>
-              Producto: {variant.product?.name}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nombre *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Ej: Rojo - Grande"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sku">SKU</Label>
-                <Input
-                  id="sku"
-                  value={formData.sku}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
-                  placeholder="SKU de variante"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="priceAdjustment">Ajuste de Precio</Label>
-                <Input
-                  id="priceAdjustment"
-                  type="number"
-                  step="0.01"
-                  value={formData.priceAdjustment}
-                  onChange={(e) => setFormData(prev => ({ ...prev, priceAdjustment: parseFloat(e.target.value) || 0 }))}
-                  placeholder="0.00"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Precio base: {formatCurrency(variant.product?.price || 0)}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="stockQuantity">Stock</Label>
-                <Input
-                  id="stockQuantity"
-                  type="number"
-                  min="0"
-                  value={formData.stockQuantity}
-                  onChange={(e) => setFormData(prev => ({ ...prev, stockQuantity: parseInt(e.target.value) || 0 }))}
-                  placeholder="0"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={formData.isActive}
-                onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor="isActive">Variante activa</Label>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// Create Variant Dialog
-function CreateVariantDialog({
-  open,
-  onOpenChange,
-  products,
-  onSuccess,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  products: Product[];
-  onSuccess?: () => void;
-}) {
-  const queryClient = useQueryClient();
-  const [productId, setProductId] = useState('');
-  const [formData, setFormData] = useState({
-    name: '',
-    sku: '',
-    priceAdjustment: 0,
-    stockQuantity: 0,
-    option1Name: '',
-    option1Value: '',
-    option2Name: '',
-    option2Value: '',
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      if (!productId) throw new Error('Selecciona un producto');
-      return variantsApi.create(productId, formData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['variants'] });
-      toast.success('Variante creada correctamente');
-      onOpenChange(false);
-      setProductId('');
-      setFormData({
-        name: '',
-        sku: '',
-        priceAdjustment: 0,
-        stockQuantity: 0,
-        option1Name: '',
-        option1Value: '',
-        option2Name: '',
-        option2Value: '',
-      });
-      onSuccess?.();
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Error al crear la variante');
-    },
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!productId) {
-      toast.error('Selecciona un producto');
-      return;
-    }
-    if (!formData.name.trim()) {
-      toast.error('El nombre es requerido');
-      return;
-    }
-    await createMutation.mutateAsync();
-  };
-
-  const selectedProduct = products.find(p => p.id === productId);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Nueva Variante</DialogTitle>
-            <DialogDescription>
-              Crea una nueva variante para un producto existente
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Producto *</Label>
-              <Select value={productId} onValueChange={setProductId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar producto" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name} ({product.sku})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="create-name">Nombre *</Label>
-                <Input
-                  id="create-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Ej: Rojo - Grande"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="create-sku">SKU</Label>
-                <Input
-                  id="create-sku"
-                  value={formData.sku}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))}
-                  placeholder="Auto-generado si vacío"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="create-option1Name">Opción 1 (Nombre)</Label>
-                <Input
-                  id="create-option1Name"
-                  value={formData.option1Name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, option1Name: e.target.value }))}
-                  placeholder="Ej: Color"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="create-option1Value">Opción 1 (Valor)</Label>
-                <Input
-                  id="create-option1Value"
-                  value={formData.option1Value}
-                  onChange={(e) => setFormData(prev => ({ ...prev, option1Value: e.target.value }))}
-                  placeholder="Ej: Rojo"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="create-option2Name">Opción 2 (Nombre)</Label>
-                <Input
-                  id="create-option2Name"
-                  value={formData.option2Name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, option2Name: e.target.value }))}
-                  placeholder="Ej: Talla"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="create-option2Value">Opción 2 (Valor)</Label>
-                <Input
-                  id="create-option2Value"
-                  value={formData.option2Value}
-                  onChange={(e) => setFormData(prev => ({ ...prev, option2Value: e.target.value }))}
-                  placeholder="Ej: Grande"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="create-priceAdjustment">Ajuste de Precio</Label>
-                <Input
-                  id="create-priceAdjustment"
-                  type="number"
-                  step="0.01"
-                  value={formData.priceAdjustment}
-                  onChange={(e) => setFormData(prev => ({ ...prev, priceAdjustment: parseFloat(e.target.value) || 0 }))}
-                  placeholder="0.00"
-                />
-                {selectedProduct && (
-                  <p className="text-xs text-muted-foreground">
-                    Precio base: {formatCurrency(selectedProduct.price)}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="create-stockQuantity">Stock Inicial</Label>
-                <Input
-                  id="create-stockQuantity"
-                  type="number"
-                  min="0"
-                  value={formData.stockQuantity}
-                  onChange={(e) => setFormData(prev => ({ ...prev, stockQuantity: parseInt(e.target.value) || 0 }))}
-                  placeholder="0"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Creando...' : 'Crear Variante'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 export default function VariantsPage() {
   const router = useRouter();
@@ -564,16 +200,82 @@ export default function VariantsPage() {
   const [selectedVariant, setSelectedVariant] = useState<VariantWithProduct | null>(null);
   const [showHelpDrawer, setShowHelpDrawer] = useState(false);
 
-  // Fetch all products to populate filter
-  const { data: productsData } = useQuery({
-    queryKey: ['products', 'all'],
+  // Fetch all products to populate filter (paginated to get all)
+  const { data: productsData, isLoading: isLoadingProducts, error: productsError } = useQuery({
+    queryKey: ['products', 'for-variants-filter'],
     queryFn: async () => {
-      const response = await productsApi.getAll({ limit: 1000 });
-      return response;
+      try {
+        // First request to get total count - include all products (active and inactive)
+        const firstPage = await productsApi.getAll({ page: 1, limit: 100 });
+        console.log('First page response:', firstPage);
+        
+        // The API returns { data: { data: [...], pagination: {...} } } or { data: [...], pagination: {...} }
+        // Let's check both structures
+        const responseData = firstPage?.data;
+        const products = responseData?.data || responseData || [];
+        const total = responseData?.pagination?.total || products.length;
+        
+        console.log('First page products:', products);
+        console.log('Total products:', total);
+        
+        if (total <= 100) {
+          return firstPage;
+        }
+        
+        // If more than 100, fetch remaining pages
+        const totalPages = Math.ceil(total / 100);
+        const allProducts = Array.isArray(products) ? [...products] : [];
+        
+        for (let page = 2; page <= totalPages; page++) {
+          const pageData = await productsApi.getAll({ page, limit: 100 });
+          const pageResponseData = pageData?.data;
+          const pageProducts = pageResponseData?.data || pageResponseData || [];
+          if (Array.isArray(pageProducts)) {
+            allProducts.push(...pageProducts);
+          }
+        }
+        
+        return { data: allProducts, pagination: { total } };
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        throw error;
+      }
     },
+    retry: 2,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const products = productsData?.data?.data || [];
+  // Handle both response structures: { data: { data: [...] } } or { data: [...] }
+  const products = useMemo(() => {
+    if (!productsData) return [];
+    const responseData = productsData?.data;
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+    if (responseData?.data && Array.isArray(responseData.data)) {
+      return responseData.data;
+    }
+    return [];
+  }, [productsData]);
+  
+  // Debug: Log products to see what we're getting
+  useEffect(() => {
+    if (productsData) {
+      console.log('Products data raw:', productsData);
+      console.log('Products array:', products);
+      console.log('Products count:', products.length);
+      if (products.length > 0) {
+        console.log('First product:', products[0]);
+      }
+    }
+  }, [productsData, products]);
+  
+  // Show error if products fail to load
+  useEffect(() => {
+    if (productsError) {
+      toast.error('Error al cargar los productos. Por favor, intenta de nuevo.');
+    }
+  }, [productsError]);
 
   // Fetch variants for all products
   const { data: variantsData, isLoading, isError, error, refetch } = useQuery({
@@ -586,7 +288,9 @@ export default function VariantsPage() {
       const variantsPromises = productsWithVariants.map(async (product: any) => {
         try {
           const response = await variantsApi.getByProduct(product.id);
-          const variants = response.data?.data || [];
+          // El backend devuelve: { success: true, data: [...] }
+          // ApiClient.get devuelve response.data, entonces response = { success: true, data: [...] }
+          const variants = response?.data || [];
           return variants.map((variant: ProductVariant) => ({
             ...variant,
             product: {
@@ -729,10 +433,18 @@ export default function VariantsPage() {
           title="Variantes de Productos"
           description="Gestiona todas las variantes de tus productos (tallas, colores, etc.)"
           actions={
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Actualizar
+            <>
+              {isLoadingProducts && (
+                <span className="text-sm text-muted-foreground flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Cargando productos...
+                </span>
+              )}
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading || isLoadingProducts}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Actualizar
             </Button>
+            </>
           }
         />
 
@@ -777,6 +489,7 @@ export default function VariantsPage() {
               label: 'Nueva Variante',
               icon: <Plus className="h-4 w-4" />,
               onClick: () => setCreateDialogOpen(true),
+              disabled: false, // Always allow opening drawer, it will show message if no products
             },
             {
               label: 'Ver Productos',
@@ -791,10 +504,17 @@ export default function VariantsPage() {
           }}
           emptyState={{
             icon: <Grid3x3 className="h-16 w-16 text-muted-foreground/50" />,
-            title: 'No hay variantes',
-            description: 'Las variantes de productos aparecerán aquí cuando crees productos con opciones (tallas, colores, etc.)',
-            action: (
-              <Button onClick={() => setCreateDialogOpen(true)}>
+            title: products.length === 0 ? 'No hay productos disponibles' : 'No hay variantes',
+            description: products.length === 0 
+              ? 'Primero debes crear productos en el catálogo para poder agregar variantes'
+              : 'Las variantes de productos aparecerán aquí cuando crees productos con opciones (tallas, colores, etc.)',
+            action: products.length === 0 ? (
+              <Button onClick={() => router.push(route('/products/catalog'))}>
+                <Package className="h-4 w-4 mr-2" />
+                Ir al Catálogo
+              </Button>
+            ) : (
+              <Button onClick={() => setCreateDialogOpen(true)} disabled={isLoadingProducts}>
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Variante
               </Button>
@@ -810,23 +530,22 @@ export default function VariantsPage() {
           getRowId={(row) => row.id}
         />
 
-        {/* Edit Variant Dialog */}
-        <EditVariantDialog
+        {/* Variant Form Drawer (Create/Edit) */}
+        <VariantFormDrawer
+          open={createDialogOpen || editDialogOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setCreateDialogOpen(false);
+              setEditDialogOpen(false);
+              setSelectedVariant(null);
+            }
+          }}
+          products={products}
           variant={selectedVariant}
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
           onSuccess={() => {
             setSelectedVariant(null);
             refetch();
           }}
-        />
-
-        {/* Create Variant Dialog */}
-        <CreateVariantDialog
-          open={createDialogOpen}
-          onOpenChange={setCreateDialogOpen}
-          products={products}
-          onSuccess={refetch}
         />
 
         {/* Floating Help Button */}

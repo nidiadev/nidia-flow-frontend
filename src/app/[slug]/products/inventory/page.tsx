@@ -1,28 +1,28 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { SmartSelect } from '@/components/ui/smart-select';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Package,
@@ -30,11 +30,16 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowUpDown,
+  Building2,
+  HelpCircle,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { SectionHeader } from '@/components/ui/section-header';
+import { TenantLink } from '@/components/ui/tenant-link';
 import { useTenantRoutes } from '@/hooks/use-tenant-routes';
-import { inventoryApi, productsApi, InventoryMovement, CreateInventoryMovementDto } from '@/lib/api/products';
+import { inventoryApi, productsApi, warehousesApi, InventoryMovement, CreateInventoryMovementDto } from '@/lib/api/products';
 import { Table } from '@/components/table';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -104,6 +109,23 @@ function getColumns(): ColumnDef<InventoryMovementWithProduct>[] {
       },
     },
     {
+      accessorKey: 'warehouseId', // Show warehouse info if available (would require backend to return warehouse name)
+      header: 'Bodega',
+      cell: ({ row }) => {
+         // Assuming the backend might include warehouse info in the future, or we just show a placeholder if not.
+         // Since we don't have warehouse name in the response DTO yet, we can't show name.
+         // But we can show an icon or something if warehouseId exists.
+         return row.original.warehouseId ? (
+             <Badge variant="outline" className="gap-1">
+                 <Building2 className="h-3 w-3" />
+                 Bodega
+             </Badge>
+         ) : (
+             <span className="text-muted-foreground text-xs">-</span>
+         );
+      }
+    },
+    {
       accessorKey: 'quantity',
       header: 'Cantidad',
       cell: ({ row }) => {
@@ -126,20 +148,6 @@ function getColumns(): ColumnDef<InventoryMovementWithProduct>[] {
       ),
     },
     {
-      accessorKey: 'notes',
-      header: 'Notas',
-      cell: ({ row }) => {
-        const notes = row.original.notes;
-        return notes ? (
-          <div className="max-w-xs truncate" title={notes}>
-            {notes}
-          </div>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        );
-      },
-    },
-    {
       accessorKey: 'createdAt',
       header: 'Fecha',
       cell: ({ row }) => (
@@ -156,14 +164,16 @@ function getColumns(): ColumnDef<InventoryMovementWithProduct>[] {
   ];
 }
 
-// New Movement Dialog
-function NewMovementDialog({ products }: { products: any[] }) {
+// New Movement Drawer
+function NewMovementDrawer({ products, warehouses }: { products: any[]; warehouses: any[] }) {
   const queryClient = useQueryClient();
+  const { route } = useTenantRoutes();
   const [open, setOpen] = useState(false);
   const [productId, setProductId] = useState('');
-  const [variantId, setVariantId] = useState('');
+  const [variantId, setVariantId] = useState('none');
+  const [warehouseId, setWarehouseId] = useState('none');
   const [movementType, setMovementType] = useState<'in' | 'out' | 'adjustment' | 'transfer' | 'sale' | 'return' | 'damaged' | 'expired'>('in');
-  const [quantity, setQuantity] = useState('');
+  const [quantityInput, setQuantityInput] = useState('');
   const [reason, setReason] = useState('');
 
   // Fetch variants for selected product
@@ -174,152 +184,331 @@ function NewMovementDialog({ products }: { products: any[] }) {
       const response = await productsApi.getById(productId);
       return response;
     },
-    enabled: !!productId,
+    enabled: !!productId && open,
   });
 
   const variants = variantsData?.data?.variants || [];
+  
+  // Validar que haya bodegas
+  const hasWarehouses = warehouses.length > 0;
 
   const createMovementMutation = useMutation({
     mutationFn: (data: CreateInventoryMovementDto) => inventoryApi.createMovement(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-movements'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Movimiento de inventario registrado correctamente');
       setOpen(false);
-      setProductId('');
-      setVariantId('');
-      setMovementType('in');
-      setQuantity('');
-      setReason('');
+      resetForm();
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || 'Error al registrar el movimiento');
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const resetForm = () => {
+    setProductId('');
+    setVariantId('none');
+    setWarehouseId('none');
+    setMovementType('in');
+    setQuantityInput('');
+    setReason('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productId || !quantity || !reason) {
-      toast.error('Por favor completa todos los campos requeridos');
+    
+    if (!hasWarehouses) {
+      toast.error('Debes crear al menos una bodega antes de registrar movimientos');
+      return;
+    }
+    
+    if (!productId) {
+      toast.error('Selecciona un producto');
+      return;
+    }
+    
+    if (!warehouseId || warehouseId === 'none') {
+      toast.error('Selecciona una bodega');
+      return;
+    }
+    
+    if (!quantityInput || parseFloat(quantityInput) <= 0) {
+      toast.error('Ingresa una cantidad válida mayor a 0');
+      return;
+    }
+    
+    if (!reason.trim()) {
+      toast.error('Describe el motivo del movimiento');
       return;
     }
 
     createMovementMutation.mutate({
       productId,
-      variantId: variantId || undefined,
+      productVariantId: variantId && variantId !== 'none' ? variantId : undefined,
+      warehouseId: warehouseId !== 'none' ? warehouseId : undefined,
       type: movementType,
-      quantity: parseFloat(quantity),
-      reason,
+      quantity: parseFloat(quantityInput),
+      reason: reason.trim(),
     });
   };
 
+  const isPending = createMovementMutation.isPending;
+
+  // Reset form when drawer opens/closes
+  React.useEffect(() => {
+    if (!open) {
+      resetForm();
+    }
+  }, [open]);
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo Movimiento
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Registrar Movimiento de Inventario</DialogTitle>
-          <DialogDescription>
-            Registra una entrada, salida o ajuste de inventario
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="product">Producto *</Label>
-              <Select value={productId} onValueChange={setProductId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar producto" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product: any) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {variants.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="variant">Variante</Label>
-                <Select value={variantId} onValueChange={setVariantId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sin variante" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Sin variante</SelectItem>
-                    {variants.map((variant: any) => (
-                      <SelectItem key={variant.id} value={variant.id}>
-                        {variant.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+    <TooltipProvider>
+      <Drawer open={open} onOpenChange={setOpen} direction="right">
+        <DrawerContent direction="right" className="h-full flex flex-col">
+          <DrawerHeader className="text-left border-b flex-shrink-0">
+            <DrawerTitle>Registrar Movimiento de Inventario</DrawerTitle>
+            <DrawerDescription>
+              Registra una entrada, salida o ajuste de inventario en una bodega específica
+            </DrawerDescription>
+          </DrawerHeader>
+          
+          {!hasWarehouses ? (
+            <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0">
+              <div className="max-w-2xl mx-auto">
+                <div className="border rounded-lg p-6 bg-muted/30 text-center space-y-4">
+                  <AlertCircle className="h-12 w-12 text-warning mx-auto" />
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">No hay bodegas creadas</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Debes crear al menos una bodega antes de poder registrar movimientos de inventario.
+                    </p>
+                    <Button asChild>
+                      <TenantLink href={route('/products/warehouses')}>
+                        <Building2 className="h-4 w-4 mr-2" />
+                        Ir a Bodegas
+                      </TenantLink>
+                    </Button>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="type">Tipo de Movimiento *</Label>
-              <Select value={movementType} onValueChange={(value: any) => setMovementType(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="in">Entrada</SelectItem>
-                  <SelectItem value="out">Salida</SelectItem>
-                  <SelectItem value="adjustment">Ajuste</SelectItem>
-                  <SelectItem value="transfer">Transferencia</SelectItem>
-                  <SelectItem value="sale">Venta</SelectItem>
-                  <SelectItem value="return">Devolución</SelectItem>
-                  <SelectItem value="damaged">Dañado</SelectItem>
-                  <SelectItem value="expired">Vencido</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Cantidad *</Label>
-              <Input
-                id="quantity"
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder="0.00"
-                required
-              />
-            </div>
-          </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0">
+                <div className="space-y-6 max-w-2xl mx-auto">
+                  
+                  {/* Product Selection */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <Label htmlFor="product" className="text-sm font-medium">
+                        Producto <span className="text-destructive">*</span>
+                      </Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-xs">
+                          <p>Selecciona el producto al que corresponde este movimiento de inventario.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <SmartSelect
+                      id="product"
+                      options={products.map((product: any) => ({
+                        value: product.id,
+                        label: `${product.name}${product.sku ? ` (${product.sku})` : ''}`,
+                      }))}
+                      value={productId || undefined}
+                      onValueChange={setProductId}
+                      placeholder="Seleccionar producto"
+                      searchPlaceholder="Buscar producto..."
+                      disabled={isPending}
+                    />
+                  </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="reason">Motivo *</Label>
-            <Textarea
-              id="reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Describe el motivo del movimiento..."
-              required
-            />
-          </div>
+                  {/* Variant Selection */}
+                  {variants.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5">
+                        <Label htmlFor="variant" className="text-sm font-medium">
+                          Variante
+                        </Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-xs">
+                            <p>Opcionalmente selecciona una variante específica del producto. Si no seleccionas ninguna, el movimiento se aplicará al producto base.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <SmartSelect
+                        id="variant"
+                        options={[
+                          { value: 'none', label: 'Sin variante' },
+                          ...variants.map((variant: any) => ({
+                            value: variant.id,
+                            label: variant.name,
+                          }))
+                        ]}
+                        value={variantId}
+                        onValueChange={setVariantId}
+                        placeholder="Sin variante"
+                        searchPlaceholder="Buscar variante..."
+                        disabled={isPending || !productId}
+                      />
+                    </div>
+                  )}
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={createMovementMutation.isPending}>
-              {createMovementMutation.isPending ? 'Registrando...' : 'Registrar Movimiento'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+                  {/* Warehouse and Movement Type */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5">
+                        <Label htmlFor="warehouse" className="text-sm font-medium">
+                          Bodega <span className="text-destructive">*</span>
+                        </Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-xs">
+                            <p>Selecciona la bodega donde se realizará el movimiento. El inventario se registrará en la bodega seleccionada.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <SmartSelect
+                        id="warehouse"
+                        options={warehouses.map((warehouse: any) => ({
+                          value: warehouse.id,
+                          label: `${warehouse.name}${warehouse.isDefault ? ' (Predeterminada)' : ''}`,
+                        }))}
+                        value={warehouseId !== 'none' ? warehouseId : undefined}
+                        onValueChange={(value) => setWarehouseId(value || 'none')}
+                        placeholder="Seleccionar bodega"
+                        searchPlaceholder="Buscar bodega..."
+                        disabled={isPending}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5">
+                        <Label htmlFor="type" className="text-sm font-medium">
+                          Tipo de Movimiento <span className="text-destructive">*</span>
+                        </Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-xs">
+                            <p>Selecciona el tipo de movimiento: Entrada (aumenta stock), Salida (disminuye stock), Ajuste (corrige inventario), etc.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <SmartSelect
+                        id="type"
+                        options={[
+                          { value: 'in', label: 'Entrada' },
+                          { value: 'out', label: 'Salida' },
+                          { value: 'adjustment', label: 'Ajuste' },
+                          { value: 'transfer', label: 'Transferencia' },
+                          { value: 'sale', label: 'Venta' },
+                          { value: 'return', label: 'Devolución' },
+                          { value: 'damaged', label: 'Dañado' },
+                          { value: 'expired', label: 'Vencido' },
+                        ]}
+                        value={movementType}
+                        onValueChange={(value: any) => setMovementType(value)}
+                        placeholder="Seleccionar tipo"
+                        disabled={isPending}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quantity */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <Label htmlFor="quantity" className="text-sm font-medium">
+                        Cantidad <span className="text-destructive">*</span>
+                      </Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-xs">
+                          <p>Ingresa la cantidad de unidades del movimiento. Debe ser mayor a 0. Para salidas, el sistema validará que haya suficiente stock disponible.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={quantityInput}
+                      onChange={(e) => setQuantityInput(e.target.value)}
+                      placeholder="0.00"
+                      required
+                      disabled={isPending}
+                      className="h-10"
+                    />
+                  </div>
+
+                  {/* Reason */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <Label htmlFor="reason" className="text-sm font-medium">
+                        Motivo <span className="text-destructive">*</span>
+                      </Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-xs">
+                          <p>Describe el motivo o razón del movimiento. Esta información quedará registrada en el historial para auditoría y trazabilidad.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Textarea
+                      id="reason"
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="Describe el motivo del movimiento..."
+                      required
+                      disabled={isPending}
+                      rows={4}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <DrawerFooter className="border-t flex-shrink-0 bg-background">
+                <div className="flex gap-2 justify-end">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setOpen(false)}
+                    disabled={isPending}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={isPending || !productId || !warehouseId || warehouseId === 'none' || !quantityInput || !reason.trim()}>
+                    {isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Registrando...
+                      </>
+                    ) : (
+                      'Registrar Movimiento'
+                    )}
+                  </Button>
+                </div>
+              </DrawerFooter>
+            </form>
+          )}
+        </DrawerContent>
+      </Drawer>
+    </TooltipProvider>
   );
 }
 
@@ -329,16 +518,40 @@ export default function InventoryPage() {
   const [page, setPage] = useState(1);
   const limit = 20;
 
-  // Fetch products for dialog
-  const { data: productsData } = useQuery({
-    queryKey: ['products', 'all'],
+  // Fetch products for dialog (paginated to get all)
+  const { data: productsData, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['products', 'for-inventory-filter'],
     queryFn: async () => {
-      const response = await productsApi.getAll({ limit: 1000 });
-      return response;
+      // First request to get total count
+      const firstPage = await productsApi.getAll({ page: 1, limit: 100 });
+      const total = firstPage?.data?.pagination?.total || 0;
+      
+      if (total <= 100) {
+        return firstPage;
+      }
+      
+      // If more than 100, fetch remaining pages
+      const totalPages = Math.ceil(total / 100);
+      const allProducts = [...(firstPage?.data?.data || [])];
+      
+      for (let page = 2; page <= totalPages; page++) {
+        const pageData = await productsApi.getAll({ page, limit: 100 });
+        allProducts.push(...(pageData?.data?.data || []));
+      }
+      
+      return { data: { data: allProducts, pagination: { total } } };
     },
   });
 
   const products = productsData?.data?.data || [];
+
+  // Fetch warehouses
+  const { data: warehousesData } = useQuery({
+    queryKey: ['warehouses'],
+    queryFn: () => warehousesApi.getAll(),
+  });
+
+  const warehouses = warehousesData?.data || [];
 
   // Fetch inventory movements
   const { data: movementsData, isLoading, isError, error, refetch } = useQuery({
@@ -439,7 +652,7 @@ export default function InventoryPage() {
             {
               label: 'Nuevo Movimiento',
               icon: <Plus className="h-4 w-4" />,
-              render: () => <NewMovementDialog products={products} />,
+              render: () => <NewMovementDrawer products={products} warehouses={warehouses} />,
             },
           ]}
           stats={{
