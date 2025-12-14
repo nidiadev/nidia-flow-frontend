@@ -163,7 +163,7 @@ function getColumns(): ColumnDef<VariantWithProduct>[] {
         
         return (
           <div>
-            <div className="font-semibold">
+          <div className="font-semibold">
               {formatCurrency(finalPrice)}
             </div>
             {adjustment !== 0 && (
@@ -205,9 +205,18 @@ export default function VariantsPage() {
     queryKey: ['products', 'for-variants-filter'],
     queryFn: async () => {
       try {
-        // First request to get total count
+        // First request to get total count - include all products (active and inactive)
         const firstPage = await productsApi.getAll({ page: 1, limit: 100 });
-        const total = firstPage?.data?.pagination?.total || 0;
+        console.log('First page response:', firstPage);
+        
+        // The API returns { data: { data: [...], pagination: {...} } } or { data: [...], pagination: {...} }
+        // Let's check both structures
+        const responseData = firstPage?.data;
+        const products = responseData?.data || responseData || [];
+        const total = responseData?.pagination?.total || products.length;
+        
+        console.log('First page products:', products);
+        console.log('Total products:', total);
         
         if (total <= 100) {
           return firstPage;
@@ -215,14 +224,18 @@ export default function VariantsPage() {
         
         // If more than 100, fetch remaining pages
         const totalPages = Math.ceil(total / 100);
-        const allProducts = [...(firstPage?.data?.data || [])];
+        const allProducts = Array.isArray(products) ? [...products] : [];
         
         for (let page = 2; page <= totalPages; page++) {
           const pageData = await productsApi.getAll({ page, limit: 100 });
-          allProducts.push(...(pageData?.data?.data || []));
+          const pageResponseData = pageData?.data;
+          const pageProducts = pageResponseData?.data || pageResponseData || [];
+          if (Array.isArray(pageProducts)) {
+            allProducts.push(...pageProducts);
+          }
         }
         
-        return { data: { data: allProducts, pagination: { total } } };
+        return { data: allProducts, pagination: { total } };
       } catch (error) {
         console.error('Error fetching products:', error);
         throw error;
@@ -232,7 +245,30 @@ export default function VariantsPage() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const products = productsData?.data?.data || [];
+  // Handle both response structures: { data: { data: [...] } } or { data: [...] }
+  const products = useMemo(() => {
+    if (!productsData) return [];
+    const responseData = productsData?.data;
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+    if (responseData?.data && Array.isArray(responseData.data)) {
+      return responseData.data;
+    }
+    return [];
+  }, [productsData]);
+  
+  // Debug: Log products to see what we're getting
+  useEffect(() => {
+    if (productsData) {
+      console.log('Products data raw:', productsData);
+      console.log('Products array:', products);
+      console.log('Products count:', products.length);
+      if (products.length > 0) {
+        console.log('First product:', products[0]);
+      }
+    }
+  }, [productsData, products]);
   
   // Show error if products fail to load
   useEffect(() => {
@@ -252,7 +288,9 @@ export default function VariantsPage() {
       const variantsPromises = productsWithVariants.map(async (product: any) => {
         try {
           const response = await variantsApi.getByProduct(product.id);
-          const variants = response.data?.data || [];
+          // El backend devuelve: { success: true, data: [...] }
+          // ApiClient.get devuelve response.data, entonces response = { success: true, data: [...] }
+          const variants = response?.data || [];
           return variants.map((variant: ProductVariant) => ({
             ...variant,
             product: {
@@ -405,7 +443,7 @@ export default function VariantsPage() {
               <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading || isLoadingProducts}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Actualizar
-              </Button>
+            </Button>
             </>
           }
         />
@@ -451,7 +489,7 @@ export default function VariantsPage() {
               label: 'Nueva Variante',
               icon: <Plus className="h-4 w-4" />,
               onClick: () => setCreateDialogOpen(true),
-              disabled: isLoadingProducts || products.length === 0,
+              disabled: false, // Always allow opening drawer, it will show message if no products
             },
             {
               label: 'Ver Productos',
